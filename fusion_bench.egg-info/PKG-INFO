@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: fusion-bench
+Version: 0.1.0
+Summary: Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench
+Requires-Python: >=3.12
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: aiofiles>=23.0.0
+Requires-Dist: matplotlib>=3.8.0
+Provides-Extra: test
+Requires-Dist: pytest>=8.0.0; extra == "test"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "test"
+Requires-Dist: pytest-cov>=5.0.0; extra == "test"
+Requires-Dist: pytest-mock>=3.14.0; extra == "test"
