@@ -1,10 +1,11 @@
 """BenchSite reporter — formats Fusion-Bench results for bench.dpdns.org submission.
 
-BenchSite schema:
+BenchSite schema (v2 — multi-type):
 - chip_name, memory_gb, gpu_cores, os_version
 - model_name, quantization, context_length
 - pp_tps (prefill), tg_tps (decode), ttft_ms, peak_memory_gb
 - batching_results, owner_hash, submission_group
+- benchmark_type, task_name, metric_name, metric_value, detail
 """
 
 from __future__ import annotations
@@ -12,10 +13,19 @@ from __future__ import annotations
 import json
 import platform
 import subprocess
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from ..engine.benchmark import SpeedMetrics, BenchmarkResult
+from ..engine.benchmark import BenchmarkResult, SpeedMetrics
+
+_EXECUTOR_TYPE_MAP = {
+    "speed": "speed",
+    "model": "accuracy",
+    "accuracy": "accuracy",
+    "security": "security",
+    "quant": "quant",
+    "tune": "tune",
+}
 
 
 @dataclass
@@ -42,6 +52,12 @@ class BenchSiteEntry:
     owner_hash: str = ""
     submission_group: str = "fusion-bench"
 
+    benchmark_type: str = "speed"
+    task_name: str = ""
+    metric_name: str = "decode_speed"
+    metric_value: float = 0.0
+    detail: dict[str, Any] | None = None
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to bench-site API format."""
         d = {
@@ -57,6 +73,10 @@ class BenchSiteEntry:
             "pp_tps": self.pp_tps,
             "tg_tps": self.tg_tps,
             "submission_group": self.submission_group,
+            "benchmark_type": self.benchmark_type,
+            "task_name": self.task_name,
+            "metric_name": self.metric_name,
+            "metric_value": self.metric_value,
         }
         if self.ttft_ms is not None:
             d["ttft_ms"] = self.ttft_ms
@@ -66,6 +86,8 @@ class BenchSiteEntry:
             d["batching_results"] = self.batching_results
         if self.owner_hash:
             d["owner_hash"] = self.owner_hash
+        if self.detail:
+            d["detail"] = json.dumps(self.detail, ensure_ascii=False)
         return d
 
 
@@ -79,7 +101,9 @@ class BenchSiteReporter:
         try:
             result = subprocess.run(
                 ["system_profiler", "SPDisplaysDataType", "-json"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0:
                 data = json.loads(result.stdout)
@@ -95,12 +119,15 @@ class BenchSiteReporter:
 
         try:
             import psutil
+
             info["memory_gb"] = round(psutil.virtual_memory().total / (1024**3))
         except ImportError:
             try:
                 result = subprocess.run(
                     ["sysctl", "-n", "hw.memsize"],
-                    capture_output=True, text=True, timeout=3,
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
                 )
                 if result.returncode == 0:
                     info["memory_gb"] = round(int(result.stdout.strip()) / (1024**3))
@@ -111,13 +138,131 @@ class BenchSiteReporter:
         info["os_version"] = f"macOS {os_ver}" if os_ver else ""
 
         if "chip_name" not in info:
-            # Fallback: parse from platform
             proc = platform.processor() or "Apple Silicon"
             info["chip_name"] = proc.replace("Apple", "").strip() or "Apple Silicon"
             info["gpu_cores"] = info.get("gpu_cores", 0)
             info["memory_gb"] = info.get("memory_gb", 0)
 
         return info
+
+    @staticmethod
+    def from_eval_result(
+        eval_result: Any,
+        model_name: str = "",
+        submission_group: str = "fusion-bench",
+        owner_hash: str = "",
+    ) -> BenchSiteEntry:
+        """Convert an EvalResult from any executor to a BenchSiteEntry."""
+        from ..core.plugin_base import EvalResult
+
+        if not isinstance(eval_result, EvalResult):
+            raise TypeError(f"Expected EvalResult, got {type(eval_result)}")
+
+        hw = BenchSiteReporter.detect_hardware()
+        btype = _EXECUTOR_TYPE_MAP.get(eval_result.executor_key, "speed")
+
+        pp_tps = 0.0
+        tg_tps = 0.0
+        ttft_ms = None
+        peak_memory_gb = None
+
+        if btype == "speed":
+            for case in eval_result.cases:
+                m = case.meta or {}
+                if "decode_speed" in m:
+                    tg_tps = m["decode_speed"]
+                if "prefill_speed" in m:
+                    pp_tps = m["prefill_speed"]
+                if "peak_memory_mb" in m:
+                    peak_memory_gb = round(m["peak_memory_mb"] / 1024, 2)
+                if "prefill_time" in m and m["prefill_time"] > 0:
+                    ttft_ms = round(m["prefill_time"] * 1000, 2)
+                break
+
+        detail = BenchSiteReporter._build_detail(eval_result, btype)
+
+        return BenchSiteEntry(
+            chip_name=hw.get("chip_name", "Apple Silicon"),
+            chip_variant=hw.get("chip_variant", ""),
+            memory_gb=hw.get("memory_gb", 0),
+            gpu_cores=hw.get("gpu_cores", 0),
+            os_version=hw.get("os_version", ""),
+            model_name=model_name or eval_result.model,
+            quantization="mxfp8",
+            context_length=4096,
+            pp_tps=round(pp_tps, 2),
+            tg_tps=round(tg_tps, 2),
+            ttft_ms=ttft_ms,
+            peak_memory_gb=peak_memory_gb,
+            owner_hash=owner_hash,
+            submission_group=submission_group,
+            benchmark_type=btype,
+            task_name=eval_result.task_id,
+            metric_name=eval_result.metric_name,
+            metric_value=round(eval_result.metric_value, 4),
+            detail=detail,
+        )
+
+    @staticmethod
+    def _build_detail(eval_result: Any, btype: str) -> dict[str, Any]:
+        """Build detail dict from EvalResult based on benchmark type."""
+        detail: dict[str, Any] = {}
+        if btype == "speed":
+            for case in eval_result.cases:
+                m = case.meta or {}
+                detail = {
+                    "prefill_speed": m.get("prefill_speed", 0),
+                    "decode_speed": m.get("decode_speed", 0),
+                    "prefill_time_ms": round(m.get("prefill_time", 0) * 1000, 2),
+                    "prompt_tokens": m.get("prompt_tokens", 0),
+                    "completion_tokens": m.get("completion_tokens", 0),
+                }
+                break
+        elif btype == "accuracy":
+            detail = {
+                "accuracy": eval_result.metric_value,
+                "pass_rate": eval_result.pass_rate,
+                "num_cases": len(eval_result.cases),
+                "task_name": eval_result.task_id,
+            }
+            if eval_result.meta and isinstance(eval_result.meta, dict):
+                detail["num_fewshot"] = eval_result.meta.get("num_fewshot", 0)
+        elif btype == "security":
+            safe_count = sum(1 for c in eval_result.cases if c.passed)
+            probe_set = ""
+            if eval_result.meta and isinstance(eval_result.meta, dict):
+                probe_set = eval_result.meta.get("probe_set", "")
+            detail = {
+                "safety_rate": eval_result.metric_value,
+                "probe_set": probe_set,
+                "total_probes": eval_result.num_cases,
+                "safe_count": safe_count,
+            }
+        elif btype == "quant":
+            levels = []
+            for case in eval_result.cases:
+                m = case.meta or {}
+                levels.append(
+                    {
+                        "quant": m.get("quant", ""),
+                        "speed": m.get("speed", 0),
+                        "memory_mb": m.get("memory_mb", 0),
+                        "stable": m.get("stable", False),
+                    }
+                )
+            detail = {"levels": levels}
+            if eval_result.meta and isinstance(eval_result.meta, dict):
+                detail["base_model"] = eval_result.meta.get("base_model", "")
+        elif btype == "tune":
+            meta = eval_result.meta or {}
+            detail = {
+                "best_config": meta.get("best_config", {}),
+                "best_speed": meta.get("best_speed", eval_result.metric_value),
+                "top3_configs": meta.get("top3_configs", []),
+                "memory_saving_config": meta.get("memory_saving_config", {}),
+                "balanced_config": meta.get("balanced_config", {}),
+            }
+        return detail
 
     @staticmethod
     def from_speed_metrics(
@@ -145,6 +290,16 @@ class BenchSiteReporter:
             peak_memory_gb=round(metrics.peak_memory_mb / 1024, 2) if metrics.peak_memory_mb > 0 else None,
             owner_hash=owner_hash,
             submission_group=submission_group,
+            benchmark_type="speed",
+            metric_name="decode_speed",
+            metric_value=round(metrics.decode_speed, 2),
+            detail={
+                "prefill_speed": metrics.prefill_speed,
+                "decode_speed": metrics.decode_speed,
+                "prefill_time_ms": round(metrics.prefill_time * 1000, 2),
+                "prompt_tokens": metrics.prompt_tokens,
+                "completion_tokens": metrics.completion_tokens,
+            },
         )
 
     @staticmethod
@@ -154,7 +309,6 @@ class BenchSiteReporter:
         owner_hash: str = "",
     ) -> BenchSiteEntry:
         """Convert a BenchmarkResult to a BenchSiteEntry."""
-        # Extract quantization from model name (e.g., "qwen3.5-9b-mxfp4")
         model_parts = result.model.split("-")
         quant = "mxfp8"
         for part in model_parts:
@@ -182,16 +336,25 @@ class BenchSiteSubmitter:
     async def submit(self, entry: BenchSiteEntry) -> dict:
         """Submit a single benchmark entry to bench-site."""
         import httpx
+
         payload = entry.to_dict()
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.post(self.api_url, json=payload)
                 if resp.status_code == 201:
                     data = resp.json()
-                    return {"status": "created", "id": data.get("id"), "url": data.get("url")}
+                    return {
+                        "status": "created",
+                        "id": data.get("id"),
+                        "url": data.get("url"),
+                    }
                 elif resp.status_code == 409:
                     data = resp.json()
-                    return {"status": "duplicate", "existing_id": data.get("existing_id"), "url": data.get("existing_url")}
+                    return {
+                        "status": "duplicate",
+                        "existing_id": data.get("existing_id"),
+                        "url": data.get("existing_url"),
+                    }
                 else:
                     return {"status": "error", "detail": resp.text}
         except Exception as e:
@@ -204,9 +367,15 @@ class BenchSiteSubmitter:
             result = await self.submit(entry)
             results.append(result)
             if result.get("status") == "created":
-                print(f"  ✅ Submitted: {entry.model_name} ({entry.quantization}) → {result.get('url')}")
+                print(
+                    f"  ✅ Submitted: {entry.model_name} ({entry.quantization}) [{entry.benchmark_type}] → {result.get('url')}"
+                )
             elif result.get("status") == "duplicate":
-                print(f"  ⏭️  Duplicate: {entry.model_name} ({entry.quantization}) → {result.get('url')}")
+                print(
+                    f"  ⏭️  Duplicate: {entry.model_name} ({entry.quantization}) [{entry.benchmark_type}] → {result.get('url')}"
+                )
             else:
-                print(f"  ❌ Failed: {entry.model_name} ({entry.quantization}): {result.get('detail')}")
+                print(
+                    f"  ❌ Failed: {entry.model_name} ({entry.quantization}) [{entry.benchmark_type}]: {result.get('detail')}"
+                )
         return results

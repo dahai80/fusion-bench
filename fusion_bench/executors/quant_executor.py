@@ -5,7 +5,13 @@ from __future__ import annotations
 import logging
 import time
 
-from ..core.plugin_base import CaseResult, EvalResult, ExecutorPlugin, ExecutorType, TaskConfig
+from ..core.plugin_base import (
+    CaseResult,
+    EvalResult,
+    ExecutorPlugin,
+    ExecutorType,
+    TaskConfig,
+)
 from ..optimizer.quant_bench import QuantBenchmark
 
 logger = logging.getLogger(__name__)
@@ -35,13 +41,20 @@ class QuantExecutor(ExecutorPlugin):
 
             cases: list[CaseResult] = []
             for qr in quant_results:
-                cases.append(CaseResult(
-                    input_text=f"quant={qr.quant}",
-                    score=qr.speed,
-                    passed=qr.speed > 0 and qr.stable,
-                    latency_ms=0.0,
-                    meta={"quant": qr.quant, "speed": qr.speed, "memory_mb": qr.memory_mb, "stable": qr.stable},
-                ))
+                cases.append(
+                    CaseResult(
+                        input_text=f"quant={qr.quant}",
+                        score=qr.speed,
+                        passed=qr.speed > 0 and qr.stable,
+                        latency_ms=0.0,
+                        meta={
+                            "quant": qr.quant,
+                            "speed": qr.speed,
+                            "memory_mb": qr.memory_mb,
+                            "stable": qr.stable,
+                        },
+                    )
+                )
 
             best_speed = max((c.score for c in cases), default=0.0)
 

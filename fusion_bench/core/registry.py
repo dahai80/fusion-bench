@@ -7,17 +7,17 @@ and quality gate rules. Supports runtime discovery and lazy loading.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
-    from .plugin_base import ExecutorPlugin
+    pass
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
 
-class Registry(Generic[T]):
+class Registry[T]:
     """Generic type-safe registry for named items.
 
     Usage:
@@ -41,7 +41,9 @@ class Registry(Generic[T]):
 
     def get_or_raise(self, key: str) -> type[T]:
         if key not in self._items:
-            raise KeyError(f"Registry[{self.name}]: no item registered as '{key}'. Available: {list(self._items.keys())}")
+            raise KeyError(
+                f"Registry[{self.name}]: no item registered as '{key}'. Available: {list(self._items.keys())}"
+            )
         return self._items[key]
 
     def list_keys(self) -> list[str]:

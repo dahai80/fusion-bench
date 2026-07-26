@@ -34,6 +34,7 @@ fusion-bench run mmlu --model qwen3.5-9b
 fusion-bench tune --model qwen3.5-9b
 fusion-bench compare --models qwen3.5-9b,deepseek-v4 --tasks mmlu,gsm8k
 fusion-bench quant --model qwen3.5-9b
+fusion-bench bench-site stats
 ```
 
 ## Architecture
@@ -104,13 +105,45 @@ fusion-mlx HTTP API (localhost:11434/v1)
 | `reporter/bench_site_db.py` | `BenchSiteDB`, `BenchSiteRecord` | Direct SQLite write to bench-site database |
 | `reporter/bench_site.py` | `BenchSiteReporter`, `BenchSiteSubmitter` | Format + HTTP submit to bench.dpdns.org API |
 | `cache.py` | `BenchmarkCache` | SQLite cache keyed by model+config+task |
-| `cli.py` | `main()` + `cmd_*` functions | argparse CLI v2 with subcommands: list-tasks, list-suites, list-executors, run, suite, speed, tune, quant, security, gates, traces, compare |
+| `cli.py` | `main()` + `cmd_*` functions | argparse CLI v2 with subcommands: list-tasks, list-suites, list-executors, run, suite, speed, tune, quant, security, gates, traces, compare, bench-site |
+
+## Bench-Site (Web UI)
+
+Bench-site is a Next.js 16 app living in `bench-site/` subdirectory. It provides the public web UI at [bench.dpdns.org](https://bench.dpdns.org) for browsing and comparing Apple Silicon LLM benchmarks.
+
+**Tech stack:** Next.js 16.2.9, React 19, better-sqlite3, drizzle-orm, Tailwind CSS 4, recharts.
+
+**Database schema:** The `benchmarks` table is defined in `bench-site/src/db/schema.ts` (drizzle ORM). This is the **schema source of truth**. Fusion-bench's `reporter/bench_site_db.py._ensure_schema()` must stay in sync.
+
+**Integration paths:**
+1. **Direct SQLite** — `BenchSiteDB` writes to `bench-site/data/bench.db` (primary, same-machine)
+2. **HTTP API** — `BenchSiteSubmitter` POSTs to `bench.dpdns.org/api/benchmarks` (remote)
+
+**Local development:**
+```bash
+cd bench-site && npm install && npm run dev     # Dev server on :3000
+fusion-bench bench-site dev                      # Alternative via CLI
+```
+
+**Deploy to production:**
+```bash
+cd bench-site && ./deploy.sh                     # Build + rsync + restart
+fusion-bench bench-site deploy                   # Alternative via CLI
+```
+
+**CLI management:**
+```bash
+fusion-bench bench-site dev [--port 3000]        # Start dev server
+fusion-bench bench-site build                    # Production build
+fusion-bench bench-site deploy [--skip-build]    # Deploy to server
+fusion-bench bench-site stats                    # Show database statistics
+```
 
 ## Key Conventions
 
 - **Async-first:** Engine and adapter code uses `async/await` with `httpx.AsyncClient`. CLI dispatches via `asyncio.run()`.
 - **Quantization naming:** Model names embed quant level (e.g., `qwen3.5-9b-mxfp4`). Code parses this from model name when reporting.
-- **BenchSiteDB paths:** Auto-detects `~/claude-home/bench-site/data/bench.db`; falls back to `~/.fusion-bench/bench-site.db`.
+- **BenchSiteDB paths:** Auto-detects `bench-site/data/bench.db` (project root), then `~/claude-home/bench-site/data/bench.db`; falls back to `~/.fusion-bench/bench-site.db`.
 - **Task directory:** LMEvalTaskRunner looks for `~/bench/lm-evaluation-harness/lm_eval/tasks` for YAML task definitions.
 - **Token estimation:** MLXModel uses approximate token counting (~4 chars/token) since no tokenizer is loaded.
 - **pytest-asyncio:** `asyncio_mode = "auto"` in pyproject.toml — async test functions work without explicit markers.

@@ -1,12 +1,12 @@
 """Parameter tuner — automatically finds optimal fusion-mlx parameters for any model."""
+
 from __future__ import annotations
 
-import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..engine.benchmark import BenchmarkRunner, SpeedMetrics, BenchmarkResult
+from ..engine.benchmark import BenchmarkResult, BenchmarkRunner
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TuneResult:
     """Result of auto-tuning for a single model."""
+
     model: str = ""
     best_config: dict[str, Any] = field(default_factory=dict)
     best_speed: float = 0.0
@@ -57,7 +58,8 @@ class ParameterTuner:
         for cfg in configs:
             try:
                 metrics = await self.runner.run_single(
-                    model=model, prompt=prompt,
+                    model=model,
+                    prompt=prompt,
                     max_tokens=cfg.get("max_tokens", 256),
                     temperature=cfg.get("temperature", 0.7),
                 )
@@ -107,9 +109,11 @@ class ParameterTuner:
         for batch in self.BATCH_SIZES:
             for tokens in self.MAX_TOKENS:
                 for temp in self.TEMPERATURES:
-                    configs.append({
-                        "batch_size": batch,
-                        "max_tokens": tokens,
-                        "temperature": temp,
-                    })
+                    configs.append(
+                        {
+                            "batch_size": batch,
+                            "max_tokens": tokens,
+                            "temperature": temp,
+                        }
+                    )
         return configs

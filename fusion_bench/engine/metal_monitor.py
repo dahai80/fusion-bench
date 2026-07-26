@@ -27,7 +27,9 @@ class MetalMonitor:
         try:
             result = subprocess.run(
                 ["system_profiler", "SPDisplaysDataType", "-json"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode != 0:
                 return {}
@@ -43,7 +45,11 @@ class MetalMonitor:
                 "vram": gpu.get("spdisplays_vram", "Unknown"),
                 "chip_type": gpu.get("sppci_device_type", ""),
             }
-        except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError) as e:
+        except (
+            subprocess.TimeoutExpired,
+            json.JSONDecodeError,
+            FileNotFoundError,
+        ) as e:
             logger.debug("Failed to collect GPU info: %s", e)
             return {}
 
@@ -54,7 +60,9 @@ class MetalMonitor:
         try:
             result = subprocess.run(
                 ["sysctl", "-n", "hw.memsize", "hw.ncpu", "machdep.cpu.brand_string"],
-                capture_output=True, text=True, timeout=3,
+                capture_output=True,
+                text=True,
+                timeout=3,
             )
             if result.returncode == 0:
                 lines = result.stdout.strip().split("\n")
@@ -69,9 +77,12 @@ class MetalMonitor:
         return info
 
     @staticmethod
-    async def collect_mlx_stats(mlx_url: str = "http://localhost:11434") -> dict[str, Any]:
+    async def collect_mlx_stats(
+        mlx_url: str = "http://localhost:11434",
+    ) -> dict[str, Any]:
         """Collect MLX runtime stats from fusion-mlx."""
         import httpx
+
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.get(f"{mlx_url}/stats")
@@ -95,7 +106,9 @@ class MetalMonitor:
         try:
             result = subprocess.run(
                 ["pmset", "-g", "stats"],
-                capture_output=True, text=True, timeout=3,
+                capture_output=True,
+                text=True,
+                timeout=3,
             )
             if result.returncode == 0:
                 return {"power_stats": result.stdout[:500]}
@@ -105,7 +118,6 @@ class MetalMonitor:
 
     async def collect_all(self, mlx_url: str = "http://localhost:11434") -> dict[str, Any]:
         """Collect all metrics in one call."""
-        import asyncio
         gpu = self.collect_gpu_info()
         sys_info = self.collect_system_info()
         mlx = await self.collect_mlx_stats(mlx_url)

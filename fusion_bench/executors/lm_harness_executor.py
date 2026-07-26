@@ -5,7 +5,13 @@ from __future__ import annotations
 import logging
 import time
 
-from ..core.plugin_base import CaseResult, EvalResult, ExecutorPlugin, ExecutorType, TaskConfig
+from ..core.plugin_base import (
+    CaseResult,
+    EvalResult,
+    ExecutorPlugin,
+    ExecutorType,
+    TaskConfig,
+)
 from ..engine.task_runner import LMEvalTaskRunner
 
 logger = logging.getLogger(__name__)
@@ -42,14 +48,16 @@ class LMHarnessExecutor(ExecutorPlugin):
 
             cases: list[CaseResult] = []
             for item in result.get("results", []):
-                cases.append(CaseResult(
-                    input_text=item.get("prompt", "")[:200],
-                    expected=item.get("target", ""),
-                    actual=item.get("prediction", ""),
-                    score=1.0 if item.get("correct") else 0.0,
-                    passed=item.get("correct", False),
-                    meta=item,
-                ))
+                cases.append(
+                    CaseResult(
+                        input_text=item.get("prompt", "")[:200],
+                        expected=item.get("target", ""),
+                        actual=item.get("prediction", ""),
+                        score=1.0 if item.get("correct") else 0.0,
+                        passed=item.get("correct", False),
+                        meta=item,
+                    )
+                )
 
             return EvalResult(
                 task_id=config.task_id,
@@ -79,6 +87,7 @@ class LMHarnessExecutor(ExecutorPlugin):
     def is_available(self) -> bool:
         try:
             import yaml  # noqa: F401
+
             return True
         except ImportError:
             return False

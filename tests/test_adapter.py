@@ -1,7 +1,8 @@
 """Tests for Fusion-Bench MLX adapter and task runner."""
+
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -16,8 +17,10 @@ class MockResponse:
             "choices": [{"message": {"content": "test response"}}],
             "usage": {"prompt_tokens": 10, "completion_tokens": 5},
         }
+
     def raise_for_status(self):
         pass
+
     def json(self):
         return self._json
 
@@ -43,10 +46,14 @@ class TestMLXModel:
     async def test_generate_until_with_stop(self):
         model = MLXModel(base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse(json_data={
-            "choices": [{"message": {"content": "hello world\nmore"}}],
-            "usage": {"prompt_tokens": 5, "completion_tokens": 10},
-        }))
+        mock_client.post = AsyncMock(
+            return_value=MockResponse(
+                json_data={
+                    "choices": [{"message": {"content": "hello world\nmore"}}],
+                    "usage": {"prompt_tokens": 5, "completion_tokens": 10},
+                }
+            )
+        )
         model._client = mock_client
         results = await model.generate_until([{"context": "hi", "until": ["\n"], "max_length": 50}])
         assert "\n" not in results[0]
@@ -64,10 +71,22 @@ class TestMLXModel:
     async def test_loglikelihood(self):
         model = MLXModel(base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse(json_data={
-            "choices": [{"text": " answer", "logprobs": {"tokens": [" answer"], "token_logprobs": [-0.5]}}],
-            "usage": {"prompt_tokens": 5, "completion_tokens": 1},
-        }))
+        mock_client.post = AsyncMock(
+            return_value=MockResponse(
+                json_data={
+                    "choices": [
+                        {
+                            "text": " answer",
+                            "logprobs": {
+                                "tokens": [" answer"],
+                                "token_logprobs": [-0.5],
+                            },
+                        }
+                    ],
+                    "usage": {"prompt_tokens": 5, "completion_tokens": 1},
+                }
+            )
+        )
         model._client = mock_client
         results = await model.loglikelihood([("question", " answer")])
         assert len(results) == 1
@@ -77,10 +96,12 @@ class TestMLXModel:
     async def test_loglikelihood_fallback(self):
         model = MLXModel(base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(side_effect=[
-            RuntimeError("fail"),  # /v1/completions fails
-            MockResponse(),  # /v1/chat/completions fallback
-        ])
+        mock_client.post = AsyncMock(
+            side_effect=[
+                RuntimeError("fail"),  # /v1/completions fails
+                MockResponse(),  # /v1/chat/completions fallback
+            ]
+        )
         model._client = mock_client
         results = await model.loglikelihood([("question", " answer")])
         assert len(results) == 1
@@ -89,10 +110,19 @@ class TestMLXModel:
     async def test_loglikelihood_rolling(self):
         model = MLXModel(base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse(json_data={
-            "choices": [{"text": "test", "logprobs": {"tokens": ["test"], "token_logprobs": [-0.3]}}],
-            "usage": {"prompt_tokens": 5, "completion_tokens": 1},
-        }))
+        mock_client.post = AsyncMock(
+            return_value=MockResponse(
+                json_data={
+                    "choices": [
+                        {
+                            "text": "test",
+                            "logprobs": {"tokens": ["test"], "token_logprobs": [-0.3]},
+                        }
+                    ],
+                    "usage": {"prompt_tokens": 5, "completion_tokens": 1},
+                }
+            )
+        )
         model._client = mock_client
         results = await model.loglikelihood_rolling(["test text"])
         assert len(results) == 1

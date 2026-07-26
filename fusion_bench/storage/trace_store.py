@@ -6,6 +6,7 @@ for the eval_result and gate_results fields.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import sqlite3
@@ -124,12 +125,8 @@ class TraceStore:
     def stats(self) -> dict[str, Any]:
         """Return aggregate stats about stored traces."""
         total = self.conn.execute("SELECT COUNT(*) FROM traces").fetchone()[0]
-        by_status = dict(
-            self.conn.execute("SELECT status, COUNT(*) FROM traces GROUP BY status").fetchall()
-        )
-        by_level = dict(
-            self.conn.execute("SELECT level, COUNT(*) FROM traces GROUP BY level").fetchall()
-        )
+        by_status = dict(self.conn.execute("SELECT status, COUNT(*) FROM traces GROUP BY status").fetchall())
+        by_level = dict(self.conn.execute("SELECT level, COUNT(*) FROM traces GROUP BY level").fetchall())
         by_executor = dict(
             self.conn.execute("SELECT executor_key, COUNT(*) FROM traces GROUP BY executor_key").fetchall()
         )
@@ -138,6 +135,100 @@ class TraceStore:
             "by_status": by_status,
             "by_level": by_level,
             "by_executor": by_executor,
+        }
+
+    def trend(
+        self,
+        model: str,
+        executor_key: str | None = None,
+        metric_name: str = "metric_value",
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Return version-over-version trend data for a model.
+
+        Each point contains: timestamp, executor_key, metric_value, task_id.
+        Useful for tracking metric drift across runs.
+        """
+        conditions = ["model = ?", "status = ?", "eval_result IS NOT NULL"]
+        params: list[Any] = [model, "completed"]
+
+        if executor_key:
+            conditions.append("executor_key = ?")
+            params.append(executor_key)
+
+        where = " AND ".join(conditions)
+        params.append(limit)
+
+        rows = self.conn.execute(
+            f"SELECT * FROM traces WHERE {where} ORDER BY timestamp ASC LIMIT ?",
+            params,
+        ).fetchall()
+
+        points = []
+        for row in rows:
+            eval_result = {}
+            if row["eval_result"]:
+                with contextlib.suppress(json.JSONDecodeError):
+                    eval_result = json.loads(row["eval_result"])
+
+            value = eval_result.get(metric_name, eval_result.get("metric_value"))
+            if value is None:
+                continue
+
+            points.append(
+                {
+                    "timestamp": row["timestamp"],
+                    "executor_key": row["executor_key"],
+                    "task_id": row["task_id"],
+                    "metric_name": metric_name,
+                    "metric_value": value,
+                }
+            )
+
+        return points
+
+    def trend_diff(
+        self,
+        model: str,
+        executor_key: str | None = None,
+        metric_name: str = "metric_value",
+    ) -> dict[str, Any]:
+        """Compare latest vs previous run for a model/executor.
+
+        Returns dict with: latest_value, previous_value, delta, delta_pct, direction.
+        """
+        points = self.trend(model, executor_key, metric_name, limit=2)
+        if len(points) < 2:
+            return {
+                "model": model,
+                "executor_key": executor_key,
+                "latest_value": points[0]["metric_value"] if points else None,
+                "previous_value": None,
+                "delta": None,
+                "delta_pct": None,
+                "direction": "initial",
+            }
+
+        latest = points[-1]["metric_value"]
+        previous = points[-2]["metric_value"]
+        delta = latest - previous
+        delta_pct = (delta / previous * 100) if previous != 0 else None
+
+        if delta > 0:
+            direction = "improved"
+        elif delta < 0:
+            direction = "regressed"
+        else:
+            direction = "stable"
+
+        return {
+            "model": model,
+            "executor_key": executor_key,
+            "latest_value": latest,
+            "previous_value": previous,
+            "delta": round(delta, 4),
+            "delta_pct": round(delta_pct, 2) if delta_pct is not None else None,
+            "direction": direction,
         }
 
     def close(self) -> None:
@@ -149,24 +240,18 @@ class TraceStore:
     def _row_to_record(row: sqlite3.Row) -> TraceRecord:
         eval_result = None
         if row["eval_result"]:
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 eval_result = json.loads(row["eval_result"])
-            except json.JSONDecodeError:
-                pass
 
         gate_results = []
         if row["gate_results"]:
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 gate_results = json.loads(row["gate_results"])
-            except json.JSONDecodeError:
-                pass
 
         host_info = {}
         if row["host_info"]:
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 host_info = json.loads(row["host_info"])
-            except json.JSONDecodeError:
-                pass
 
         return TraceRecord(
             trace_id=row["trace_id"],

@@ -1,0 +1,45 @@
+# Fusion-Bench + Fusion-MLX docker-compose.
+# Importers/callers: `docker-compose up`; DevOps deployment.
+# Affected API: no API changes; orchestration only.
+# Data schema: N/A.
+# User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-14 containerization).
+
+version: "3.8"
+
+services:
+  fusion-bench:
+    build: .
+    container_name: fusion-bench
+    ports:
+      - "8000:8000"
+    volumes:
+      - fusion-bench-data:/root/.fusion-bench
+      - fusion-bench-tasks:/root/bench
+    environment:
+      - FUSION_MLX_URL=http://fusion-mlx:11434/v1
+      - FUSION_BENCH_LOG_LEVEL=INFO
+    depends_on:
+      fusion-mlx:
+        condition: service_started
+    restart: unless-stopped
+
+  fusion-mlx:
+    image: ghcr.io/dahai80/fusion-mlx:latest
+    container_name: fusion-mlx
+    ports:
+      - "11434:11434"
+    volumes:
+      - mlx-models:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  fusion-bench-data:
+  fusion-bench-tasks:
+  mlx-models:

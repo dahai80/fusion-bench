@@ -6,6 +6,7 @@ fusion_bench/cli.py
 fusion_bench.egg-info/PKG-INFO
 fusion_bench.egg-info/SOURCES.txt
 fusion_bench.egg-info/dependency_links.txt
+fusion_bench.egg-info/entry_points.txt
 fusion_bench.egg-info/requires.txt
 fusion_bench.egg-info/top_level.txt
 fusion_bench/adapters/__init__.py
@@ -44,6 +45,11 @@ tests/test_advanced.py
 tests/test_architecture.py
 tests/test_bench_site.py
 tests/test_bench_site_db.py
+tests/test_cli.py
 tests/test_core.py
 tests/test_coverage.py
+tests/test_coverage_boost.py
 tests/test_coverage_final.py
+tests/test_executors.py
+tests/test_orchestrator.py
+tests/test_storage_and_engine.py

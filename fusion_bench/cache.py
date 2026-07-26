@@ -1,4 +1,5 @@
 """Benchmark cache — SQLite-based caching to avoid redundant evaluations."""
+
 from __future__ import annotations
 
 import json
@@ -88,16 +89,12 @@ class BenchmarkCache:
                     (model, task),
                 )
             elif model:
-                cursor = conn.execute(
-                    "DELETE FROM benchmarks WHERE model = ?", (model,)
-                )
+                cursor = conn.execute("DELETE FROM benchmarks WHERE model = ?", (model,))
             elif task:
-                cursor = conn.execute(
-                    "DELETE FROM benchmarks WHERE task = ?", (task,)
-                )
+                cursor = conn.execute("DELETE FROM benchmarks WHERE task = ?", (task,))
             else:
                 cursor = conn.execute("DELETE FROM benchmarks")
-        return cursor.rowcount
+            return cursor.rowcount
 
     def stats(self) -> dict[str, Any]:
         """Get cache statistics."""

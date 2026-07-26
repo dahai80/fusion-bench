@@ -1,0 +1,38 @@
+# Python
+# Importers/callers: git. Affected API: none. Data schemas: none.
+# User instruction: "生成doc文档，更新README，提交代码仓，建设CI和lint，确保全绿，发布0.3.0版本"
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Generated docs
+docs/api/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
+# Bench-site
+bench-site/node_modules/
+bench-site/.next/
+bench-site/data/

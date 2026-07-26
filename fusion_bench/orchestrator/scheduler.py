@@ -53,42 +53,109 @@ class Scheduler:
     def load_default_suites(self) -> None:
         """Register built-in benchmark suites for common scenarios."""
         # L1 — Model baseline
-        self.register_suite("l1-quick", [
-            BenchmarkTask("l1-speed", "Speed benchmark", EvalLevel.L1_MODEL, "speed",
-                           params={"runs": 3}),
-        ])
-        self.register_suite("l1-full", [
-            BenchmarkTask("l1-speed", "Speed benchmark", EvalLevel.L1_MODEL, "speed",
-                           params={"runs": 3}),
-            BenchmarkTask("l1-accuracy", "Accuracy (MMLU)", EvalLevel.L1_MODEL, "lm_harness",
-                           dataset="mmlu", params={"task_name": "mmlu", "num_fewshot": 5}),
-            BenchmarkTask("l1-quant", "Quantization comparison", EvalLevel.L1_MODEL, "quant"),
-        ])
+        self.register_suite(
+            "l1-quick",
+            [
+                BenchmarkTask(
+                    "l1-speed",
+                    "Speed benchmark",
+                    EvalLevel.L1_MODEL,
+                    "speed",
+                    params={"runs": 3},
+                ),
+            ],
+        )
+        self.register_suite(
+            "l1-full",
+            [
+                BenchmarkTask(
+                    "l1-speed",
+                    "Speed benchmark",
+                    EvalLevel.L1_MODEL,
+                    "speed",
+                    params={"runs": 3},
+                ),
+                BenchmarkTask(
+                    "l1-accuracy",
+                    "Accuracy (MMLU)",
+                    EvalLevel.L1_MODEL,
+                    "lm_harness",
+                    dataset="mmlu",
+                    params={"task_name": "mmlu", "num_fewshot": 5},
+                ),
+                BenchmarkTask("l1-quant", "Quantization comparison", EvalLevel.L1_MODEL, "quant"),
+            ],
+        )
 
         # L1 — Tuning
-        self.register_suite("l1-tune", [
-            BenchmarkTask("l1-tune", "Parameter tuning", EvalLevel.L1_MODEL, "tune",
-                           params={"max_combinations": 12}),
-        ])
+        self.register_suite(
+            "l1-tune",
+            [
+                BenchmarkTask(
+                    "l1-tune",
+                    "Parameter tuning",
+                    EvalLevel.L1_MODEL,
+                    "tune",
+                    params={"max_combinations": 12},
+                ),
+            ],
+        )
 
         # L3 — Application security
-        self.register_suite("l3-security", [
-            BenchmarkTask("l3-injection", "Injection probes", EvalLevel.L3_APP, "security",
-                           params={"probe_set": "injection"}),
-            BenchmarkTask("l3-harmful", "Harmful content probes", EvalLevel.L3_APP, "security",
-                           params={"probe_set": "harmful"}),
-            BenchmarkTask("l3-pii", "PII leakage probes", EvalLevel.L3_APP, "security",
-                           params={"probe_set": "pii"}),
-        ])
+        self.register_suite(
+            "l3-security",
+            [
+                BenchmarkTask(
+                    "l3-injection",
+                    "Injection probes",
+                    EvalLevel.L3_APP,
+                    "security",
+                    params={"probe_set": "injection"},
+                ),
+                BenchmarkTask(
+                    "l3-harmful",
+                    "Harmful content probes",
+                    EvalLevel.L3_APP,
+                    "security",
+                    params={"probe_set": "harmful"},
+                ),
+                BenchmarkTask(
+                    "l3-pii",
+                    "PII leakage probes",
+                    EvalLevel.L3_APP,
+                    "security",
+                    params={"probe_set": "pii"},
+                ),
+            ],
+        )
 
         # Full — All levels
-        self.register_suite("full", [
-            BenchmarkTask("full-speed", "Speed benchmark", EvalLevel.L1_MODEL, "speed",
-                           params={"runs": 3}),
-            BenchmarkTask("full-accuracy", "Accuracy (MMLU)", EvalLevel.L1_MODEL, "lm_harness",
-                           dataset="mmlu", params={"task_name": "mmlu", "num_fewshot": 5}),
-            BenchmarkTask("full-security", "Security probes", EvalLevel.L3_APP, "security",
-                           params={"probe_set": "injection"}),
-        ])
+        self.register_suite(
+            "full",
+            [
+                BenchmarkTask(
+                    "full-speed",
+                    "Speed benchmark",
+                    EvalLevel.L1_MODEL,
+                    "speed",
+                    params={"runs": 3},
+                ),
+                BenchmarkTask(
+                    "full-accuracy",
+                    "Accuracy (MMLU)",
+                    EvalLevel.L1_MODEL,
+                    "lm_harness",
+                    dataset="mmlu",
+                    params={"task_name": "mmlu", "num_fewshot": 5},
+                ),
+                BenchmarkTask(
+                    "full-security",
+                    "Security probes",
+                    EvalLevel.L3_APP,
+                    "security",
+                    params={"probe_set": "injection"},
+                ),
+            ],
+        )
 
         logger.info("Loaded %d default suites: %s", len(self._suites), list(self._suites.keys()))

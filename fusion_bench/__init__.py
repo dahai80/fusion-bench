@@ -15,40 +15,70 @@ Architecture:
 """
 
 # Legacy exports (backward compatible)
-from .engine.benchmark import BenchmarkRunner, BenchmarkResult, SpeedMetrics
-from .engine.metrics import MetricsCollector
-from .engine.task_runner import LMEvalTaskRunner
 from .adapters.mlx_model import MLXModel
-from .optimizer.tuner import ParameterTuner, TuneResult
-from .reporter.report import ReportGenerator
+from .core.models import (
+    BenchmarkTask,
+    EvalLevel,
+    GateResult,
+    GateTier,
+    QualityGate,
+    SuiteResult,
+    TaskStatus,
+    TraceRecord,
+)
+from .core.plugin_base import (
+    CaseResult,
+    EvalResult,
+    ExecutorPlugin,
+    ExecutorType,
+    TaskConfig,
+)
 
 # New architecture exports
-from .core.registry import Registry, executor_registry, suite_registry, gate_registry
-from .core.plugin_base import ExecutorPlugin, ExecutorType, TaskConfig, EvalResult, CaseResult
-from .core.models import (
-    EvalLevel, GateTier, TaskStatus,
-    BenchmarkTask, QualityGate, GateResult, SuiteResult, TraceRecord,
-)
-from .orchestrator.pipeline import Pipeline
+from .core.registry import Registry, executor_registry, gate_registry, suite_registry
+from .engine.benchmark import BenchmarkResult, BenchmarkRunner, SpeedMetrics
+from .engine.metrics import MetricsCollector
+from .engine.task_runner import LMEvalTaskRunner
+from .optimizer.tuner import ParameterTuner, TuneResult
 from .orchestrator.gate_engine import GateEngine
+from .orchestrator.pipeline import Pipeline
 from .orchestrator.scheduler import Scheduler
+from .reporter.report import ReportGenerator
 from .storage.trace_store import TraceStore
 
 __all__ = [
     # Legacy
-    "BenchmarkRunner", "BenchmarkResult", "SpeedMetrics",
+    "BenchmarkRunner",
+    "BenchmarkResult",
+    "SpeedMetrics",
     "MetricsCollector",
     "LMEvalTaskRunner",
     "MLXModel",
-    "ParameterTuner", "TuneResult",
+    "ParameterTuner",
+    "TuneResult",
     "ReportGenerator",
     # Core
-    "Registry", "executor_registry", "suite_registry", "gate_registry",
-    "ExecutorPlugin", "ExecutorType", "TaskConfig", "EvalResult", "CaseResult",
-    "EvalLevel", "GateTier", "TaskStatus",
-    "BenchmarkTask", "QualityGate", "GateResult", "SuiteResult", "TraceRecord",
+    "Registry",
+    "executor_registry",
+    "suite_registry",
+    "gate_registry",
+    "ExecutorPlugin",
+    "ExecutorType",
+    "TaskConfig",
+    "EvalResult",
+    "CaseResult",
+    "EvalLevel",
+    "GateTier",
+    "TaskStatus",
+    "BenchmarkTask",
+    "QualityGate",
+    "GateResult",
+    "SuiteResult",
+    "TraceRecord",
     # Orchestrator
-    "Pipeline", "GateEngine", "Scheduler",
+    "Pipeline",
+    "GateEngine",
+    "Scheduler",
     # Storage
     "TraceStore",
 ]

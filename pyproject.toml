@@ -1,6 +1,6 @@
 [project]
 name = "fusion-bench"
-version = "0.2.0"
+version = "0.3.0"
 description = "Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,7 +9,13 @@ dependencies = [
     "aiofiles>=23.0.0",
     "matplotlib>=3.8.0",
     "pyyaml>=6.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "datasets>=2.18.0",
 ]
+
+[project.scripts]
+fusion-bench = "fusion_bench.cli:main"
 
 [project.optional-dependencies]
 test = [
@@ -17,6 +23,19 @@ test = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.0",
+    "ruff>=0.8.0",
+]
+pdf = [
+    "reportlab>=4.0.0",
+]
+excel = [
+    "openpyxl>=3.1.0",
+]
+security = [
+    "garak>=0.4.0",
+]
+doc = [
+    "pdoc>=14.0.0",
 ]
 
 [tool.pytest.ini_options]
@@ -38,6 +57,14 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
 
 [tool.setuptools.packages.find]
 include = ["fusion_bench*"]

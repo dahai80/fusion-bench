@@ -1,4 +1,5 @@
 """Additional tests to push coverage to 95%+ for Fusion-Bench."""
+
 from __future__ import annotations
 
 import json
@@ -8,13 +9,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from fusion_bench.engine.benchmark import BenchmarkRunner, SpeedMetrics, BenchmarkResult
+from fusion_bench.engine.benchmark import BenchmarkResult, BenchmarkRunner, SpeedMetrics
 from fusion_bench.engine.metrics import MetricsCollector, SystemMetrics
-from fusion_bench.optimizer.tuner import ParameterTuner, TuneResult
+from fusion_bench.optimizer.tuner import ParameterTuner
 from fusion_bench.reporter.report import ReportGenerator
 
-
 # ── SpeedMetrics edge cases ──
+
 
 class TestSpeedMetricsAdvanced:
     def test_partial_metrics(self):
@@ -25,9 +26,12 @@ class TestSpeedMetricsAdvanced:
 
     def test_high_values(self):
         m = SpeedMetrics(
-            prefill_tokens=10000, decode_tokens=5000,
-            prefill_time=0.5, decode_time=2.0,
-            prefill_speed=20000.0, decode_speed=2500.0,
+            prefill_tokens=10000,
+            decode_tokens=5000,
+            prefill_time=0.5,
+            decode_time=2.0,
+            prefill_speed=20000.0,
+            decode_speed=2500.0,
             peak_memory_mb=64000.0,
         )
         d = m.to_dict()
@@ -37,6 +41,7 @@ class TestSpeedMetricsAdvanced:
 
 # ── BenchmarkRunner advanced ──
 
+
 class MockResponse:
     def __init__(self, status_code=200, json_data=None):
         self.status_code = status_code
@@ -44,8 +49,10 @@ class MockResponse:
             "usage": {"prompt_tokens": 50, "completion_tokens": 100},
             "choices": [{"message": {"content": "test"}}],
         }
+
     def raise_for_status(self):
         pass
+
     def json(self):
         return self._json
 
@@ -56,9 +63,13 @@ class TestBenchmarkRunnerAdvanced:
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
-        mock_client.get = AsyncMock(return_value=MockResponse(json_data={
-            "model_memory_used_formatted": "4.5 GB",
-        }))
+        mock_client.get = AsyncMock(
+            return_value=MockResponse(
+                json_data={
+                    "model_memory_used_formatted": "4.5 GB",
+                }
+            )
+        )
         runner._client = mock_client
         metrics = await runner.run_single(model="test-model", prompt="hi", max_tokens=50)
         assert metrics.decode_speed > 0
@@ -69,6 +80,7 @@ class TestBenchmarkRunnerAdvanced:
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1", timeout=1.0)
         mock_client = MagicMock()
         from httpx import TimeoutException
+
         mock_client.post = AsyncMock(side_effect=TimeoutException("timeout"))
         runner._client = mock_client
         metrics = await runner.run_single(model="test-model")
@@ -88,9 +100,13 @@ class TestBenchmarkRunnerAdvanced:
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
-        mock_client.get = AsyncMock(return_value=MockResponse(json_data={
-            "model_memory_used_formatted": "2 GB",
-        }))
+        mock_client.get = AsyncMock(
+            return_value=MockResponse(
+                json_data={
+                    "model_memory_used_formatted": "2 GB",
+                }
+            )
+        )
         runner._client = mock_client
         results = await runner.benchmark(model="test", max_tokens=50, runs=2)
         assert len(results) >= 1
@@ -120,9 +136,13 @@ class TestBenchmarkRunnerAdvanced:
     async def test_list_models_success(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
-        mock_client.get = AsyncMock(return_value=MockResponse(json_data={
-            "data": [{"id": "model1"}, {"id": "model2"}],
-        }))
+        mock_client.get = AsyncMock(
+            return_value=MockResponse(
+                json_data={
+                    "data": [{"id": "model1"}, {"id": "model2"}],
+                }
+            )
+        )
         runner._client = mock_client
         models = await runner.list_models()
         assert len(models) == 2
@@ -156,9 +176,13 @@ class TestBenchmarkRunnerAdvanced:
             RuntimeError("fail"),
             MockResponse(),
         ]
-        mock_client.get = AsyncMock(return_value=MockResponse(json_data={
-            "model_memory_used_formatted": "2 GB",
-        }))
+        mock_client.get = AsyncMock(
+            return_value=MockResponse(
+                json_data={
+                    "model_memory_used_formatted": "2 GB",
+                }
+            )
+        )
         runner._client = mock_client
         result = await runner.run_stability(model="test", rounds=3)
         # Two out of three succeeded -> stable (2 >= 3*0.9=2.7 -> False since 2 < 2.7)
@@ -209,6 +233,7 @@ class TestBenchmarkRunnerAdvanced:
 
 # ── MetricsCollector advanced ──
 
+
 class TestMetricsCollectorAdvanced:
     @pytest.mark.asyncio
     async def test_collect_success(self):
@@ -251,14 +276,18 @@ class TestMetricsCollectorAdvanced:
 
 # ── ParameterTuner advanced ──
 
+
 class TestParameterTunerAdvanced:
     @pytest.mark.asyncio
     async def test_tune_with_results(self):
         tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
         # Mock the runner's run_single
-        tuner.runner.run_single = AsyncMock(return_value=SpeedMetrics(
-            decode_speed=25.0, peak_memory_mb=4096.0,
-        ))
+        tuner.runner.run_single = AsyncMock(
+            return_value=SpeedMetrics(
+                decode_speed=25.0,
+                peak_memory_mb=4096.0,
+            )
+        )
         result = await tuner.tune("test-model", max_combinations=3)
         assert result.model == "test-model"
         assert result.best_speed > 0
@@ -275,9 +304,12 @@ class TestParameterTunerAdvanced:
     @pytest.mark.asyncio
     async def test_tune_single_result(self):
         tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
-        tuner.runner.run_single = AsyncMock(return_value=SpeedMetrics(
-            decode_speed=30.0, peak_memory_mb=2048.0,
-        ))
+        tuner.runner.run_single = AsyncMock(
+            return_value=SpeedMetrics(
+                decode_speed=30.0,
+                peak_memory_mb=2048.0,
+            )
+        )
         result = await tuner.tune("test-model", max_combinations=1)
         assert len(result.all_results) == 1
         assert result.best_speed == 30.0
@@ -285,9 +317,12 @@ class TestParameterTunerAdvanced:
     @pytest.mark.asyncio
     async def test_tune_multi_model(self):
         tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
-        tuner.runner.run_single = AsyncMock(return_value=SpeedMetrics(
-            decode_speed=20.0, peak_memory_mb=3072.0,
-        ))
+        tuner.runner.run_single = AsyncMock(
+            return_value=SpeedMetrics(
+                decode_speed=20.0,
+                peak_memory_mb=3072.0,
+            )
+        )
         results = await tuner.tune_multi_model(["model-a", "model-b"], max_combinations=2)
         assert len(results) == 2
         assert "model-a" in results
@@ -296,10 +331,12 @@ class TestParameterTunerAdvanced:
     @pytest.mark.asyncio
     async def test_tune_multi_model_one_fails(self):
         tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
-        tuner.runner.run_single = AsyncMock(side_effect=[
-            SpeedMetrics(decode_speed=20.0),
-            RuntimeError("fail"),
-        ])
+        tuner.runner.run_single = AsyncMock(
+            side_effect=[
+                SpeedMetrics(decode_speed=20.0),
+                RuntimeError("fail"),
+            ]
+        )
         results = await tuner.tune_multi_model(["model-a", "model-b"], max_combinations=1)
         assert "model-a" in results
         assert "model-b" in results
@@ -315,6 +352,7 @@ class TestParameterTunerAdvanced:
 
 # ── ReportGenerator advanced ──
 
+
 class TestReportGeneratorAdvanced:
     @pytest.mark.asyncio
     async def test_to_json_with_file(self):
@@ -328,8 +366,14 @@ class TestReportGeneratorAdvanced:
 
     def test_to_markdown_multiple_results(self):
         results = [
-            BenchmarkResult(model="model-a", metrics=SpeedMetrics(decode_speed=30.0, peak_memory_mb=4096)),
-            BenchmarkResult(model="model-b", metrics=SpeedMetrics(decode_speed=20.0, peak_memory_mb=2048)),
+            BenchmarkResult(
+                model="model-a",
+                metrics=SpeedMetrics(decode_speed=30.0, peak_memory_mb=4096),
+            ),
+            BenchmarkResult(
+                model="model-b",
+                metrics=SpeedMetrics(decode_speed=20.0, peak_memory_mb=2048),
+            ),
         ]
         md = ReportGenerator.to_markdown(results, "Multi Model Test")
         assert "model-a" in md

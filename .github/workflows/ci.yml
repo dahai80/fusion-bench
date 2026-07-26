@@ -1,0 +1,38 @@
+# GitHub Actions CI — lint + test
+# Importers/callers: GitHub Actions runner on push/PR.
+# Affected API: none. Data schemas: none.
+# User instruction: "生成doc文档，更新README，提交代码仓，建设CI和lint，确保全绿，发布0.3.0版本"
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install ruff
+      - name: Ruff check
+        run: ruff check .
+      - name: Ruff format check
+        run: ruff format --check .
+
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install with test deps
+        run: pip install -e ".[test]"
+      - name: Run tests
+        run: pytest tests/ -q

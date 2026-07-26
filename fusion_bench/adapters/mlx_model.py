@@ -11,13 +11,9 @@ Design:
 
 from __future__ import annotations
 
-import abc
 import asyncio
-import json
 import logging
-import re
 import time
-from typing import Any
 
 import httpx
 
@@ -50,6 +46,7 @@ class MLXModel:
         self.max_length = max_length
         self.temperature = temperature
         self._client: httpx.AsyncClient | None = None
+        self._client_lock = asyncio.Lock()
         # Track token usage
         self.total_prompt_tokens = 0
         self.total_completion_tokens = 0
@@ -62,6 +59,16 @@ class MLXModel:
                 timeout=120.0,
                 headers={"Authorization": f"Bearer {self.api_key}"},
             )
+        return self._client
+
+    async def get_client(self) -> httpx.AsyncClient:
+        async with self._client_lock:
+            if self._client is None:
+                self._client = httpx.AsyncClient(
+                    base_url=self.base_url,
+                    timeout=120.0,
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                )
         return self._client
 
     async def close(self) -> None:
@@ -194,7 +201,8 @@ class MLXModel:
             payload["stop"] = stop
 
         start = time.time()
-        resp = await self.client.post("/chat/completions", json=payload)
+        client = await self.get_client()
+        resp = await client.post("/chat/completions", json=payload)
         resp.raise_for_status()
         elapsed = time.time() - start
         data = resp.json()
@@ -203,7 +211,11 @@ class MLXModel:
         self.total_prompt_tokens += usage.get("prompt_tokens", 0)
         self.total_completion_tokens += usage.get("completion_tokens", 0)
 
-        logger.debug("Chat completion: %d tokens in %.2fs", usage.get("completion_tokens", 0), elapsed)
+        logger.debug(
+            "Chat completion: %d tokens in %.2fs",
+            usage.get("completion_tokens", 0),
+            elapsed,
+        )
         return data
 
     async def _completion(
@@ -224,7 +236,8 @@ class MLXModel:
             payload["logprobs"] = 1
 
         try:
-            resp = await self.client.post("/completions", json=payload)
+            client = await self.get_client()
+            resp = await client.post("/completions", json=payload)
             resp.raise_for_status()
             return resp.json()
         except httpx.HTTPStatusError:
@@ -251,7 +264,8 @@ class MLXModel:
         try:
             choice = data["choices"][0]
             if "logprobs" in choice and choice["logprobs"]:
-                tokens = choice["logprobs"].get("tokens", [])
+                # ruff: noqa: F841 — tokens read for debug but not returned
+                _tokens = choice["logprobs"].get("tokens", [])  # noqa: F841
                 token_logprobs = choice["logprobs"].get("token_logprobs", [])
                 if token_logprobs:
                     return sum(token_logprobs) / len(token_logprobs)

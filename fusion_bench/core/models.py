@@ -9,26 +9,26 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class EvalLevel(str, Enum):
+class EvalLevel(StrEnum):
     L1_MODEL = "L1"
     L2_AGENT = "L2"
     L3_APP = "L3"
     L4_ARTIFACT = "L4"
 
 
-class GateTier(str, Enum):
+class GateTier(StrEnum):
     EXPERIMENTAL = "experimental"
     BUSINESS = "business"
     PRODUCTION = "production"
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -39,6 +39,7 @@ class TaskStatus(str, Enum):
 @dataclass
 class BenchmarkTask:
     """A single benchmark task definition."""
+
     task_id: str
     name: str
     level: EvalLevel
@@ -66,6 +67,7 @@ class BenchmarkTask:
 @dataclass
 class QualityGate:
     """Quality gate rule with automatic pass/fail threshold."""
+
     gate_id: str
     name: str
     tier: GateTier
@@ -74,6 +76,8 @@ class QualityGate:
     threshold: float = 0.0
     executor_key: str | None = None
     level: EvalLevel | None = None
+    action: str = "warn"
+    on_fail_callback: str | None = None
 
     def evaluate(self, metric_value: float) -> bool:
         ops = {
@@ -99,12 +103,15 @@ class QualityGate:
             "threshold": self.threshold,
             "executor_key": self.executor_key,
             "level": self.level.value if self.level else None,
+            "action": self.action,
+            "on_fail_callback": self.on_fail_callback,
         }
 
 
 @dataclass
 class GateResult:
     """Result of evaluating a quality gate against a metric."""
+
     gate_id: str
     gate_name: str
     tier: GateTier
@@ -112,6 +119,24 @@ class GateResult:
     metric_value: float
     threshold: float
     passed: bool
+    action: str = "warn"
+    approved_by: str = ""
+    approved_at: str = ""
+
+    @property
+    def is_blocking(self) -> bool:
+        return self.action == "block" and not self.passed and not self.approved_by
+
+    @property
+    def is_approved(self) -> bool:
+        return bool(self.approved_by)
+
+    def approve(self, approver: str) -> None:
+        self.approved_by = approver
+        from datetime import datetime
+
+        self.approved_at = datetime.now().isoformat()
+        logger.info("Gate %s approved by %s at %s", self.gate_id, approver, self.approved_at)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -122,12 +147,17 @@ class GateResult:
             "metric_value": self.metric_value,
             "threshold": self.threshold,
             "passed": self.passed,
+            "action": self.action,
+            "approved_by": self.approved_by,
+            "approved_at": self.approved_at,
+            "is_blocking": self.is_blocking,
         }
 
 
 @dataclass
 class SuiteResult:
     """Result of running an entire benchmark suite."""
+
     suite_id: str
     model: str
     level: EvalLevel
@@ -155,6 +185,7 @@ class SuiteResult:
 @dataclass
 class TraceRecord:
     """Full trace record for a benchmark run — stored and queryable."""
+
     trace_id: str
     model: str
     level: EvalLevel
@@ -167,6 +198,8 @@ class TraceRecord:
     duration_seconds: float = 0.0
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     host_info: dict[str, Any] = field(default_factory=dict)
+    agent_version: str = ""
+    app_version: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -182,4 +215,6 @@ class TraceRecord:
             "duration_seconds": self.duration_seconds,
             "timestamp": self.timestamp,
             "host_info": self.host_info,
+            "agent_version": self.agent_version,
+            "app_version": self.app_version,
         }

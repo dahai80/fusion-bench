@@ -6,8 +6,6 @@ No direct MLX, torch, or transformers imports.
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import re
 import time
@@ -58,18 +56,21 @@ class LMEvalTaskRunner:
         for task_file in sorted(self.tasks_dir.glob("*/*.yaml")):
             try:
                 import yaml
+
                 data = yaml.safe_load(task_file.read_text(encoding="utf-8"))
                 if data and "task" in data:
-                    tasks.append({
-                        "name": data["task"],
-                        "group": data.get("group", ""),
-                        "description": data.get("description", ""),
-                        "path": str(task_file.relative_to(self.tasks_dir)),
-                        "dataset": data.get("dataset_path", ""),
-                        "num_fewshot": data.get("num_fewshot", 0),
-                    })
-            except Exception:
-                pass
+                    tasks.append(
+                        {
+                            "name": data["task"],
+                            "group": data.get("group", ""),
+                            "description": data.get("description", ""),
+                            "path": str(task_file.relative_to(self.tasks_dir)),
+                            "dataset": data.get("dataset_path", ""),
+                            "num_fewshot": data.get("num_fewshot", 0),
+                        }
+                    )
+            except Exception as e:
+                logger.debug("Failed to load task file %s: %s", task_file, e)
 
         return tasks
 
@@ -91,7 +92,11 @@ class LMEvalTaskRunner:
         """
         task_data = self._load_task(task_name)
         if not task_data:
-            return {"task": task_name, "error": f"Task '{task_name}' not found", "results": {}}
+            return {
+                "task": task_name,
+                "error": f"Task '{task_name}' not found",
+                "results": {},
+            }
 
         model = MLXModel(
             model=self.model_name,
@@ -133,11 +138,12 @@ class LMEvalTaskRunner:
         for task_file in sorted(self.tasks_dir.rglob("*.yaml")):
             try:
                 import yaml
+
                 data = yaml.safe_load(task_file.read_text(encoding="utf-8"))
                 if data and data.get("task") == task_name:
                     return data
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed to load task file %s: %s", task_file, e)
         return None
 
     async def _evaluate_task(
@@ -160,6 +166,7 @@ class LMEvalTaskRunner:
         # Load dataset
         try:
             from datasets import load_dataset
+
             ds = load_dataset(dataset_path, dataset_name, split=test_split)
         except Exception as e:
             logger.warning("Failed to load dataset %s: %s", dataset_path, e)
@@ -184,11 +191,15 @@ class LMEvalTaskRunner:
 
             # Generate
             try:
-                gen_result = await model.generate_until([{
-                    "context": prompt,
-                    "until": ["\n"],
-                    "max_length": 128,
-                }])
+                gen_result = await model.generate_until(
+                    [
+                        {
+                            "context": prompt,
+                            "until": ["\n"],
+                            "max_length": 128,
+                        }
+                    ]
+                )
                 prediction = gen_result[0] if gen_result else ""
 
                 # Normalize for comparison
@@ -200,19 +211,25 @@ class LMEvalTaskRunner:
                     correct += 1
                 total += 1
 
-                results.append({
-                    "prompt": prompt[:200],
-                    "target": target,
-                    "prediction": prediction,
-                    "correct": is_correct,
-                })
+                results.append(
+                    {
+                        "prompt": prompt[:200],
+                        "target": target,
+                        "prediction": prediction,
+                        "correct": is_correct,
+                    }
+                )
 
             except Exception as e:
                 logger.error("Sample %d failed: %s", i, e)
 
             if (i + 1) % 10 == 0:
-                logger.info("  Progress: %d/%d, accuracy: %.1f%%",
-                           i + 1, len(samples), correct / max(total, 1) * 100)
+                logger.info(
+                    "  Progress: %d/%d, accuracy: %.1f%%",
+                    i + 1,
+                    len(samples),
+                    correct / max(total, 1) * 100,
+                )
 
         elapsed = time.time() - start_time
         accuracy = correct / max(total, 1)

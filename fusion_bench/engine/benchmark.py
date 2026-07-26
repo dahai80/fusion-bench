@@ -7,7 +7,6 @@ Never imports MLX, mlx-lm, or any engine code directly.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -21,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SpeedMetrics:
     """Speed metrics for a single benchmark run."""
+
     prefill_tokens: int = 0
     decode_tokens: int = 0
     prefill_time: float = 0.0
@@ -50,6 +50,7 @@ class SpeedMetrics:
 @dataclass
 class BenchmarkResult:
     """Complete benchmark result for a single model/config."""
+
     model: str = ""
     config: dict[str, Any] = field(default_factory=dict)
     metrics: SpeedMetrics = field(default_factory=SpeedMetrics)
@@ -74,6 +75,7 @@ class BenchmarkRunner:
         self.api_key = api_key
         self.timeout = timeout
         self._client: httpx.AsyncClient | None = None
+        self._client_lock = asyncio.Lock()
 
     @property
     def client(self) -> httpx.AsyncClient:
@@ -85,6 +87,16 @@ class BenchmarkRunner:
             )
         return self._client
 
+    async def get_client(self) -> httpx.AsyncClient:
+        async with self._client_lock:
+            if self._client is None:
+                self._client = httpx.AsyncClient(
+                    base_url=self.mlx_base_url,
+                    timeout=self.timeout,
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                )
+        return self._client
+
     async def close(self) -> None:
         if self._client:
             await self._client.aclose()
@@ -93,7 +105,8 @@ class BenchmarkRunner:
     async def list_models(self) -> list[dict[str, Any]]:
         """List available models from fusion-mlx."""
         try:
-            resp = await self.client.get("/models")
+            client = await self.get_client()
+            resp = await client.get("/models")
             resp.raise_for_status()
             data = resp.json()
             return data.get("data", [])
@@ -116,14 +129,18 @@ class BenchmarkRunner:
 
         try:
             start = time.time()
-            resp = await self.client.post("/chat/completions", json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "stream": False,
-                **config,
-            })
+            client = await self.get_client()
+            resp = await client.post(
+                "/chat/completions",
+                json={
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "stream": False,
+                    **config,
+                },
+            )
             elapsed = time.time() - start
             resp.raise_for_status()
             data = resp.json()
@@ -139,7 +156,7 @@ class BenchmarkRunner:
 
             # Get server stats for memory
             try:
-                stats_resp = await self.client.get("/stats")
+                stats_resp = await client.get("/stats")
                 if stats_resp.status_code == 200:
                     stats = stats_resp.json()
                     mem_str = stats.get("model_memory_used_formatted", "0B")
@@ -170,14 +187,16 @@ class BenchmarkRunner:
         for i in range(rounds):
             try:
                 metrics = await self.run_single(
-                    model=model, prompt=prompt,
-                    max_tokens=max_tokens, temperature=0.0,
+                    model=model,
+                    prompt=prompt,
+                    max_tokens=max_tokens,
+                    temperature=0.0,
                 )
                 if metrics.total_time > 0:
                     success += 1
                 await asyncio.sleep(0.1)
             except Exception as e:
-                errors.append(f"Round {i+1}: {e}")
+                errors.append(f"Round {i + 1}: {e}")
 
         result.stable = success >= rounds * 0.9
         result.errors = errors
@@ -195,8 +214,10 @@ class BenchmarkRunner:
             prompt = "Hello " * (ctx // 10)
             try:
                 metrics = await self.run_single(
-                    model=model, prompt=prompt,
-                    max_tokens=16, temperature=0.0,
+                    model=model,
+                    prompt=prompt,
+                    max_tokens=16,
+                    temperature=0.0,
                     config={"max_tokens": 16},
                 )
                 if metrics.total_time > 0:
@@ -226,10 +247,12 @@ class BenchmarkRunner:
             result = BenchmarkResult(model=model, config=cfg)
             run_metrics = []
 
-            for i in range(runs):
+            for _i in range(runs):
                 metrics = await self.run_single(
-                    model=model, prompt=prompt,
-                    max_tokens=max_tokens, config=cfg,
+                    model=model,
+                    prompt=prompt,
+                    max_tokens=max_tokens,
+                    config=cfg,
                 )
                 if metrics.total_time > 0:
                     run_metrics.append(metrics)
@@ -242,13 +265,15 @@ class BenchmarkRunner:
                     avg.prefill_speed += m.prefill_speed
                     avg.total_time += m.total_time
                     avg.peak_memory_mb += m.peak_memory_mb
-                    avg.prompt_tokens = m.prompt_tokens
-                    avg.completion_tokens = m.completion_tokens
+                    avg.prompt_tokens += m.prompt_tokens
+                    avg.completion_tokens += m.completion_tokens
                 n = len(run_metrics)
                 avg.decode_speed /= n
                 avg.prefill_speed /= n
                 avg.total_time /= n
                 avg.peak_memory_mb /= n
+                avg.prompt_tokens //= n
+                avg.completion_tokens //= n
                 result.metrics = avg
 
             results.append(result)

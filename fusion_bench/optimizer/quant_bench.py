@@ -6,12 +6,10 @@ Tests speed, memory, and accuracy across quant levels.
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
-from ..engine.benchmark import BenchmarkRunner, SpeedMetrics
+from ..engine.benchmark import BenchmarkRunner
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class QuantResult:
     """Result for a single quantization level."""
+
     quant: str = ""
     speed: float = 0.0
     memory_mb: float = 0.0
@@ -52,40 +51,43 @@ class QuantBenchmark:
         self.mlx_base_url = mlx_base_url
         self.base_model = base_model
 
-    async def run_speed_comparison(self, levels: list[str] | None = None,
-                                     runs: int = 2) -> list[QuantResult]:
+    async def run_speed_comparison(self, levels: list[str] | None = None, runs: int = 2) -> list[QuantResult]:
         """Compare speed and memory across quantization levels."""
         levels = levels or self.DEFAULT_LEVELS
         runner = BenchmarkRunner(mlx_base_url=self.mlx_base_url)
         results = []
 
-        for quant in levels:
-            model_name = f"{self.base_model}-{quant}"
-            logger.info("Benchmarking %s ...", model_name)
-            try:
-                metrics = await runner.run_single(
-                    model=model_name,
-                    prompt="Explain machine learning in 3 sentences.",
-                    max_tokens=128,
-                )
-                results.append(QuantResult(
-                    quant=quant,
-                    speed=metrics.decode_speed,
-                    memory_mb=metrics.peak_memory_mb,
-                    model_name=model_name,
-                ))
-            except Exception as e:
-                logger.warning("Failed to benchmark %s: %s", model_name, e)
-                results.append(QuantResult(quant=quant, model_name=model_name))
-
-        await runner.close()
+        try:
+            for quant in levels:
+                model_name = f"{self.base_model}-{quant}"
+                logger.info("Benchmarking %s ...", model_name)
+                try:
+                    metrics = await runner.run_single(
+                        model=model_name,
+                        prompt="Explain machine learning in 3 sentences.",
+                        max_tokens=128,
+                    )
+                    results.append(
+                        QuantResult(
+                            quant=quant,
+                            speed=metrics.decode_speed,
+                            memory_mb=metrics.peak_memory_mb,
+                            model_name=model_name,
+                        )
+                    )
+                except Exception as e:
+                    logger.warning("Failed to benchmark %s: %s", model_name, e)
+                    results.append(QuantResult(quant=quant, model_name=model_name))
+        finally:
+            await runner.close()
         return results
 
-    async def run_accuracy_comparison(self, levels: list[str] | None = None,
-                                       task: str = "mmlu",
-                                       max_samples: int = 10) -> list[QuantResult]:
+    async def run_accuracy_comparison(
+        self, levels: list[str] | None = None, task: str = "mmlu", max_samples: int = 10
+    ) -> list[QuantResult]:
         """Compare accuracy across quantization levels on a specific task."""
         from ..engine.task_runner import LMEvalTaskRunner
+
         levels = levels or self.DEFAULT_LEVELS
         results = []
 
@@ -100,11 +102,13 @@ class QuantBenchmark:
                 )
                 task_result = await runner.run_task(task)
                 acc = task_result.get("metrics", {}).get("accuracy", 0.0)
-                results.append(QuantResult(
-                    quant=quant,
-                    accuracy=acc,
-                    model_name=model_name,
-                ))
+                results.append(
+                    QuantResult(
+                        quant=quant,
+                        accuracy=acc,
+                        model_name=model_name,
+                    )
+                )
             except Exception as e:
                 logger.warning("Failed to evaluate %s: %s", model_name, e)
                 results.append(QuantResult(quant=quant, model_name=model_name))
@@ -117,9 +121,9 @@ class QuantBenchmark:
             title = f"Quantization Comparison — {self.base_model}"
         lines = [
             f"# {title}",
-            f"",
-            f"| Quant Level | Speed (tok/s) | Memory (MB) | Accuracy | Stable |",
-            f"|-------------|:-------------:|:-----------:|:--------:|:------:|",
+            "",
+            "| Quant Level | Speed (tok/s) | Memory (MB) | Accuracy | Stable |",
+            "|-------------|:-------------:|:-----------:|:--------:|:------:|",
         ]
         for r in results:
             speed = f"{r.speed:.1f}" if r.speed else "N/A"
@@ -133,10 +137,12 @@ class QuantBenchmark:
         if valid:
             best_speed = max(valid, key=lambda r: r.speed)
             best_mem = min(valid, key=lambda r: r.memory_mb)
-            lines.extend([
-                f"",
-                f"**Fastest:** {best_speed.quant} ({best_speed.speed:.1f} tok/s)",
-                f"**Most memory efficient:** {best_mem.quant} ({best_mem.memory_mb:.0f} MB)",
-            ])
+            lines.extend(
+                [
+                    "",
+                    f"**Fastest:** {best_speed.quant} ({best_speed.speed:.1f} tok/s)",
+                    f"**Most memory efficient:** {best_mem.quant} ({best_mem.memory_mb:.0f} MB)",
+                ]
+            )
 
         return "\n".join(lines)

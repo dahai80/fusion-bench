@@ -1,20 +1,18 @@
 """Tests for Fusion-Bench core modules."""
+
 from __future__ import annotations
 
 import json
-import tempfile
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from fusion_bench.engine.benchmark import BenchmarkRunner, SpeedMetrics, BenchmarkResult
-from fusion_bench.engine.metrics import MetricsCollector, SystemMetrics
-from fusion_bench.optimizer.tuner import ParameterTuner, TuneResult
+from fusion_bench.engine.benchmark import BenchmarkResult, BenchmarkRunner, SpeedMetrics
+from fusion_bench.engine.metrics import MetricsCollector
+from fusion_bench.optimizer.tuner import ParameterTuner
 from fusion_bench.reporter.report import ReportGenerator
 
-
 # ── SpeedMetrics ──
+
 
 class TestSpeedMetrics:
     def test_defaults(self):
@@ -31,6 +29,7 @@ class TestSpeedMetrics:
 
 # ── BenchmarkResult ──
 
+
 class TestBenchmarkResult:
     def test_defaults(self):
         r = BenchmarkResult(model="test-model")
@@ -40,6 +39,7 @@ class TestBenchmarkResult:
 
 
 # ── BenchmarkRunner ──
+
 
 class TestBenchmarkRunner:
     def test_init(self):
@@ -69,6 +69,7 @@ class TestBenchmarkRunner:
 
 # ── MetricsCollector ──
 
+
 class TestMetricsCollector:
     @pytest.mark.asyncio
     async def test_collect_no_server(self):
@@ -85,6 +86,7 @@ class TestMetricsCollector:
 
 
 # ── ParameterTuner ──
+
 
 class TestParameterTuner:
     def test_init(self):
@@ -106,10 +108,12 @@ class TestParameterTuner:
         tuner = ParameterTuner(mlx_base_url="http://localhost:19999/v1")
         result = await tuner.tune("test-model", max_combinations=2)
         assert result.model == "test-model"
-        assert len(result.all_results) >= 0
+        assert result.best_speed == 0.0
+        assert len(result.all_results) > 0
 
 
 # ── ReportGenerator ──
+
 
 class TestReportGenerator:
     def test_to_json(self):

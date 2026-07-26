@@ -1,20 +1,19 @@
 """Tests for Fusion-Bench CLI, Metal monitor, cache, and quant benchmark."""
+
 from __future__ import annotations
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from fusion_bench.cli import main as cli_main
-from fusion_bench.engine.metal_monitor import MetalMonitor
 from fusion_bench.cache import BenchmarkCache
+from fusion_bench.engine.metal_monitor import MetalMonitor
 from fusion_bench.optimizer.quant_bench import QuantBenchmark, QuantResult
 
-
 # ── MetalMonitor ──
+
 
 class TestMetalMonitor:
     def test_collect_gpu_info(self):
@@ -29,7 +28,14 @@ class TestMetalMonitor:
 
     @pytest.mark.asyncio
     async def test_collect_mlx_stats_no_server(self):
-        stats = await MetalMonitor.collect_mlx_stats("http://localhost:19999")
+        mock_client = MagicMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = AsyncMock(side_effect=Exception("connection refused"))
+        mock_httpx = MagicMock()
+        mock_httpx.AsyncClient = MagicMock(return_value=mock_client)
+        with patch.dict("sys.modules", {"httpx": mock_httpx}):
+            stats = await MetalMonitor.collect_mlx_stats("http://localhost:19999")
         assert stats == {}
 
     def test_collect_power_info(self):
@@ -38,14 +44,28 @@ class TestMetalMonitor:
 
     @pytest.mark.asyncio
     async def test_collect_all(self):
-        info = await MetalMonitor().collect_all("http://localhost:19999")
+        p1 = patch.object(MetalMonitor, "collect_gpu_info", return_value={"gpu_model": "M2"})
+        p2 = patch.object(MetalMonitor, "collect_system_info", return_value={"cpu_cores": 10})
+        p3 = patch.object(
+            MetalMonitor,
+            "collect_mlx_stats",
+            new_callable=AsyncMock,
+            return_value={"models_loaded": 1},
+        )
+        p4 = patch.object(MetalMonitor, "collect_power_info", return_value={"power_stats": "ok"})
+        with p1, p2, p3, p4:
+            info = await MetalMonitor().collect_all("http://localhost:19999")
         assert "gpu" in info
         assert "system" in info
         assert "mlx" in info
 
     def test_format_report(self):
         data = {
-            "gpu": {"gpu_model": "Apple M5 Max", "gpu_cores": 40, "metal_family": "Metal 3"},
+            "gpu": {
+                "gpu_model": "Apple M5 Max",
+                "gpu_cores": 40,
+                "metal_family": "Metal 3",
+            },
             "system": {"total_memory_gb": 128, "cpu_cores": 16},
             "mlx": {"models_loaded": 2, "total_requests": 100},
         }
@@ -56,6 +76,7 @@ class TestMetalMonitor:
 
 
 # ── BenchmarkCache ──
+
 
 class TestBenchmarkCache:
     def test_set_and_get(self):
@@ -121,6 +142,7 @@ class TestBenchmarkCache:
 
 # ── QuantBenchmark ──
 
+
 class TestQuantResult:
     def test_defaults(self):
         r = QuantResult(quant="mxfp4")
@@ -167,11 +189,13 @@ class TestQuantBenchmark:
 
 # ── CLI ──
 
+
 class TestCLI:
     def test_list_tasks(self):
         """Just verify the CLI module loads without errors."""
         # Can't easily test argparse without sys.exit, but at least verify module loads
         from fusion_bench import cli
+
         assert hasattr(cli, "main")
         assert hasattr(cli, "cmd_list_tasks")
         assert hasattr(cli, "cmd_run")

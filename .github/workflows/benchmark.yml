@@ -1,0 +1,57 @@
+# Importers/callers: GitHub Actions CI runner invokes this as composite action.
+# Affected API: fusion_bench.cicd.github_action module reads env vars set here.
+# Data schemas: GitHub Actions inputs/outputs contract; no internal schema change.
+# User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" — complete P2-09 CI/CD workflow file.
+
+name: Fusion-Bench
+description: Run MLX model benchmarks via Fusion-Bench
+inputs:
+  model:
+    description: Model name to benchmark
+    required: true
+  executor:
+    description: Executor key (speed, lm_harness, tune, quant, security)
+    required: false
+    default: speed
+  level:
+    description: Evaluation level (L1, L2, L3, L4)
+    required: false
+    default: L1
+  base-url:
+    description: Fusion-Bench API base URL
+    required: false
+    default: http://localhost:8900
+  gate-tier:
+    description: Quality gate tier to check (experimental, business, production)
+    required: false
+    default: ""
+  timeout:
+    description: Task timeout in seconds
+    required: false
+    default: "600"
+outputs:
+  task-id:
+    description: Created task ID
+    value: ${{ steps.benchmark.outputs.task_id }}
+  status:
+    description: Task final status
+    value: ${{ steps.benchmark.outputs.status }}
+  metric-value:
+    description: Primary metric value
+    value: ${{ steps.benchmark.outputs.metric_value }}
+runs:
+  using: composite
+  steps:
+    - name: Run Benchmark
+      id: benchmark
+      shell: bash
+      run: |
+        pip install fusion-bench
+        python -m fusion_bench.cicd.github_action
+      env:
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_EXECUTOR: ${{ inputs.executor }}
+        INPUT_LEVEL: ${{ inputs.level }}
+        INPUT_BASE_URL: ${{ inputs.base-url }}
+        INPUT_GATE_TIER: ${{ inputs.gate-tier }}
+        INPUT_TIMEOUT: ${{ inputs.timeout }}

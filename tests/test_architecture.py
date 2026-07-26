@@ -1,20 +1,27 @@
 """Tests for the new plugin architecture: core, executors, orchestrator, storage."""
 
-import asyncio
-import json
 import tempfile
 from pathlib import Path
 
 import pytest
 
-from fusion_bench.core.registry import Registry, executor_registry, gate_registry
-from fusion_bench.core.plugin_base import (
-    CaseResult, EvalResult, ExecutorPlugin, ExecutorType, TaskConfig,
-)
 from fusion_bench.core.models import (
-    BenchmarkTask, EvalLevel, GateResult, GateTier,
-    QualityGate, SuiteResult, TaskStatus, TraceRecord,
+    EvalLevel,
+    GateResult,
+    GateTier,
+    QualityGate,
+    SuiteResult,
+    TaskStatus,
+    TraceRecord,
 )
+from fusion_bench.core.plugin_base import (
+    CaseResult,
+    EvalResult,
+    ExecutorPlugin,
+    ExecutorType,
+    TaskConfig,
+)
+from fusion_bench.core.registry import Registry, executor_registry
 from fusion_bench.orchestrator.gate_engine import GateEngine
 from fusion_bench.orchestrator.scheduler import Scheduler
 from fusion_bench.storage.trace_store import TraceStore
@@ -113,8 +120,15 @@ class TestQualityGate:
 class TestGateEngine:
     def test_evaluate_matching_gate(self):
         engine = GateEngine()
-        gate = QualityGate("g1", "Min speed", GateTier.EXPERIMENTAL,
-                            "decode_speed", ">=", 10.0, executor_key="speed")
+        gate = QualityGate(
+            "g1",
+            "Min speed",
+            GateTier.EXPERIMENTAL,
+            "decode_speed",
+            ">=",
+            10.0,
+            executor_key="speed",
+        )
         engine.add_gate(gate)
 
         results = engine.evaluate("speed", "decode_speed", 15.0)
@@ -123,8 +137,15 @@ class TestGateEngine:
 
     def test_evaluate_non_matching_metric(self):
         engine = GateEngine()
-        gate = QualityGate("g1", "Min speed", GateTier.EXPERIMENTAL,
-                            "decode_speed", ">=", 10.0, executor_key="speed")
+        gate = QualityGate(
+            "g1",
+            "Min speed",
+            GateTier.EXPERIMENTAL,
+            "decode_speed",
+            ">=",
+            10.0,
+            executor_key="speed",
+        )
         engine.add_gate(gate)
 
         results = engine.evaluate("speed", "accuracy", 0.5)
@@ -132,8 +153,15 @@ class TestGateEngine:
 
     def test_evaluate_non_matching_executor(self):
         engine = GateEngine()
-        gate = QualityGate("g1", "Min speed", GateTier.EXPERIMENTAL,
-                            "decode_speed", ">=", 10.0, executor_key="speed")
+        gate = QualityGate(
+            "g1",
+            "Min speed",
+            GateTier.EXPERIMENTAL,
+            "decode_speed",
+            ">=",
+            10.0,
+            executor_key="speed",
+        )
         engine.add_gate(gate)
 
         results = engine.evaluate("security", "decode_speed", 15.0)
@@ -212,14 +240,16 @@ class TestTraceStore:
         with tempfile.TemporaryDirectory() as tmpdir:
             store = TraceStore(db_path=Path(tmpdir) / "test.db")
             for i, level in enumerate([EvalLevel.L1_MODEL, EvalLevel.L3_APP]):
-                store.insert(TraceRecord(
-                    trace_id=f"t-{i}",
-                    model="m1",
-                    level=level,
-                    executor_key="speed",
-                    task_id=f"s{i}",
-                    status=TaskStatus.COMPLETED,
-                ))
+                store.insert(
+                    TraceRecord(
+                        trace_id=f"t-{i}",
+                        model="m1",
+                        level=level,
+                        executor_key="speed",
+                        task_id=f"s{i}",
+                        status=TaskStatus.COMPLETED,
+                    )
+                )
 
             l1 = store.query(level="L1")
             assert len(l1) == 1
@@ -231,25 +261,35 @@ class TestTraceStore:
 class TestExecutorRegistration:
     def test_all_executors_registered(self):
         from fusion_bench.executors import register_all
-        executor_registry._items.clear()
-        register_all()
-        keys = executor_registry.list_keys()
-        assert "speed" in keys
-        assert "security" in keys
-        assert "quant" in keys
-        assert "tune" in keys
+
+        saved = dict(executor_registry._items)
+        try:
+            executor_registry._items.clear()
+            register_all()
+            keys = executor_registry.list_keys()
+            assert "speed" in keys
+            assert "security" in keys
+            assert "quant" in keys
+            assert "tune" in keys
+        finally:
+            executor_registry._items = saved
 
     def test_executor_types(self):
         from fusion_bench.executors import register_all
-        executor_registry._items.clear()
-        register_all()
 
-        for key in executor_registry.list_keys():
-            cls = executor_registry.get(key)
-            instance = cls()
-            assert isinstance(instance, ExecutorPlugin)
-            assert instance.name
-            assert isinstance(instance.executor_type, ExecutorType)
+        saved = dict(executor_registry._items)
+        try:
+            executor_registry._items.clear()
+            register_all()
+
+            for key in executor_registry.list_keys():
+                cls = executor_registry.get(key)
+                instance = cls()
+                assert isinstance(instance, ExecutorPlugin)
+                assert instance.name
+                assert isinstance(instance.executor_type, ExecutorType)
+        finally:
+            executor_registry._items = saved
 
 
 class TestTraceRecordToDict:
@@ -278,9 +318,7 @@ class TestSuiteResultToDict:
             model="m1",
             level=EvalLevel.L1_MODEL,
             results=[{"accuracy": 0.9}],
-            gate_results=[
-                GateResult("g1", "gate1", GateTier.EXPERIMENTAL, "accuracy", 0.9, 0.5, True)
-            ],
+            gate_results=[GateResult("g1", "gate1", GateTier.EXPERIMENTAL, "accuracy", 0.9, 0.5, True)],
             overall_passed=True,
         )
         d = result.to_dict()

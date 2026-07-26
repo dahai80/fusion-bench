@@ -1,8 +1,10 @@
 """Metrics collection — gathers performance metrics from fusion-mlx server stats."""
+
 from __future__ import annotations
 
+import asyncio
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -11,6 +13,7 @@ import httpx
 @dataclass
 class SystemMetrics:
     """System-level metrics from fusion-mlx server."""
+
     models_loaded: int = 0
     models_discovered: int = 0
     total_requests: int = 0
@@ -69,6 +72,3 @@ class MetricsCollector:
             series.append(metrics)
             await asyncio.sleep(interval)
         return series
-
-
-import asyncio

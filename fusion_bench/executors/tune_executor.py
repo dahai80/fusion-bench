@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 
-from ..core.plugin_base import CaseResult, EvalResult, ExecutorPlugin, ExecutorType, TaskConfig
+from ..core.plugin_base import (
+    CaseResult,
+    EvalResult,
+    ExecutorPlugin,
+    ExecutorType,
+    TaskConfig,
+)
 from ..optimizer.tuner import ParameterTuner
 
 logger = logging.getLogger(__name__)
@@ -24,7 +31,10 @@ class TuneExecutor(ExecutorPlugin):
         errors: list[str] = []
 
         try:
-            prompt = config.get("prompt", "Explain machine learning in 3 sentences. Be concise and clear.")
+            prompt = config.get(
+                "prompt",
+                "Explain machine learning in 3 sentences. Be concise and clear.",
+            )
             max_combinations = config.get("max_combinations", 12)
 
             tune_result = await tuner.tune(
@@ -35,14 +45,16 @@ class TuneExecutor(ExecutorPlugin):
 
             cases: list[CaseResult] = []
             for br in tune_result.all_results:
-                cases.append(CaseResult(
-                    input_text=prompt[:200],
-                    actual=f"decode={br.metrics.decode_speed:.1f} tok/s",
-                    score=br.metrics.decode_speed,
-                    passed=br.metrics.decode_speed > 0,
-                    latency_ms=br.metrics.total_time * 1000,
-                    meta={"config": br.config, "metrics": br.metrics.to_dict()},
-                ))
+                cases.append(
+                    CaseResult(
+                        input_text=prompt[:200],
+                        actual=f"decode={br.metrics.decode_speed:.1f} tok/s",
+                        score=br.metrics.decode_speed,
+                        passed=br.metrics.decode_speed > 0,
+                        latency_ms=br.metrics.total_time * 1000,
+                        meta={"config": br.config, "metrics": br.metrics.to_dict()},
+                    )
+                )
 
             return EvalResult(
                 task_id=config.task_id,
@@ -73,6 +85,11 @@ class TuneExecutor(ExecutorPlugin):
                 duration_seconds=time.time() - start,
                 errors=[str(e)],
             )
+        finally:
+            if hasattr(tuner.runner, "close"):
+                close_coro = tuner.runner.close()
+                if asyncio.iscoroutine(close_coro):
+                    await close_coro
 
     def is_available(self) -> bool:
         return True

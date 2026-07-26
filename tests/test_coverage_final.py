@@ -1,13 +1,13 @@
 """Final coverage push — targets remaining uncovered lines in benchmark.py and tuner.py."""
+
 from __future__ import annotations
 
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from fusion_bench.engine.benchmark import BenchmarkRunner, SpeedMetrics, BenchmarkResult
-from fusion_bench.optimizer.tuner import ParameterTuner, TuneResult
+from fusion_bench.engine.benchmark import BenchmarkRunner, SpeedMetrics
+from fusion_bench.optimizer.tuner import ParameterTuner
 
 
 class MockResponse:
@@ -17,8 +17,10 @@ class MockResponse:
             "usage": {"prompt_tokens": 50, "completion_tokens": 100},
             "choices": [{"message": {"content": "test"}}],
         }
+
     def raise_for_status(self):
         pass
+
     def json(self):
         return self._json
 
@@ -31,9 +33,11 @@ class TestBenchmarkFinal:
         """Cover case where all benchmark runs fail."""
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse(
-            json_data={"usage": {"prompt_tokens": 0, "completion_tokens": 0}},
-        ))
+        mock_client.post = AsyncMock(
+            return_value=MockResponse(
+                json_data={"usage": {"prompt_tokens": 0, "completion_tokens": 0}},
+            )
+        )
         runner._client = mock_client
         results = await runner.benchmark(model="test", max_tokens=50, runs=3)
         for r in results:
@@ -58,9 +62,12 @@ class TestBenchmarkFinal:
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
-        mock_client.get = AsyncMock(return_value=MockResponse(
-            status_code=200, json_data={"no_memory": True},
-        ))
+        mock_client.get = AsyncMock(
+            return_value=MockResponse(
+                status_code=200,
+                json_data={"no_memory": True},
+            )
+        )
         runner._client = mock_client
         results = await runner.benchmark(model="test", max_tokens=50, runs=1)
         assert len(results) >= 1
@@ -81,8 +88,10 @@ class TestBenchmarkFinal:
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
         config = {"extra_params": {"stop": ["\n"]}}
-        metrics = await runner.run_single(
-            model="test", prompt="hi", max_tokens=50,
+        _metrics = await runner.run_single(
+            model="test",
+            prompt="hi",
+            max_tokens=50,
             config=config,
         )
         # Verify the config was passed to the API call
@@ -95,10 +104,12 @@ class TestBenchmarkFinal:
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
         mock_client = MagicMock()
         # First config succeeds, second fails
-        mock_client.post = AsyncMock(side_effect=[
-            MockResponse(),
-            RuntimeError("fail"),
-        ])
+        mock_client.post = AsyncMock(
+            side_effect=[
+                MockResponse(),
+                RuntimeError("fail"),
+            ]
+        )
         runner._client = mock_client
         configs = [{"temperature": 0.0}, {"temperature": 0.7}]
         results = await runner.benchmark(model="test", configs=configs, max_tokens=50, runs=1)
@@ -133,11 +144,13 @@ class TestTunerFinal:
         """Cover tune where some configs fail."""
         tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
         # Some configs succeed, some fail
-        tuner.runner.run_single = AsyncMock(side_effect=[
-            SpeedMetrics(decode_speed=25.0, peak_memory_mb=4096),
-            RuntimeError("fail"),
-            SpeedMetrics(decode_speed=30.0, peak_memory_mb=2048),
-        ])
+        tuner.runner.run_single = AsyncMock(
+            side_effect=[
+                SpeedMetrics(decode_speed=25.0, peak_memory_mb=4096),
+                RuntimeError("fail"),
+                SpeedMetrics(decode_speed=30.0, peak_memory_mb=2048),
+            ]
+        )
         result = await tuner.tune("test-model", max_combinations=3)
         # At least one result should be in all_results
         assert len(result.all_results) >= 1
@@ -146,9 +159,12 @@ class TestTunerFinal:
     async def test_tune_few_configs(self):
         """Cover tune with fewer than 3 configs."""
         tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
-        tuner.runner.run_single = AsyncMock(return_value=SpeedMetrics(
-            decode_speed=25.0, peak_memory_mb=4096,
-        ))
+        tuner.runner.run_single = AsyncMock(
+            return_value=SpeedMetrics(
+                decode_speed=25.0,
+                peak_memory_mb=4096,
+            )
+        )
         result = await tuner.tune("test-model", max_combinations=2)
         assert len(result.all_results) >= 1
         # top3_configs should have at most 2 items
@@ -158,11 +174,13 @@ class TestTunerFinal:
     async def test_tune_memory_saving_config(self):
         """Cover memory_saving_config selection."""
         tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
-        tuner.runner.run_single = AsyncMock(side_effect=[
-            SpeedMetrics(decode_speed=10.0, peak_memory_mb=8192),
-            SpeedMetrics(decode_speed=20.0, peak_memory_mb=4096),
-            SpeedMetrics(decode_speed=30.0, peak_memory_mb=2048),
-        ])
+        tuner.runner.run_single = AsyncMock(
+            side_effect=[
+                SpeedMetrics(decode_speed=10.0, peak_memory_mb=8192),
+                SpeedMetrics(decode_speed=20.0, peak_memory_mb=4096),
+                SpeedMetrics(decode_speed=30.0, peak_memory_mb=2048),
+            ]
+        )
         result = await tuner.tune("test-model", max_combinations=3)
         # memory_saving_config should be the one with lowest memory
         if result.memory_saving_config:
