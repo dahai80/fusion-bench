@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-122-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-150-success.svg)](tests/)
 
 [Quick Start](#quick-start) · [CLI Reference](#cli-reference) · [Architecture](#architecture) · [Documentation](docs/)
 
@@ -24,6 +24,10 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 | **Apple Silicon optimized** | ✅ Metal monitor | ❌ | ❌ |
 | **Quantization comparison** | ✅ 4/8/16-bit | ❌ | ❌ |
 | **Auto parameter tuning** | ✅ | ❌ | ❌ |
+| **Quality gates** | ✅ 3-tier (Exp/Biz/Prod) | ❌ | ❌ |
+| **Security probes** | ✅ injection/harmful/PII | ❌ | ❌ |
+| **Plugin architecture** | ✅ Registry[T] pattern | ✅ | ❌ |
+| **Trace store** | ✅ SQLite persistent | ❌ | ❌ |
 | **Benchmark tasks** | 2082 (lm-eval compatible) | 2082 | 100+ |
 | **Local offline** | ✅ 100% | ✅ | ✅ |
 | **bench.dpdns.org integration** | ✅ Direct DB write | ❌ | ❌ |
@@ -101,11 +105,17 @@ asyncio.run(main())
 | Command | Description |
 |---------|-------------|
 | `fusion-bench list-tasks [--pattern]` | List available evaluation tasks from lm-eval |
+| `fusion-bench list-suites` | List benchmark suites (l1-quick, l1-full, l3-security…) |
+| `fusion-bench list-executors` | List registered executor plugins |
 | `fusion-bench run <task> [--model] [--max-samples]` | Run a single evaluation task |
-| `fusion-bench tune [--model] [--max-combinations]` | Auto-tune model parameters |
-| `fusion-bench compare --models <m1,m2> [--tasks]` | Compare multiple models |
+| `fusion-bench suite <name> [--model] [--tier]` | Run a suite with quality gates |
 | `fusion-bench speed [--model] [--runs]` | Benchmark model speed |
+| `fusion-bench tune [--model] [--max-combinations]` | Auto-tune model parameters |
 | `fusion-bench quant [--model] [--levels]` | Compare quantization levels |
+| `fusion-bench security [--model] [--probe-set]` | Run security probes (injection/harmful/pii) |
+| `fusion-bench gates [--tier]` | Show quality gate thresholds |
+| `fusion-bench traces [--model] [--executor]` | Query trace store |
+| `fusion-bench compare --models <m1,m2> [--tasks]` | Compare multiple models |
 
 ### Options
 
@@ -120,46 +130,63 @@ asyncio.run(main())
 ## Architecture
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│                        Fusion-Bench CLI                        │
-│  run · list-tasks · tune · compare · speed · quant             │
-└───────────────────────────┬───────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│                         Fusion-Bench CLI v2                       │
+│  run · suite · speed · tune · quant · security · gates · traces   │
+└───────────────────────────────┬───────────────────────────────────┘
+                                │
+┌───────────────────────────────▼───────────────────────────────────┐
+│                      Orchestrator Layer                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐ │
+│  │   Pipeline    │  │  GateEngine  │  │      Scheduler          │ │
+│  │ (concurrent)  │  │ (3-tier gate)│  │ (l1-quick, l1-full…)   │ │
+│  └──────┬───────┘  └──────────────┘  └─────────────────────────┘ │
+└─────────┼─────────────────────────────────────────────────────────┘
+          │
+┌─────────▼─────────────────────────────────────────────────────────┐
+│               Executor Plugins (Registry[T])                      │
+│  ┌─────────┐ ┌───────────┐ ┌──────┐ ┌──────┐ ┌──────────────┐   │
+│  │  speed  │ │ lm_harness│ │ tune │ │ quant│ │  security    │   │
+│  └────┬────┘ └─────┬─────┘ └──┬───┘ └──┬───┘ └──────┬───────┘   │
+└───────┼────────────┼──────────┼────────┼────────────┼────────────┘
+        │            │          │        │            │
+┌───────▼────────────▼──────────▼────────▼────────────▼────────────┐
+│              Engine / Adapter Layer (legacy compat)               │
+│  BenchmarkRunner · LMEvalTaskRunner · ParameterTuner · QuantBench │
+│                    MLXModel Adapter (HTTP API)                     │
+└───────────────────────────┬───────────────────────────────────────┘
                             │
-┌───────────────────────────▼───────────────────────────────────┐
-│                   Benchmark Engine                              │
-│  ┌────────────────┐  ┌────────────────┐  ┌─────────────────┐  │
-│  │ LMEvalTaskRunner│  │ BenchmarkRunner│  │ ParameterTuner  │  │
-│  │ (2082 tasks)    │  │ (speed/memory) │  │ (auto-tuning)   │  │
-│  └───────┬────────┘  └───────┬────────┘  └────────┬────────┘  │
-└──────────┼──────────────────┼─────────────────────┼────────────┘
-           │                  │                     │
-┌──────────▼──────────────────▼─────────────────────▼────────────┐
-│                   MLXModel Adapter                              │
-│  generate_until · loglikelihood · tok_encode/decode             │
-│           ↓ HTTP API (never imports MLX directly)               │
-└────────────────────────────────────────────────────────────────┘
-           │
-┌──────────▼────────────────────────────────────────────────────┐
-│  fusion-mlx (/v1/chat/completions, /v1/completions, /v1/models)│
-│           ↓                                                    │
-│  Apple Silicon MLX Runtime (Metal GPU)                        │
-└────────────────────────────────────────────────────────────────┘
+┌───────────────────────────▼───────────────────────────────────────┐
+│  fusion-mlx (/v1/chat/completions, /v1/completions, /v1/models)  │
+│           ↓                                                      │
+│  Apple Silicon MLX Runtime (Metal GPU)                           │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Modules
 
 | Module | File | Description |
 |--------|------|-------------|
+| **Core Registry** | `core/registry.py` | Type-safe `Registry[T]` for plugins, suites, gates |
+| **Plugin Base** | `core/plugin_base.py` | `ExecutorPlugin` ABC + `TaskConfig`/`EvalResult`/`CaseResult` |
+| **Data Models** | `core/models.py` | `BenchmarkTask`, `QualityGate`, `SuiteResult`, `TraceRecord` |
+| **Pipeline** | `orchestrator/pipeline.py` | Concurrent suite execution with quality gates |
+| **Gate Engine** | `orchestrator/gate_engine.py` | 3-tier gate evaluation (Experimental/Business/Production) |
+| **Scheduler** | `orchestrator/scheduler.py` | Suite definitions (l1-quick, l1-full, l3-security…) |
+| **Trace Store** | `storage/trace_store.py` | SQLite-backed trace persistence and querying |
+| **Speed Executor** | `executors/speed_executor.py` | Speed/memory benchmark plugin |
+| **LM Harness Executor** | `executors/lm_harness_executor.py` | lm-evaluation-harness task plugin |
+| **Tune Executor** | `executors/tune_executor.py` | Parameter auto-tuning plugin |
+| **Quant Executor** | `executors/quant_executor.py` | Quantization comparison plugin |
+| **Security Executor** | `executors/security_executor.py` | Injection/harmful/PII security probes |
 | **Benchmark Engine** | `engine/benchmark.py` | Speed, memory, stability, max context probing |
 | **Task Runner** | `engine/task_runner.py` | lm-evaluation-harness task loader (2082 tasks) |
-| **Metal Monitor** | `engine/metal_monitor.py` | GPU info via system_profiler + MLX stats |
 | **MLX Adapter** | `adapters/mlx_model.py` | lm-eval compatible model interface |
 | **Parameter Tuner** | `optimizer/tuner.py` | Auto-traverses batch/tokens/temperature |
 | **Quant Comparison** | `optimizer/quant_bench.py` | Multi-quantization speed/accuracy comparison |
 | **Report Generator** | `reporter/report.py` | JSON, Markdown, Chart, Config template |
 | **BenchSite DB** | `reporter/bench_site_db.py` | Direct write to bench.dpdns.org database |
-| **Cache** | `cache.py` | SQLite benchmark cache |
-| **CLI** | `cli.py` | Command-line interface |
+| **CLI** | `cli.py` | Command-line interface v2 |
 
 ---
 
@@ -191,7 +218,7 @@ pytest tests/ --cov=fusion_bench
 ```
 
 ### Test Stats
-- **122 tests**, 0 failures
+- **150 tests**, 0 failures
 - **96%+ statement coverage** (core modules)
 - **Python 3.12+** compatible
 
@@ -205,6 +232,10 @@ pytest tests/ --cov=fusion_bench
 | **Metal monitoring** | ❌ | ❌ | ✅ system_profiler |
 | **Quantization comparison** | ❌ | ❌ | ✅ 4/8/16-bit |
 | **Auto parameter tuning** | ❌ | ❌ | ✅ |
+| **Quality gates** | ❌ | ❌ | ✅ 3-tier (Exp/Biz/Prod) |
+| **Security probes** | ❌ | ❌ | ✅ injection/harmful/PII |
+| **Plugin architecture** | ✅ | ❌ | ✅ Registry[T] pattern |
+| **Trace store** | ❌ | ❌ | ✅ SQLite persistent |
 | **Benchmark tasks** | 2082 | 100+ | 2082 (compatible) |
 | **Local offline** | ✅ | ✅ | ✅ 100% |
 | **bench.dpdns.org** | ❌ | ❌ | ✅ Direct DB write |

@@ -1,6 +1,6 @@
 [project]
 name = "fusion-bench"
-version = "0.1.0"
+version = "0.2.0"
 description = "Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench"
 requires-python = ">=3.12"
 dependencies = [
@@ -8,6 +8,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "aiofiles>=23.0.0",
     "matplotlib>=3.8.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
