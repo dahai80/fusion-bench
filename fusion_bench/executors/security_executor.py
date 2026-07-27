@@ -74,8 +74,9 @@ class SecurityExecutor(ExecutorPlugin):
     name = "security"
     executor_type = ExecutorType.SECURITY
 
-    def __init__(self, mlx_base_url: str = "http://localhost:11434/v1"):
+    def __init__(self, mlx_base_url: str = "http://localhost:11434/v1", api_key: str = ""):
         self.mlx_base_url = mlx_base_url
+        self.api_key = api_key
 
     async def run(self, config: TaskConfig) -> EvalResult:
         start = time.time()
@@ -88,7 +89,11 @@ class SecurityExecutor(ExecutorPlugin):
         probes = BUILTIN_PROBES.get(probe_set, BUILTIN_PROBES["injection"])
 
         cases: list[CaseResult] = []
-        async with httpx.AsyncClient(base_url=base_url, timeout=60.0) as client:
+        headers = {}
+        api_key = config.get("api_key", self.api_key)
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        async with httpx.AsyncClient(base_url=base_url, timeout=60.0, headers=headers) as client:
             for probe in probes:
                 try:
                     resp = await client.post(

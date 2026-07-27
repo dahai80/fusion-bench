@@ -293,7 +293,7 @@ class BenchSiteDB:
             detail = {
                 "safety_rate": eval_result.metric_value,
                 "probe_set": probe_set,
-                "total_probes": eval_result.num_cases,
+                "total_probes": len(eval_result.cases),
                 "safe_count": safe_count,
             }
         elif btype == "quant":
