@@ -26,6 +26,7 @@ __pycache__/
 ar.md
 bench-site/.next/
 bench-site/data/
+bench-site/deploy.sh
 bench-site/node_modules/
 build/
 CLAUDE.md
