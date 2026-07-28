@@ -1,39 +1,37 @@
-# Python
-# Importers/callers: git. Affected API: none. Data schemas: none.
-# User instruction: "生成doc文档，更新README，提交代码仓，建设CI和lint，确保全绿，发布0.3.0版本"
+
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.venv/
-*.egg-info/
-dist/
-build/
-*.egg
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Generated docs
-docs/api/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Claude Code
 .claude/
-
+.coverage
+.DS_Store
+.idea/
+.pytest_cache/
+.venv/
+.vscode/
+*.egg
+*.egg-info/
+*.py[cod]
+*.so
+*.swo
+*.swp
+*$py.class
 # Bench-site
-bench-site/node_modules/
+# Claude Code
+# Generated docs
+# IDE
+# Importers/callers: git. Affected API: none. Data schemas: none.
+# OS
+# Python
+# Testing
+# User instruction: "生成doc文档，更新README，提交代码仓，建设CI和lint，确保全绿，发布0.3.0版本"
+ar.md
 bench-site/.next/
 bench-site/data/
+bench-site/node_modules/
+build/
+CLAUDE.md
+dist/
+docs/api/
 FUSION_BENCH_ANALYSIS.md
+htmlcov/
+start.sh
+Thumbs.db
