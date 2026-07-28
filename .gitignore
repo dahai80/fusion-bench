@@ -1,4 +1,3 @@
-
 __pycache__/
 .claude/
 .coverage
@@ -14,15 +13,6 @@ __pycache__/
 *.swo
 *.swp
 *$py.class
-# Bench-site
-# Claude Code
-# Generated docs
-# IDE
-# Importers/callers: git. Affected API: none. Data schemas: none.
-# OS
-# Python
-# Testing
-# User instruction: "生成doc文档，更新README，提交代码仓，建设CI和lint，确保全绿，发布0.3.0版本"
 ar.md
 bench-site/.next/
 bench-site/data/
