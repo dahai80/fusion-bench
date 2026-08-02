@@ -20,7 +20,7 @@ inputs:
   base-url:
     description: Fusion-Bench API base URL
     required: false
-    default: http://localhost:8900
+    default: http://localhost:11450
   gate-tier:
     description: Quality gate tier to check (experimental, business, production)
     required: false

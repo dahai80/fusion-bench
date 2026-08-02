@@ -13,8 +13,8 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from typing import Any
-import httpx
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field, model_validator
 
@@ -96,7 +96,7 @@ class TaskCreateRequest(BaseModel):
     }
 
     @model_validator(mode="after")
-    def _resolve_suite(self) -> "TaskCreateRequest":
+    def _resolve_suite(self) -> TaskCreateRequest:
         if self.suite and self.executor_key == "speed":
             mapped = self._SUITE_MAP.get(self.suite)
             if mapped:
@@ -296,16 +296,19 @@ async def _run_task(task_id: str, req: TaskCreateRequest):
         if cb_url:
             try:
                 async with httpx.AsyncClient(timeout=10) as client:
-                    await client.post(cb_url, json={
-                        "task_id": task_id,
-                        "status": info.get("status", "unknown"),
-                        "model": req.model,
-                        "model_id": req.model_id,
-                        "executor_key": req.executor_key,
-                        "result": info.get("result"),
-                        "error": info.get("error"),
-                        "duration_seconds": info.get("duration_seconds", 0),
-                    })
+                    await client.post(
+                        cb_url,
+                        json={
+                            "task_id": task_id,
+                            "status": info.get("status", "unknown"),
+                            "model": req.model,
+                            "model_id": req.model_id,
+                            "executor_key": req.executor_key,
+                            "result": info.get("result"),
+                            "error": info.get("error"),
+                            "duration_seconds": info.get("duration_seconds", 0),
+                        },
+                    )
                 logger.info("Callback POST to %s for task %s", cb_url, task_id)
             except Exception as cb_err:
                 logger.warning("Callback POST failed for task %s: %s", task_id, cb_err)

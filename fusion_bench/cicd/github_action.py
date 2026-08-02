@@ -22,7 +22,7 @@ def run_benchmark(
     model: str | None = None,
     executor_key: str = "speed",
     level: str = "L1",
-    base_url: str = "http://localhost:8900",
+    base_url: str = "http://localhost:11450",
     gate_tier: str | None = None,
     timeout: int = 600,
 ) -> dict[str, Any]:
@@ -86,7 +86,7 @@ def main() -> None:
     model = os.environ.get("INPUT_MODEL", os.environ.get("FUSION_BENCH_MODEL", ""))
     executor = os.environ.get("INPUT_EXECUTOR", "speed")
     level = os.environ.get("INPUT_LEVEL", "L1")
-    base_url = os.environ.get("INPUT_BASE_URL", "http://localhost:8900")
+    base_url = os.environ.get("INPUT_BASE_URL", "http://localhost:11450")
     gate_tier = os.environ.get("INPUT_GATE_TIER", "")
     timeout = int(os.environ.get("INPUT_TIMEOUT", "600"))
 

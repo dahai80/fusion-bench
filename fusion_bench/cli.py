@@ -127,8 +127,8 @@ def main():
 
     # serve (API server)
     serve_parser = subparsers.add_parser("serve", help="Start REST API server")
-    serve_parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
-    serve_parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+    serve_parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    serve_parser.add_argument("--port", type=int, default=11450, help="Bind port (default: 11450)")
     serve_parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
     serve_parser.add_argument("--ssl-certfile", default="", help="TLS certificate file")
     serve_parser.add_argument("--ssl-keyfile", default="", help="TLS private key file")
@@ -145,7 +145,7 @@ def main():
         choices=["dev", "build", "deploy", "stats"],
         help="Action: dev/build/deploy/stats",
     )
-    benchsite_parser.add_argument("--port", type=int, default=3000, help="Dev server port (default: 3000)")
+    benchsite_parser.add_argument("--port", type=int, default=11461, help="Dev server port (default: 11461)")
     benchsite_parser.add_argument("--skip-build", action="store_true", help="Deploy: skip build step")
     benchsite_parser.add_argument("--skip-restart", action="store_true", help="Deploy: skip service restart")
 
