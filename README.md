@@ -267,7 +267,7 @@ fusion-bench bench-site stats
 ```bash
 cd bench-site
 npm install
-npm run dev          # http://localhost:3000
+npm run dev          # http://localhost:11461
 ./deploy.sh         # Build + deploy to production
 ```
 
