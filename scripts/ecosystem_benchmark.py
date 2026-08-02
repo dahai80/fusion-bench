@@ -279,6 +279,7 @@ async def phase4_security_scan():
             "peak_memory_gb": None,
             "owner_hash": "",
             "benchmark_type": "security_scan",
+            "task_name": "code-scan",
             "metric_name": "findings_count",
             "metric_value": float(findings_count),
             "detail": json.dumps(
