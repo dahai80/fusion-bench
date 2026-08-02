@@ -13,9 +13,10 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from typing import Any
+import httpx
 
 from fastapi import Depends, FastAPI, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ..auth.rbac import Permission, require_permission
 from ..core.models import EvalLevel, GateTier, TaskStatus
@@ -77,19 +78,37 @@ if _os.environ.get("FUSION_BENCH_TLS_ENFORCE") == "1":
 class TaskCreateRequest(BaseModel):
     task_type: str = Field(default="model", description="Task type: model/agent/code/security/artifact")
     model: str = Field(default="qwen3.5-9b")
+    model_id: str | None = Field(default=None, description="External model UUID (e.g. from fusion-model-hub)")
     suite_id: str | None = None
+    suite: str | None = Field(default=None, description="Suite alias: standard/full/quick — maps to executor_key")
     executor_key: str = Field(default="speed")
+    callback_url: str | None = Field(default=None, description="POST result to this URL on completion")
     params: dict[str, Any] = Field(default_factory=dict)
     dataset: str | None = None
     max_samples: int | None = None
     timeout_seconds: int = 600
     level: str = Field(default="L1")
 
+    _SUITE_MAP: dict[str, str] = {
+        "quick": "speed",
+        "standard": "speed",
+        "full": "speed",
+    }
+
+    @model_validator(mode="after")
+    def _resolve_suite(self) -> "TaskCreateRequest":
+        if self.suite and self.executor_key == "speed":
+            mapped = self._SUITE_MAP.get(self.suite)
+            if mapped:
+                self.executor_key = mapped
+        return self
+
 
 class TaskResponse(BaseModel):
     task_id: str
     status: str
     model: str
+    model_id: str | None = None
     executor_key: str
     level: str
     created_at: str
@@ -215,6 +234,7 @@ async def create_task(
         task_id=task_id,
         status="pending",
         model=req.model,
+        model_id=req.model_id,
         executor_key=req.executor_key,
         level=req.level,
         created_at=record["created_at"],
@@ -271,6 +291,24 @@ async def _run_task(task_id: str, req: TaskCreateRequest):
         info["status"] = "failed"
         info["error"] = str(e)
         logger.error("Task %s failed: %s", task_id, e)
+    finally:
+        cb_url = req.callback_url
+        if cb_url:
+            try:
+                async with httpx.AsyncClient(timeout=10) as client:
+                    await client.post(cb_url, json={
+                        "task_id": task_id,
+                        "status": info.get("status", "unknown"),
+                        "model": req.model,
+                        "model_id": req.model_id,
+                        "executor_key": req.executor_key,
+                        "result": info.get("result"),
+                        "error": info.get("error"),
+                        "duration_seconds": info.get("duration_seconds", 0),
+                    })
+                logger.info("Callback POST to %s for task %s", cb_url, task_id)
+            except Exception as cb_err:
+                logger.warning("Callback POST failed for task %s: %s", task_id, cb_err)
 
 
 @app.get("/api/v1/tasks", response_model=list[TaskResponse])
