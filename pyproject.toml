@@ -1,6 +1,6 @@
 [project]
 name = "fusion-bench"
-version = "0.3.0"
+version = "0.3.1"
 description = "Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench"
 requires-python = ">=3.12"
 dependencies = [
