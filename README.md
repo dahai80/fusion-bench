@@ -7,7 +7,7 @@
 Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no cloud, no data leaving your device.
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-336-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -300,7 +300,6 @@ pytest tests/ --cov=fusion_bench
 - **336 tests**, 0 failures
 - **95%+ statement coverage**
 - **Python 3.12+** compatible
-- **Python 3.12+** compatible
 
 ---
 
@@ -327,9 +326,20 @@ pytest tests/ --cov=fusion_bench
 
 ## License
 
-MIT
+[Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.3.2 (2026-08-03)
+
+- **Port standardization**: Serve API 8000→11450, Bench-site 3000→11461, SDK 8900→11450
+- **Bind address**: 0.0.0.0 → 127.0.0.1
+- **TaskCreateRequest**: add `model_id`, `callback_url`, `suite` fields
+- **License**: changed from MIT to Apache 2.0
+
+### v0.3.1 (2026-08-02)
+
+- Lint and format cleanup
 
 ### v0.3.0 (2026-07-26)
 
