@@ -31,7 +31,7 @@ class TestBenchmarkFinal:
     @pytest.mark.asyncio
     async def test_benchmark_all_runs_fail(self):
         """Cover case where all benchmark runs fail."""
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(
             return_value=MockResponse(
@@ -46,7 +46,7 @@ class TestBenchmarkFinal:
     @pytest.mark.asyncio
     async def test_benchmark_with_memory_stats_fail(self):
         """Cover case where memory stats endpoint fails."""
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         mock_client.get = AsyncMock(side_effect=RuntimeError("stats fail"))
@@ -59,7 +59,7 @@ class TestBenchmarkFinal:
     @pytest.mark.asyncio
     async def test_benchmark_with_memory_bad_response(self):
         """Cover case where memory stats returns bad data."""
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         mock_client.get = AsyncMock(
@@ -83,7 +83,7 @@ class TestBenchmarkFinal:
     @pytest.mark.asyncio
     async def test_run_single_with_config(self):
         """Cover run_single with custom config parameters."""
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
@@ -101,7 +101,7 @@ class TestBenchmarkFinal:
     @pytest.mark.asyncio
     async def test_benchmark_multiple_configs_mixed_results(self):
         """Cover benchmark with multiple configs where some succeed."""
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         # First config succeeds, second fails
         mock_client.post = AsyncMock(
@@ -118,7 +118,7 @@ class TestBenchmarkFinal:
     @pytest.mark.asyncio
     async def test_probe_max_context_success_at_max(self):
         """Cover probe_max_context where max is reached."""
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
@@ -128,7 +128,7 @@ class TestBenchmarkFinal:
     @pytest.mark.asyncio
     async def test_run_stability_all_fail_run_single(self):
         """Cover run_stability where all run_single calls fail silently."""
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(side_effect=RuntimeError("always fail"))
         runner._client = mock_client
@@ -142,7 +142,7 @@ class TestTunerFinal:
     @pytest.mark.asyncio
     async def test_tune_with_some_failures(self):
         """Cover tune where some configs fail."""
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         # Some configs succeed, some fail
         tuner.runner.run_single = AsyncMock(
             side_effect=[
@@ -158,7 +158,7 @@ class TestTunerFinal:
     @pytest.mark.asyncio
     async def test_tune_few_configs(self):
         """Cover tune with fewer than 3 configs."""
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         tuner.runner.run_single = AsyncMock(
             return_value=SpeedMetrics(
                 decode_speed=25.0,
@@ -173,7 +173,7 @@ class TestTunerFinal:
     @pytest.mark.asyncio
     async def test_tune_memory_saving_config(self):
         """Cover memory_saving_config selection."""
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         tuner.runner.run_single = AsyncMock(
             side_effect=[
                 SpeedMetrics(decode_speed=10.0, peak_memory_mb=8192),
@@ -189,7 +189,7 @@ class TestTunerFinal:
     @pytest.mark.asyncio
     async def test_tune_multi_model_all_fail(self):
         """Cover tune_multi_model where all models fail."""
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         tuner.runner.run_single = AsyncMock(side_effect=RuntimeError("fail"))
         results = await tuner.tune_multi_model(["model-a", "model-b"], max_combinations=1)
         assert len(results) == 2

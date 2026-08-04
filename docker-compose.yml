@@ -16,7 +16,7 @@ services:
       - fusion-bench-data:/root/.fusion-bench
       - fusion-bench-tasks:/root/bench
     environment:
-      - FUSION_MLX_URL=http://fusion-mlx:11434/v1
+      - FUSION_MLX_URL=http://fusion-mlx:11432/v1
       - FUSION_BENCH_LOG_LEVEL=INFO
     depends_on:
       fusion-mlx:
@@ -27,7 +27,7 @@ services:
     image: ghcr.io/dahai80/fusion-mlx:latest
     container_name: fusion-mlx
     ports:
-      - "11434:11434"
+      - "11432:11432"
     volumes:
       - mlx-models:/root/.cache/huggingface
     deploy:

@@ -67,7 +67,7 @@ class BenchmarkRunner:
 
     def __init__(
         self,
-        mlx_base_url: str = "http://localhost:11434/v1",
+        mlx_base_url: str = "http://localhost:11432/v1",
         api_key: str = "local",
         timeout: float = 300.0,
     ):

@@ -69,7 +69,7 @@ class GarakExecutor(ExecutorPlugin):
         ]
         env = os.environ.copy()
         env["OPENAI_API_KEY"] = env.get("OPENAI_API_KEY", "sk-fusion-bench-local")
-        env["OPENAI_BASE_URL"] = env.get("OPENAI_BASE_URL", "http://localhost:11434/v1")
+        env["OPENAI_BASE_URL"] = env.get("OPENAI_BASE_URL", "http://localhost:11432/v1")
 
         try:
             proc = subprocess.run(

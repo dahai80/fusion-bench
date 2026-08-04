@@ -55,8 +55,8 @@ _PATTERNS: list[dict[str, Any]] = [
         ],
         "root_cause": "Cannot connect to fusion-mlx HTTP API.",
         "suggestions": [
-            "Verify fusion-mlx is running: curl http://localhost:11434/v1/models",
-            "Check if the port is correct (default 11434).",
+            "Verify fusion-mlx is running: curl http://localhost:11432/v1/models",
+            "Check if the port is correct (default 11432).",
             "Restart fusion-mlx service.",
         ],
     },
@@ -72,7 +72,7 @@ _PATTERNS: list[dict[str, Any]] = [
         "root_cause": "The requested model is not loaded in fusion-mlx.",
         "suggestions": [
             "Run: fusion-mlx load <model_name> to load the model.",
-            "Check available models with: curl http://localhost:11434/v1/models",
+            "Check available models with: curl http://localhost:11432/v1/models",
             "Verify the model name spelling matches exactly.",
         ],
     },

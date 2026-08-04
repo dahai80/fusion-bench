@@ -37,7 +37,7 @@ class TestCLIDispatch:
             args = MagicMock(
                 task="mmlu",
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 max_samples=0,
                 output="",
             )
@@ -60,7 +60,7 @@ class TestCLIDispatch:
             args = MagicMock(
                 task="mmlu",
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 max_samples=0,
                 output=str(out_file),
             )
@@ -89,7 +89,7 @@ class TestCLIDispatch:
         ):
             args = MagicMock(
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 max_combinations=12,
                 output="",
             )
@@ -119,7 +119,7 @@ class TestCLIDispatch:
         ):
             args = MagicMock(
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 max_combinations=12,
                 output=str(out_file),
             )
@@ -151,7 +151,7 @@ class TestCLIDispatch:
         ):
             args = MagicMock(
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 runs=3,
                 output="",
             )
@@ -183,7 +183,7 @@ class TestCLIDispatch:
         ):
             args = MagicMock(
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 runs=3,
                 output=str(out_file),
             )
@@ -213,7 +213,7 @@ class TestCLIDispatch:
         ):
             args = MagicMock(
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 levels="mxfp4",
                 output="",
             )
@@ -245,7 +245,7 @@ class TestCLIDispatch:
         ):
             args = MagicMock(
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 levels="mxfp4",
                 output=str(out_file),
             )
@@ -264,7 +264,7 @@ class TestCLIDispatch:
         ):
             args = MagicMock(
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 levels="mxfp4",
                 output="",
             )
@@ -286,7 +286,7 @@ class TestCLIDispatch:
             args = MagicMock(
                 models="model-a,model-b",
                 tasks="mmlu",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 output="",
             )
             await cmd_compare(args)
@@ -308,7 +308,7 @@ class TestCLIDispatch:
             args = MagicMock(
                 models="model-a",
                 tasks="mmlu",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 output=str(out_file),
             )
             await cmd_compare(args)
@@ -345,7 +345,7 @@ class TestCLIDispatch:
             args = MagicMock(
                 suite_name="l1-quick",
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 level="L1",
                 tier="experimental",
                 output="",
@@ -386,7 +386,7 @@ class TestCLIDispatch:
             args = MagicMock(
                 suite_name="l1-quick",
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 level="L1",
                 tier="experimental",
                 output=str(out_file),
@@ -434,7 +434,7 @@ class TestCLIDispatch:
             args = MagicMock(
                 suite_name="l1-quick",
                 model="m1",
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 level="L1",
                 tier="experimental",
                 output="",
@@ -466,7 +466,7 @@ class TestCLIDispatch:
             return_value=mock_result,
         ):
             args = MagicMock(
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 model="m1",
                 probe_set="injection",
                 output=str(out_file),

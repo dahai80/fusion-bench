@@ -74,7 +74,7 @@ class SecurityExecutor(ExecutorPlugin):
     name = "security"
     executor_type = ExecutorType.SECURITY
 
-    def __init__(self, mlx_base_url: str = "http://localhost:11434/v1", api_key: str = ""):
+    def __init__(self, mlx_base_url: str = "http://localhost:11432/v1", api_key: str = ""):
         self.mlx_base_url = mlx_base_url
         self.api_key = api_key
 

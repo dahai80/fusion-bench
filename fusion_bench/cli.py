@@ -43,8 +43,8 @@ def main():
     )
     parser.add_argument(
         "--mlx-url",
-        default="http://localhost:11434/v1",
-        help="fusion-mlx API URL (default: http://localhost:11434/v1)",
+        default="http://localhost:11432/v1",
+        help="fusion-mlx API URL (default: http://localhost:11432/v1)",
     )
     parser.add_argument("--model", default="qwen3.5-9b", help="Model name (default: qwen3.5-9b)")
 

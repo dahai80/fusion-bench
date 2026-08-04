@@ -78,7 +78,7 @@ class MetalMonitor:
 
     @staticmethod
     async def collect_mlx_stats(
-        mlx_url: str = "http://localhost:11434",
+        mlx_url: str = "http://localhost:11432",
     ) -> dict[str, Any]:
         """Collect MLX runtime stats from fusion-mlx."""
         import httpx
@@ -116,7 +116,7 @@ class MetalMonitor:
             pass
         return {}
 
-    async def collect_all(self, mlx_url: str = "http://localhost:11434") -> dict[str, Any]:
+    async def collect_all(self, mlx_url: str = "http://localhost:11432") -> dict[str, Any]:
         """Collect all metrics in one call."""
         gpu = self.collect_gpu_info()
         sys_info = self.collect_system_info()

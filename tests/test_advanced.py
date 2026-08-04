@@ -153,7 +153,7 @@ class TestQuantResult:
 
 class TestQuantBenchmark:
     def test_init(self):
-        qb = QuantBenchmark(mlx_base_url="http://localhost:11434/v1", base_model="qwen3.5-9b")
+        qb = QuantBenchmark(mlx_base_url="http://localhost:11432/v1", base_model="qwen3.5-9b")
         assert qb.base_model == "qwen3.5-9b"
         assert len(qb.DEFAULT_LEVELS) >= 5
 

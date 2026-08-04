@@ -46,7 +46,7 @@ class EvalScopeExecutor(ExecutorPlugin):
 
     def __init__(
         self,
-        base_url: str = "http://localhost:11434/v1",
+        base_url: str = "http://localhost:11432/v1",
         evalscope_dir: str | None = None,
     ):
         self.base_url = base_url.rstrip("/")

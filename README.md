@@ -57,7 +57,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 - macOS with Apple Silicon (M1–M5)
 - Python 3.12+
-- [fusion-mlx](https://github.com/dahai80/fusion-mlx) running on `localhost:11434`
+- [fusion-mlx](https://github.com/dahai80/fusion-mlx) running on `localhost:11432`
 
 ### Install
 
@@ -137,7 +137,7 @@ asyncio.run(main())
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--mlx-url` | `http://localhost:11434/v1` | fusion-mlx API URL |
+| `--mlx-url` | `http://localhost:11432/v1` | fusion-mlx API URL |
 | `--model` | `qwen3.5-9b` | Model name to benchmark |
 | `--output` | `""` | Output file path (JSON) |
 

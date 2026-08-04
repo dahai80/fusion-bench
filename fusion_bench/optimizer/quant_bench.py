@@ -45,7 +45,7 @@ class QuantBenchmark:
 
     def __init__(
         self,
-        mlx_base_url: str = "http://localhost:11434/v1",
+        mlx_base_url: str = "http://localhost:11432/v1",
         base_model: str = "qwen3.5-9b",
     ):
         self.mlx_base_url = mlx_base_url

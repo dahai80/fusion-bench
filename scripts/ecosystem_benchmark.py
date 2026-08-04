@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 MLX_API_KEY = "dahai168"
-MLX_BASE_URL = "http://localhost:11434/v1"
+MLX_BASE_URL = "http://localhost:11432/v1"
 
 SPEED_MODELS = [
     "Qwen3-0.6B-4bit",

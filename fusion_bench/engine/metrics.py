@@ -41,7 +41,7 @@ class SystemMetrics:
 class MetricsCollector:
     """Collects real-time metrics from fusion-mlx server via HTTP API."""
 
-    def __init__(self, mlx_base_url: str = "http://localhost:11434/v1"):
+    def __init__(self, mlx_base_url: str = "http://localhost:11432/v1"):
         self.base_url = mlx_base_url.rstrip("/")
 
     async def collect(self) -> SystemMetrics:

@@ -32,7 +32,7 @@ class MLXModel:
     def __init__(
         self,
         model: str = "qwen3.5-9b",
-        base_url: str = "http://localhost:11434/v1",
+        base_url: str = "http://localhost:11432/v1",
         api_key: str = "local",
         batch_size: int = 1,
         max_length: int = 4096,

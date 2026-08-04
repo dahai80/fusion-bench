@@ -43,8 +43,8 @@ class TestBenchmarkResult:
 
 class TestBenchmarkRunner:
     def test_init(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
-        assert runner.mlx_base_url == "http://localhost:11434/v1"
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
+        assert runner.mlx_base_url == "http://localhost:11432/v1"
         assert runner.timeout == 300.0
 
     @pytest.mark.asyncio
