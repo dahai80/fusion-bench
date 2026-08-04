@@ -330,6 +330,13 @@ pytest tests/ --cov=fusion_bench
 
 ## Changelog
 
+
+### v0.3.3 (2026-08-04)
+
+- **Netlayer URL migration**: All fusion-mlx references migrated from `localhost:11434` to `localhost:11432`
+- **Port assignments**: API=11450, Bench-site dev=11461, SDK=11450, fusion-mlx=11432
+- **Housekeeping**: Removed stale analysis docs, refreshed README
+
 ### v0.3.2 (2026-08-03)
 
 - **Port standardization**: Serve API 8000→11450, Bench-site 3000→11461, SDK 8900→11450
