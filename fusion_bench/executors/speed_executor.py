@@ -21,7 +21,7 @@ class SpeedExecutor(ExecutorPlugin):
     name = "speed"
     executor_type = ExecutorType.SPEED
 
-    def __init__(self, mlx_base_url: str = "http://localhost:11434/v1"):
+    def __init__(self, mlx_base_url: str = "http://localhost:11432/v1"):
         self.mlx_base_url = mlx_base_url
 
     async def run(self, config: TaskConfig) -> EvalResult:

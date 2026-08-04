@@ -60,7 +60,7 @@ class MockResponse:
 class TestBenchmarkRunnerAdvanced:
     @pytest.mark.asyncio
     async def test_run_single_success(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         mock_client.get = AsyncMock(
@@ -77,7 +77,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_run_single_timeout(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1", timeout=1.0)
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1", timeout=1.0)
         mock_client = MagicMock()
         from httpx import TimeoutException
 
@@ -88,7 +88,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_run_single_generic_error(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(side_effect=RuntimeError("connection error"))
         runner._client = mock_client
@@ -97,7 +97,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_benchmark_multiple_runs(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         mock_client.get = AsyncMock(
@@ -115,7 +115,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_benchmark_with_configs(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
@@ -125,7 +125,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_benchmark_no_configs(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
@@ -134,7 +134,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_list_models_success(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.get = AsyncMock(
             return_value=MockResponse(
@@ -149,7 +149,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_list_models_error(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.get = AsyncMock(side_effect=RuntimeError("fail"))
         runner._client = mock_client
@@ -158,7 +158,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_run_stability_all_success(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
@@ -167,7 +167,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_run_stability_partial_fail(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock()
         # Two successes, one failure (caught by run_single)
@@ -192,7 +192,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_probe_max_context(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
@@ -201,7 +201,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_probe_max_context_fails_early(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(side_effect=RuntimeError("OOM"))
         runner._client = mock_client
@@ -217,7 +217,7 @@ class TestBenchmarkRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_benchmark_no_prompt(self):
-        runner = BenchmarkRunner(mlx_base_url="http://localhost:11434/v1")
+        runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         runner._client = mock_client
@@ -237,7 +237,7 @@ class TestBenchmarkRunnerAdvanced:
 class TestMetricsCollectorAdvanced:
     @pytest.mark.asyncio
     async def test_collect_success(self):
-        collector = MetricsCollector(mlx_base_url="http://localhost:11434/v1")
+        collector = MetricsCollector(mlx_base_url="http://localhost:11432/v1")
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
@@ -257,7 +257,7 @@ class TestMetricsCollectorAdvanced:
 
     @pytest.mark.asyncio
     async def test_collect_http_error(self):
-        collector = MetricsCollector(mlx_base_url="http://localhost:11434/v1")
+        collector = MetricsCollector(mlx_base_url="http://localhost:11432/v1")
         with patch("httpx.AsyncClient.get", side_effect=RuntimeError("fail")):
             metrics = await collector.collect()
             assert metrics.total_requests == 0
@@ -280,7 +280,7 @@ class TestMetricsCollectorAdvanced:
 class TestParameterTunerAdvanced:
     @pytest.mark.asyncio
     async def test_tune_with_results(self):
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         # Mock the runner's run_single
         tuner.runner.run_single = AsyncMock(
             return_value=SpeedMetrics(
@@ -296,14 +296,14 @@ class TestParameterTunerAdvanced:
 
     @pytest.mark.asyncio
     async def test_tune_all_fail(self):
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         tuner.runner.run_single = AsyncMock(side_effect=RuntimeError("fail"))
         result = await tuner.tune("test-model", max_combinations=3)
         assert result.best_config == {}
 
     @pytest.mark.asyncio
     async def test_tune_single_result(self):
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         tuner.runner.run_single = AsyncMock(
             return_value=SpeedMetrics(
                 decode_speed=30.0,
@@ -316,7 +316,7 @@ class TestParameterTunerAdvanced:
 
     @pytest.mark.asyncio
     async def test_tune_multi_model(self):
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         tuner.runner.run_single = AsyncMock(
             return_value=SpeedMetrics(
                 decode_speed=20.0,
@@ -330,7 +330,7 @@ class TestParameterTunerAdvanced:
 
     @pytest.mark.asyncio
     async def test_tune_multi_model_one_fails(self):
-        tuner = ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+        tuner = ParameterTuner(mlx_base_url="http://localhost:11432/v1")
         tuner.runner.run_single = AsyncMock(
             side_effect=[
                 SpeedMetrics(decode_speed=20.0),

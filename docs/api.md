@@ -285,7 +285,7 @@ Core benchmark engine. All model inference goes through fusion-mlx HTTP API.
 
 **Constructor:**
 ```python
-BenchmarkRunner(mlx_base_url="http://localhost:11434/v1", api_key="local", timeout=300.0)
+BenchmarkRunner(mlx_base_url="http://localhost:11432/v1", api_key="local", timeout=300.0)
 ```
 
 | Method | Returns | Description |
@@ -319,7 +319,7 @@ Loads and runs lm-evaluation-harness tasks (2082 tasks) via MLXModel.
 
 **Constructor:**
 ```python
-LMEvalTaskRunner(model="qwen3.5-9b", mlx_base_url="http://localhost:11434/v1")
+LMEvalTaskRunner(model="qwen3.5-9b", mlx_base_url="http://localhost:11432/v1")
 ```
 
 | Method | Returns | Description |
@@ -340,7 +340,7 @@ LM Evaluation Harness compatible model adapter. All calls go through fusion-mlx 
 
 **Constructor:**
 ```python
-MLXModel(model="qwen3.5-9b", base_url="http://localhost:11434/v1", api_key="local")
+MLXModel(model="qwen3.5-9b", base_url="http://localhost:11432/v1", api_key="local")
 ```
 
 | Method | Returns | Description |
@@ -381,7 +381,7 @@ Auto-tunes model parameters for optimal performance.
 
 **Constructor:**
 ```python
-ParameterTuner(mlx_base_url="http://localhost:11434/v1")
+ParameterTuner(mlx_base_url="http://localhost:11432/v1")
 ```
 
 | Method | Returns | Description |
@@ -411,7 +411,7 @@ Compares model performance across quantization levels.
 
 **Constructor:**
 ```python
-QuantBenchmark(mlx_base_url="http://localhost:11434/v1", base_model="qwen3.5-9b")
+QuantBenchmark(mlx_base_url="http://localhost:11432/v1", base_model="qwen3.5-9b")
 ```
 
 | Method | Returns | Description |

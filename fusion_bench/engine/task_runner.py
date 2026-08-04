@@ -27,7 +27,7 @@ class LMEvalTaskRunner:
     def __init__(
         self,
         model: str = "qwen3.5-9b",
-        mlx_base_url: str = "http://localhost:11434/v1",
+        mlx_base_url: str = "http://localhost:11432/v1",
         tasks_dir: str = "",
         max_samples: int = 0,
     ):

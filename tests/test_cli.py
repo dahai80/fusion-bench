@@ -45,7 +45,7 @@ class TestCLIListTasks:
             "fusion_bench.engine.task_runner.LMEvalTaskRunner.list_tasks",
             return_value=[],
         ):
-            cmd_list_tasks(_make_args(mlx_url="http://localhost:11434/v1", pattern=""))
+            cmd_list_tasks(_make_args(mlx_url="http://localhost:11432/v1", pattern=""))
 
         out = capsys.readouterr().out
         assert "No tasks found" in out
@@ -63,7 +63,7 @@ class TestCLIListTasks:
             "fusion_bench.engine.task_runner.LMEvalTaskRunner.list_tasks",
             return_value=tasks,
         ):
-            cmd_list_tasks(_make_args(mlx_url="http://localhost:11434/v1", pattern=""))
+            cmd_list_tasks(_make_args(mlx_url="http://localhost:11432/v1", pattern=""))
 
         out = capsys.readouterr().out
         assert "mmlu" in out
@@ -82,7 +82,7 @@ class TestCLIListTasks:
             "fusion_bench.engine.task_runner.LMEvalTaskRunner.list_tasks",
             return_value=tasks,
         ):
-            cmd_list_tasks(_make_args(mlx_url="http://localhost:11434/v1", pattern="mmlu"))
+            cmd_list_tasks(_make_args(mlx_url="http://localhost:11432/v1", pattern="mmlu"))
 
         out = capsys.readouterr().out
         assert "mmlu" in out
@@ -178,7 +178,7 @@ class TestCLISecurity:
             return_value=mock_result,
         ):
             args = _make_args(
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 model="test-model",
                 probe_set="injection",
                 output="",
@@ -196,7 +196,7 @@ class TestCLISuite:
 
         with patch.object(Scheduler, "suite_to_task_configs", side_effect=KeyError("not found")):
             args = _make_args(
-                mlx_url="http://localhost:11434/v1",
+                mlx_url="http://localhost:11432/v1",
                 model="m1",
                 suite_name="nonexistent",
                 level="L1",

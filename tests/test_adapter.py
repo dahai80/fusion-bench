@@ -27,14 +27,14 @@ class MockResponse:
 
 class TestMLXModel:
     def test_init(self):
-        model = MLXModel(model="test-model", base_url="http://localhost:11434/v1")
+        model = MLXModel(model="test-model", base_url="http://localhost:11432/v1")
         assert model.model_name == "test-model"
         assert model.temperature == 0.0
         assert model.total_prompt_tokens == 0
 
     @pytest.mark.asyncio
     async def test_generate_until(self):
-        model = MLXModel(base_url="http://localhost:11434/v1")
+        model = MLXModel(base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=MockResponse())
         model._client = mock_client
@@ -44,7 +44,7 @@ class TestMLXModel:
 
     @pytest.mark.asyncio
     async def test_generate_until_with_stop(self):
-        model = MLXModel(base_url="http://localhost:11434/v1")
+        model = MLXModel(base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(
             return_value=MockResponse(
@@ -60,7 +60,7 @@ class TestMLXModel:
 
     @pytest.mark.asyncio
     async def test_generate_until_error(self):
-        model = MLXModel(base_url="http://localhost:11434/v1")
+        model = MLXModel(base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(side_effect=RuntimeError("fail"))
         model._client = mock_client
@@ -69,7 +69,7 @@ class TestMLXModel:
 
     @pytest.mark.asyncio
     async def test_loglikelihood(self):
-        model = MLXModel(base_url="http://localhost:11434/v1")
+        model = MLXModel(base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(
             return_value=MockResponse(
@@ -94,7 +94,7 @@ class TestMLXModel:
 
     @pytest.mark.asyncio
     async def test_loglikelihood_fallback(self):
-        model = MLXModel(base_url="http://localhost:11434/v1")
+        model = MLXModel(base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(
             side_effect=[
@@ -108,7 +108,7 @@ class TestMLXModel:
 
     @pytest.mark.asyncio
     async def test_loglikelihood_rolling(self):
-        model = MLXModel(base_url="http://localhost:11434/v1")
+        model = MLXModel(base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         mock_client.post = AsyncMock(
             return_value=MockResponse(

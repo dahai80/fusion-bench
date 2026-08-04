@@ -41,7 +41,7 @@ class GPUStats:
         }
 
 
-async def get_gpu_stats(base_url: str = "http://localhost:11434/v1") -> GPUStats:
+async def get_gpu_stats(base_url: str = "http://localhost:11432/v1") -> GPUStats:
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             resp = await client.get(f"{base_url.rstrip('/')}/stats")

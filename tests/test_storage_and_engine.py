@@ -440,7 +440,7 @@ class TestMetalMonitor:
         mock_httpx.AsyncClient = MagicMock(return_value=mock_client)
 
         with patch.dict("sys.modules", {"httpx": mock_httpx}):
-            stats = await MetalMonitor.collect_mlx_stats("http://localhost:11434")
+            stats = await MetalMonitor.collect_mlx_stats("http://localhost:11432")
 
         assert stats["models_loaded"] == 1
         assert stats["total_requests"] == 42

@@ -21,7 +21,7 @@ class LMHarnessExecutor(ExecutorPlugin):
     name = "lm_harness"
     executor_type = ExecutorType.MODEL
 
-    def __init__(self, mlx_base_url: str = "http://localhost:11434/v1", tasks_dir: str = ""):
+    def __init__(self, mlx_base_url: str = "http://localhost:11432/v1", tasks_dir: str = ""):
         self.mlx_base_url = mlx_base_url
         self.tasks_dir = tasks_dir
 

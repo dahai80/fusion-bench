@@ -38,7 +38,7 @@
 
 - macOS Apple Silicon (M1–M5)
 - Python 3.12+
-- [fusion-mlx](https://github.com/dahai80/fusion-mlx) 运行在 `localhost:11434`
+- [fusion-mlx](https://github.com/dahai80/fusion-mlx) 运行在 `localhost:11432`
 
 ### 安装
 
@@ -111,7 +111,7 @@ asyncio.run(main())
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--mlx-url` | `http://localhost:11434/v1` | fusion-mlx API 地址 |
+| `--mlx-url` | `http://localhost:11432/v1` | fusion-mlx API 地址 |
 | `--model` | `qwen3.5-9b` | 模型名称 |
 | `--output` | `""` | 输出文件路径 (JSON) |
 

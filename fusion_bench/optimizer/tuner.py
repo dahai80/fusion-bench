@@ -37,7 +37,7 @@ class ParameterTuner:
     MAX_TOKENS = [128, 256, 512]
     TEMPERATURES = [0.0, 0.7]
 
-    def __init__(self, mlx_base_url: str = "http://localhost:11434/v1"):
+    def __init__(self, mlx_base_url: str = "http://localhost:11432/v1"):
         self.runner = BenchmarkRunner(mlx_base_url=mlx_base_url)
 
     async def tune(

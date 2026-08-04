@@ -50,7 +50,7 @@ class ArtifactExecutor(ExecutorPlugin):
     name = "artifact"
     executor_type = ExecutorType.ARTIFACT
 
-    def __init__(self, base_url: str = "http://localhost:11434/v1"):
+    def __init__(self, base_url: str = "http://localhost:11432/v1"):
         self.base_url = base_url.rstrip("/")
 
     def is_available(self) -> bool:

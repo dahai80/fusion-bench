@@ -176,7 +176,7 @@ class Pipeline:
             logger.warning("Trigger condition eval failed '%s': %s", condition, e)
             return False
 
-    async def check_gpu_overload(self, mlx_base_url: str = "http://localhost:11434/v1") -> bool:
+    async def check_gpu_overload(self, mlx_base_url: str = "http://localhost:11432/v1") -> bool:
         try:
             stats = await get_gpu_stats(mlx_base_url)
             self._last_gpu_stats = stats

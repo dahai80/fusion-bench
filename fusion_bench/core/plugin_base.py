@@ -99,7 +99,7 @@ class EvalResult:
         elif "connection" in error_text or "refused" in error_text:
             self.failure_category = "infra"
             self.failure_detail = "Model server connection failure"
-            hints.append("Verify fusion-mlx is running (localhost:11434)")
+            hints.append("Verify fusion-mlx is running (localhost:11432)")
             hints.append("Check network/firewall settings")
         elif "oom" in error_text or "memory" in error_text:
             self.failure_category = "resource"
