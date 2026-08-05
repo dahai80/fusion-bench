@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -23,8 +24,12 @@ from fusion_bench.reporter.bench_site_db import BenchSiteDB
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-MLX_API_KEY = "dahai168"
-MLX_BASE_URL = "http://localhost:11432/v1"
+MLX_API_KEY = os.environ.get("FUSION_MLX_API_KEY", "")
+if not MLX_API_KEY:
+    logger.error("FUSION_MLX_API_KEY 未设置，拒绝启动 (fail visibly)。请 export FUSION_MLX_API_KEY=<key>")
+    sys.exit(1)
+MLX_BASE_URL = os.environ.get("FUSION_MLX_BASE_URL", "http://localhost:11432/v1")
+logger.info("MLX_BASE_URL=%s, API_KEY=set", MLX_BASE_URL)
 
 SPEED_MODELS = [
     "Qwen3-0.6B-4bit",
