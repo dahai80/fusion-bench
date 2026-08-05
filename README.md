@@ -331,6 +331,12 @@ pytest tests/ --cov=fusion_bench
 ## Changelog
 
 
+### v0.3.4 (2026-08-05)
+
+- **Security fix**: Remove hardcoded API key `dahai168` from `scripts/ecosystem_benchmark.py`
+- **API key from env**: `MLX_API_KEY` now read from `FUSION_MLX_API_KEY`, fail visibly if unset
+- **MLX URL from env**: `MLX_BASE_URL` read from `FUSION_MLX_BASE_URL` (default 11432)
+
 ### v0.3.3 (2026-08-04)
 
 - **Netlayer URL migration**: All fusion-mlx references migrated from `localhost:11434` to `localhost:11432`
