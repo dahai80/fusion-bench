@@ -57,10 +57,15 @@ class CodeExecutor(ExecutorPlugin):
         logger.info("CodeExecutor: running code eval for model=%s", task_config.model)
         test_cases = self._load_test_cases(task_config)
         if not test_cases:
+            logger.warning("CodeExecutor: no test cases for model=%s", task_config.model)
             return EvalResult(
-                score=0.0,
-                metrics={"test_cases_total": 0},
-                details={"error": "No code test cases found"},
+                task_id=task_config.task_id,
+                executor_key=self.name,
+                model=task_config.model,
+                level="L3",
+                metric_name="code_pass_rate",
+                metric_value=0.0,
+                errors=["No code test cases found"],
             )
 
         case_results: list[CaseResult] = []
@@ -70,10 +75,22 @@ class CodeExecutor(ExecutorPlugin):
 
         passed = sum(1 for c in case_results if c.passed)
         score = passed / len(case_results) if case_results else 0.0
+        logger.info(
+            "CodeExecutor: model=%s pass_rate=%.4f passed=%d/%d",
+            task_config.model,
+            score,
+            passed,
+            len(test_cases),
+        )
         return EvalResult(
-            score=score,
-            metrics={"test_cases_total": len(test_cases), "test_cases_passed": passed},
-            case_results=case_results,
+            task_id=task_config.task_id,
+            executor_key=self.name,
+            model=task_config.model,
+            level="L3",
+            metric_name="code_pass_rate",
+            metric_value=round(score, 4),
+            cases=case_results,
+            meta={"test_cases_total": len(test_cases), "test_cases_passed": passed},
         )
 
     def _load_test_cases(self, task_config: TaskConfig) -> list[CodeTestCase]:

@@ -926,6 +926,18 @@ async def diff_baseline(name: str, req: dict[str, Any]):
     return diff
 
 
+@app.post("/api/v1/baselines/seed")
+async def seed_baselines(
+    overwrite: bool = False,
+    _user: str = Depends(require_permission(Permission.BASELINE_MANAGE)),
+):
+    from ..storage.baseline_store import BaselineStore
+
+    store = BaselineStore()
+    created = store.seed_default_baselines(overwrite=overwrite)
+    return {"seeded": created, "count": len(created)}
+
+
 # ── Schedules ────────────────────────────────────────────────────────
 
 
@@ -1044,6 +1056,32 @@ async def delete_dataset(dataset_id: str, _user: str = Depends(require_permissio
     store = DatasetStore()
     store.delete(dataset_id)
     return {"deleted": True}
+
+
+class DatasetLoadRequest(BaseModel):
+    name: str
+    path: str
+    format: str
+    description: str = ""
+
+
+@app.post("/api/v1/datasets/load", status_code=201)
+async def load_dataset_file(
+    req: DatasetLoadRequest,
+    _user: str = Depends(require_permission(Permission.DATASET_MANAGE)),
+):
+    from ..storage.dataset_store import SUPPORTED_FORMATS, DatasetStore
+
+    if req.format not in SUPPORTED_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unsupported format '{req.format}'; supported: {', '.join(SUPPORTED_FORMATS)}",
+        )
+    store = DatasetStore()
+    ds_id = store.load_dataset_file(req.path, req.format, req.name, req.description)
+    if not ds_id:
+        raise HTTPException(status_code=400, detail="load failed (see logs): bad path or format validation error")
+    return {"dataset_id": ds_id, "loaded": True, "format": req.format}
 
 
 # ── Judges ───────────────────────────────────────────────────────────

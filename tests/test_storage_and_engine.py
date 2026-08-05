@@ -641,3 +641,201 @@ class TestLMEvalTaskRunner:
         result = runner._load_task("mmlu")
         assert result is not None
         assert result["task"] == "mmlu"
+
+
+# ── DatasetStore loaders (#12) ──
+
+
+class TestDatasetStoreLoaders:
+    def _store(self, tmp_path):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        return DatasetStore(db_path=tmp_path / "ds.db")
+
+    def test_validate_sharegpt(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        raw = [
+            {
+                "conversations": [
+                    {"from": "human", "value": "hi"},
+                    {"from": "gpt", "value": "hello"},
+                ]
+            }
+        ]
+        items = DatasetStore.validate_format("sharegpt", raw)
+        assert items[0]["messages"] == [
+            {"role": "human", "content": "hi"},
+            {"role": "gpt", "content": "hello"},
+        ]
+
+    def test_validate_sharegpt_missing_conversations(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        with pytest.raises(ValueError, match="conversations"):
+            DatasetStore.validate_format("sharegpt", [{"no_conv": 1}])
+
+    def test_validate_alpaca(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        raw = [
+            {"instruction": "translate", "input": "hello", "output": "hola"},
+            {"instruction": "summarize", "output": "short"},
+        ]
+        items = DatasetStore.validate_format("alpaca", raw)
+        assert items[0]["messages"][0]["content"] == "translate\nhello"
+        assert items[0]["messages"][1]["content"] == "hola"
+        assert items[1]["messages"][0]["content"] == "summarize"
+
+    def test_validate_alpaca_missing_instruction(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        with pytest.raises(ValueError, match="instruction"):
+            DatasetStore.validate_format("alpaca", [{"no_inst": 1}])
+
+    def test_validate_messages(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        raw = [
+            {
+                "messages": [
+                    {"role": "user", "content": "q"},
+                    {"role": "assistant", "content": "a"},
+                ],
+                "tag": "x",
+            }
+        ]
+        items = DatasetStore.validate_format("messages", raw)
+        assert items[0]["messages"][0] == {"role": "user", "content": "q"}
+        assert items[0]["tag"] == "x"
+
+    def test_validate_messages_missing_messages(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        with pytest.raises(ValueError, match="messages"):
+            DatasetStore.validate_format("messages", [{"no_msgs": 1}])
+
+    def test_validate_messages_bad_turn(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        with pytest.raises(ValueError, match="turn 0"):
+            DatasetStore.validate_format("messages", [{"messages": [{"no_role": 1}]}])
+
+    def test_validate_unsupported_format(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        with pytest.raises(ValueError, match="unsupported format"):
+            DatasetStore.validate_format("csv", [{"a": 1}])
+
+    def test_validate_non_list(self):
+        from fusion_bench.storage.dataset_store import DatasetStore
+
+        with pytest.raises(ValueError, match="must be a list"):
+            DatasetStore.validate_format("alpaca", {"not": "list"})
+
+    def test_load_dataset_file_json(self, tmp_path):
+
+        store = self._store(tmp_path)
+        f = tmp_path / "alpaca.json"
+        f.write_text(
+            json.dumps([{"instruction": "x", "output": "y"}]),
+            encoding="utf-8",
+        )
+        ds_id = store.load_dataset_file(f, format="alpaca", name="t")
+        assert ds_id
+        ds = store.get(ds_id)
+        assert ds["item_count"] == 1
+        assert ds["format"] == "alpaca"
+
+    def test_load_dataset_file_jsonl(self, tmp_path):
+
+        store = self._store(tmp_path)
+        f = tmp_path / "sharegpt.jsonl"
+        f.write_text(
+            '{"conversations":[{"from":"human","value":"q"}]}\n{"conversations":[{"from":"human","value":"q2"}]}\n',
+            encoding="utf-8",
+        )
+        ds_id = store.load_dataset_file(f, format="sharegpt", name="sg")
+        assert ds_id
+        ds = store.get(ds_id)
+        assert ds["item_count"] == 2
+
+    def test_load_dataset_file_not_found(self, tmp_path):
+
+        store = self._store(tmp_path)
+        ds_id = store.load_dataset_file(tmp_path / "nope.json", "alpaca", "x")
+        assert ds_id == ""
+
+    def test_load_dataset_file_bad_format(self, tmp_path):
+
+        store = self._store(tmp_path)
+        f = tmp_path / "bad.json"
+        f.write_text(json.dumps([{"no_instruction": 1}]), encoding="utf-8")
+        ds_id = store.load_dataset_file(f, format="alpaca", name="bad")
+        assert ds_id == ""
+
+    def test_load_dataset_file_invalid_json(self, tmp_path):
+
+        store = self._store(tmp_path)
+        f = tmp_path / "broken.json"
+        f.write_text("{not valid json", encoding="utf-8")
+        ds_id = store.load_dataset_file(f, format="alpaca", name="broken")
+        assert ds_id == ""
+
+    def test_load_dataset_file_jsonl_skips_blank(self, tmp_path):
+
+        store = self._store(tmp_path)
+        f = tmp_path / "messages.jsonl"
+        f.write_text(
+            '{"messages":[{"role":"user","content":"q"}]}\n\n{"messages":[{"role":"user","content":"q2"}]}\n',
+            encoding="utf-8",
+        )
+        ds_id = store.load_dataset_file(f, format="messages", name="msg")
+        assert ds_id
+        ds = store.get(ds_id)
+        assert ds["item_count"] == 2
+
+    def test_supported_formats_constant(self):
+        from fusion_bench.storage.dataset_store import SUPPORTED_FORMATS
+
+        assert set(SUPPORTED_FORMATS) == {"sharegpt", "alpaca", "messages"}
+
+
+class TestBaselineStoreSeed:
+    def _store(self, tmp_path):
+        from fusion_bench.storage.baseline_store import BaselineStore
+
+        return BaselineStore(db_path=tmp_path / "bl.db")
+
+    def test_seed_creates_two_baselines(self, tmp_path):
+        store = self._store(tmp_path)
+        created = store.seed_default_baselines()
+        assert len(created) == 2
+        assert "fusion-router-light" in str(created)
+        assert "fusion-coder-expert" in str(created)
+
+    def test_seed_is_idempotent(self, tmp_path):
+        store = self._store(tmp_path)
+        store.seed_default_baselines()
+        again = store.seed_default_baselines()
+        assert again == []
+
+    def test_seed_overwrite(self, tmp_path):
+        store = self._store(tmp_path)
+        store.seed_default_baselines()
+        again = store.seed_default_baselines(overwrite=True)
+        assert len(again) == 2
+
+    def test_seeded_router_baseline_retrievable(self, tmp_path):
+        store = self._store(tmp_path)
+        store.seed_default_baselines()
+        bl = store.get_baseline("fusion-router-light", "fusion-router-light", "agent", "L2")
+        assert bl is not None
+        assert bl["metrics"]["agent_score"] == 0.72
+
+    def test_seeded_coder_baseline_retrievable(self, tmp_path):
+        store = self._store(tmp_path)
+        store.seed_default_baselines()
+        bl = store.get_baseline("fusion-coder-expert", "fusion-coder-expert", "code", "L3")
+        assert bl is not None
+        assert bl["metrics"]["code_pass_rate"] == 0.68

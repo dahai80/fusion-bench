@@ -613,3 +613,319 @@ class TestQuantExecutor:
 
         assert not result.cases[0].passed
         assert result.cases[1].passed
+
+
+# ── AgentExecutor ──
+
+
+class TestAgentExecutor:
+    def test_name_and_type(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        e = AgentExecutor()
+        assert e.name == "agent"
+        assert e.executor_type == ExecutorType.AGENT
+
+    def test_safe_arith(self):
+        from fusion_bench.executors.agent_executor import _safe_arith
+
+        assert _safe_arith("15 * 7") == 105
+        assert _safe_arith("105 - 10") == 95
+        assert _safe_arith("9 * 8") == 72
+        assert _safe_arith("-(2+3)") == -5
+        assert _safe_arith("100 / 4") == 25
+
+    def test_safe_arith_rejects_bad_input(self):
+        from fusion_bench.executors.agent_executor import _safe_arith
+
+        with pytest.raises(ValueError):
+            _safe_arith("__import__('os')")
+        with pytest.raises(ValueError):
+            _safe_arith("abc")
+        with pytest.raises(ZeroDivisionError):
+            _safe_arith("1 / 0")
+
+    def test_tool_sandbox_allowed(self):
+        from fusion_bench.executors.agent_executor import ToolSandbox
+
+        sb = ToolSandbox(["calculator", "weather"])
+        assert sb.execute("calculator", {"expr": "2 + 3"}) == {"result": 5.0}
+        assert sb.execute("weather", {"city": "Tokyo"})["temp_c"] == 20
+
+    def test_tool_sandbox_rejects_unknown(self):
+        from fusion_bench.executors.agent_executor import ToolSandbox
+
+        sb = ToolSandbox(["search"])
+        result = sb.execute("rm", {"path": "/"})
+        assert "error" in result
+
+    def test_tool_sandbox_rejects_calc_injection(self):
+        from fusion_bench.executors.agent_executor import ToolSandbox
+
+        sb = ToolSandbox(["calculator"])
+        result = sb.execute("calculator", {"expr": "__import__('os')"})
+        assert result == {"error": "invalid expression"}
+
+    def test_trajectory_scorer_full(self):
+        from fusion_bench.executors.agent_executor import (
+            AgentScenario,
+            TrajectoryScorer,
+            TurnRecord,
+        )
+
+        turns = [
+            TurnRecord(0, "assistant", "let me calculate", {"name": "calculator", "args": {}}),
+            TurnRecord(1, "assistant", "actually, correction: the answer is 95"),
+        ]
+        scenario = AgentScenario(
+            scenario_id="s",
+            instruction="i",
+            expected_behavior="e",
+            tools_available=["calculator"],
+            expected_tool_calls=["calculator"],
+            expected_final_answer="95",
+        )
+        sc = TrajectoryScorer.score(turns, scenario)
+        assert sc["tool_correct"] == 1
+        assert sc["expected_coverage"] == 1.0
+        assert sc["self_corrections"] == 1
+        assert sc["answer_correct"] is True
+        assert sc["trajectory_score"] == 1.0
+
+    def test_trajectory_scorer_no_tools(self):
+        from fusion_bench.executors.agent_executor import (
+            AgentScenario,
+            TrajectoryScorer,
+            TurnRecord,
+        )
+
+        turns = [TurnRecord(0, "assistant", "red, green, blue")]
+        scenario = AgentScenario(
+            scenario_id="s",
+            instruction="i",
+            expected_behavior="e",
+            tools_available=[],
+            expected_tool_calls=[],
+        )
+        sc = TrajectoryScorer.score(turns, scenario)
+        assert sc["tool_total"] == 0
+        assert sc["expected_coverage"] == 1.0
+
+    def test_default_scenarios_count(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        scenarios = AgentExecutor._default_scenarios()
+        assert len(scenarios) >= 5
+        ids = {s.scenario_id for s in scenarios}
+        assert "agent-multi-step" in ids
+        assert "agent-self-correction" in ids
+        assert "agent-file-read" in ids
+
+    def test_parse_tool_call(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        resp = 'I will search.\n```json\n{"name": "search", "args": {"q": "tokyo"}}\n```'
+        tc = AgentExecutor._parse_tool_call(resp)
+        assert tc == {"name": "search", "args": {"q": "tokyo"}}
+
+    def test_parse_tool_call_none(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        assert AgentExecutor._parse_tool_call("no tool call here") is None
+
+    def test_parse_tool_call_arguments_alias(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        resp = '```json\n{"name": "calc", "arguments": {"expr": "1+1"}}\n```'
+        tc = AgentExecutor._parse_tool_call(resp)
+        assert tc["args"] == {"expr": "1+1"}
+
+    @pytest.mark.asyncio
+    async def test_run_multi_turn_with_tool(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        responses = iter(
+            [
+                '```json\n{"name": "calculator", "args": {"expr": "15 * 7"}}\n```',
+                "The result is 105, then 105 - 10 = 95. Final: 95",
+            ]
+        )
+        mock_resp = MockHTTPResponse()
+
+        async def fake_post(*args, **kwargs):
+            mock_resp._json = {"choices": [{"message": {"content": next(responses)}}]}
+            return mock_resp
+
+        with patch("httpx.AsyncClient.post", new=AsyncMock(side_effect=fake_post)):
+            executor = AgentExecutor(base_url="http://localhost:11432/v1")
+            scenario = AgentExecutor._default_scenarios()[2]
+            turns = await executor._run_multi_turn(
+                scenario,
+                TaskConfig(task_id="t", model="m", executor_key="agent"),
+            )
+        assert len(turns) == 2
+        assert turns[0].tool_call["name"] == "calculator"
+        assert turns[0].tool_result == {"result": 105.0}
+
+    @pytest.mark.asyncio
+    async def test_run_no_scenarios(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        config = TaskConfig(
+            task_id="agent-empty",
+            model="test-model",
+            executor_key="agent",
+            params={"scenarios": []},
+        )
+        executor = AgentExecutor(base_url="http://localhost:11432/v1")
+        with patch.object(executor, "_default_scenarios", return_value=[]):
+            result = await executor.run(config)
+        assert result.metric_value == 0.0
+        assert len(result.errors) == 1
+        assert result.executor_key == "agent"
+        assert result.level == "L2"
+
+    @pytest.mark.asyncio
+    async def test_run_success(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        config = TaskConfig(
+            task_id="agent-1",
+            model="test-model",
+            executor_key="agent",
+            params={
+                "scenarios": [
+                    {
+                        "scenario_id": "s1",
+                        "instruction": "say hello",
+                        "expected_behavior": "greets",
+                        "eval_criteria": ["contains_3_items"],
+                        "max_turns": 1,
+                    }
+                ]
+            },
+        )
+
+        mock_resp = MockHTTPResponse(json_data={"choices": [{"message": {"content": "- a\n- b\n- c"}}]})
+        with patch("httpx.AsyncClient.post", new=AsyncMock(return_value=mock_resp)):
+            executor = AgentExecutor(base_url="http://localhost:11432/v1")
+            result = await executor.run(config)
+
+        assert result.executor_key == "agent"
+        assert result.metric_name == "agent_score"
+        assert len(result.cases) == 1
+        assert "scenarios_total" in result.meta
+
+    @pytest.mark.asyncio
+    async def test_run_exception(self):
+        from fusion_bench.executors.agent_executor import AgentExecutor
+
+        config = TaskConfig(
+            task_id="agent-err",
+            model="test-model",
+            executor_key="agent",
+        )
+        with patch(
+            "httpx.AsyncClient.post",
+            new=AsyncMock(side_effect=RuntimeError("connection refused")),
+        ):
+            executor = AgentExecutor(base_url="http://localhost:11432/v1")
+            result = await executor.run(config)
+
+        assert result.metric_value == 0.0
+        assert all(not c.passed for c in result.cases)
+
+
+class TestCodeExecutor:
+    def test_name_and_type(self):
+        from fusion_bench.executors.code_executor import CodeExecutor
+
+        e = CodeExecutor()
+        assert e.name == "code"
+        assert e.executor_type == ExecutorType.CODE
+
+    def test_default_test_cases(self):
+        from fusion_bench.executors.code_executor import CodeExecutor
+
+        cases = CodeExecutor._default_test_cases()
+        assert len(cases) == 3
+        assert all(tc.test_id for tc in cases)
+
+    def test_eval_code_output_pass(self):
+        from fusion_bench.executors.code_executor import CodeExecutor, CodeTestCase
+
+        tc = CodeTestCase(
+            test_id="t1",
+            prompt="p",
+            expected_patterns=[r"def\s+foo", r"return"],
+            forbidden_patterns=[r"exec\s*\("],
+        )
+        result = CodeExecutor._eval_code_output(tc, "def foo():\n    return 1")
+        assert result["passed"] is True
+        assert result["score"] == 1.0
+
+    def test_eval_code_output_forbidden(self):
+        from fusion_bench.executors.code_executor import CodeExecutor, CodeTestCase
+
+        tc = CodeTestCase(
+            test_id="t1",
+            prompt="p",
+            expected_patterns=[r"def\s+foo"],
+            forbidden_patterns=[r"exec\s*\("],
+        )
+        result = CodeExecutor._eval_code_output(tc, "def foo():\n    exec('x')")
+        assert result["passed"] is False
+
+    @pytest.mark.asyncio
+    async def test_run_no_test_cases(self):
+        from fusion_bench.executors.code_executor import CodeExecutor
+
+        config = TaskConfig(
+            task_id="code-empty",
+            model="test-model",
+            executor_key="code",
+            params={"test_cases": []},
+        )
+        executor = CodeExecutor(base_url="http://localhost:11432/v1")
+        with patch.object(executor, "_load_test_cases", return_value=[]):
+            result = await executor.run(config)
+
+        assert result.executor_key == "code"
+        assert result.metric_name == "code_pass_rate"
+        assert result.metric_value == 0.0
+        assert len(result.errors) == 1
+
+    @pytest.mark.asyncio
+    async def test_run_success(self):
+        from fusion_bench.executors.code_executor import CodeExecutor
+
+        config = TaskConfig(
+            task_id="code-1",
+            model="test-model",
+            executor_key="code",
+            params={
+                "test_cases": [
+                    {
+                        "test_id": "c1",
+                        "prompt": "write sort",
+                        "language": "python",
+                        "expected_patterns": [r"def\s+\w+\s*\(", r"sort", r"return"],
+                        "forbidden_patterns": [r"exec\s*\("],
+                    }
+                ]
+            },
+        )
+        mock_resp = MockHTTPResponse(
+            json_data={
+                "choices": [{"message": {"content": "```python\ndef sort_fn(lst):\n    return sorted(lst)\n```"}}]
+            }
+        )
+        with patch("httpx.AsyncClient.post", new=AsyncMock(return_value=mock_resp)):
+            executor = CodeExecutor(base_url="http://localhost:11432/v1")
+            result = await executor.run(config)
+
+        assert result.executor_key == "code"
+        assert result.metric_name == "code_pass_rate"
+        assert result.metric_value == 1.0
+        assert len(result.cases) == 1
+        assert "test_cases_total" in result.meta

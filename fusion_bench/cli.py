@@ -151,11 +151,12 @@ def main():
 
     # baseline
     baseline_parser = subparsers.add_parser("baseline", help="Manage named baselines")
-    baseline_parser.add_argument("action", choices=["set", "list", "diff", "delete"], help="Action")
+    baseline_parser.add_argument("action", choices=["set", "list", "diff", "delete", "seed"], help="Action")
     baseline_parser.add_argument("--name", default="", help="Baseline name")
     baseline_parser.add_argument("--model", default="", help="Model name")
     baseline_parser.add_argument("--executor", default="speed", help="Executor key")
     baseline_parser.add_argument("--level", default="L1", help="Eval level")
+    baseline_parser.add_argument("--overwrite", action="store_true", help="seed: overwrite existing baseline seeds")
 
     # schedule
     schedule_parser = subparsers.add_parser("schedule", help="Manage cron schedules")
@@ -166,9 +167,15 @@ def main():
 
     # dataset
     dataset_parser = subparsers.add_parser("dataset", help="Manage custom datasets")
-    dataset_parser.add_argument("action", choices=["list", "create", "delete"], help="Action")
+    dataset_parser.add_argument("action", choices=["list", "create", "delete", "load"], help="Action")
     dataset_parser.add_argument("--name", default="", help="Dataset name")
     dataset_parser.add_argument("--id", default="", help="Dataset ID for delete")
+    dataset_parser.add_argument("--file", default="", help="Dataset file path (load)")
+    dataset_parser.add_argument(
+        "--format",
+        default="",
+        help="Dataset format: sharegpt | alpaca | messages (load)",
+    )
 
     # backup
     backup_parser = subparsers.add_parser("backup", help="Backup/restore databases")
@@ -624,6 +631,14 @@ def cmd_baseline(args):
                 return
             store.delete_baseline(name=args.name)
             print(f"Baseline '{args.name}' deleted.")
+        elif args.action == "seed":
+            created = store.seed_default_baselines(overwrite=args.overwrite)
+            if created:
+                print(f"Seeded {len(created)} default baseline(s):")
+                for bid in created:
+                    print(f"  {bid}")
+            else:
+                print("No new baselines seeded (already exist).")
     finally:
         pass
 
@@ -701,6 +716,20 @@ def cmd_dataset(args):
                 return
             store.delete(args.id)
             print(f"Dataset {args.id} deleted.")
+        elif args.action == "load":
+            if not args.file or not args.format or not args.name:
+                print("Error: --file, --format, --name required for load")
+                return
+            from .storage.dataset_store import SUPPORTED_FORMATS
+
+            if args.format not in SUPPORTED_FORMATS:
+                print(f"Error: unsupported format '{args.format}'. Use: {', '.join(SUPPORTED_FORMATS)}")
+                return
+            ds_id = store.load_dataset_file(args.file, args.format, args.name)
+            if ds_id:
+                print(f"Dataset '{args.name}' loaded: {ds_id}")
+            else:
+                print("Error: load failed (see logs). Check file path and format.")
     finally:
         pass
 

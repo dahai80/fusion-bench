@@ -331,6 +331,13 @@ pytest tests/ --cov=fusion_bench
 ## Changelog
 
 
+### v0.3.5 (2026-08-05)
+
+- **Agent executor (#11)**: Multi-turn tool sandbox + trajectory scoring; safe arithmetic parser (no `eval()`); 5 default scenarios
+- **Dataset loaders (#12)**: `sharegpt`/`alpaca`/`messages` format validation + `.json`/`.jsonl` file loading; CLI `dataset load` + API `/api/v1/datasets/load`
+- **Baselines & gates (#13)**: `fusion-router-light`/`fusion-coder-expert` seed baselines; agent-intent + code-gen quality gates (3 tiers each); CLI `baseline seed` + API `/api/v1/baselines/seed`
+- **Bugfix**: `CodeExecutor.run()` now uses real `EvalResult` schema (`code_pass_rate` metric, L3 level)
+
 ### v0.3.4 (2026-08-05)
 
 - **Security fix**: Remove hardcoded API key `dahai168` from `scripts/ecosystem_benchmark.py`

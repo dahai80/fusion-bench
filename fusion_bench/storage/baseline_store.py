@@ -245,6 +245,44 @@ class BaselineStore:
         logger.info("Deleted %d baseline(s) for name=%s", cursor.rowcount, name)
         return cursor.rowcount
 
+    def seed_default_baselines(self, overwrite: bool = False) -> list[str]:
+        """Seed built-in baseline seeds for fusion-router-light and fusion-coder-expert.
+
+        Idempotent: existing baselines are skipped unless overwrite=True.
+        Returns list of baseline_ids that were created or refreshed.
+        """
+        seeds = [
+            (
+                "fusion-router-light",
+                "fusion-router-light",
+                "agent",
+                "L2",
+                {"agent_score": 0.72, "tool_accuracy": 0.80, "expected_coverage": 0.70},
+                "default-seed",
+                "Built-in seed baseline for fusion-router-light intent routing",
+            ),
+            (
+                "fusion-coder-expert",
+                "fusion-coder-expert",
+                "code",
+                "L3",
+                {"code_pass_rate": 0.68, "test_cases_passed": 2, "test_cases_total": 3},
+                "default-seed",
+                "Built-in seed baseline for fusion-coder-expert code generation",
+            ),
+        ]
+        created: list[str] = []
+        for name, model, executor_key, level, metrics, src, desc in seeds:
+            existing = self.get_baseline(name, model, executor_key, level)
+            if existing and not overwrite:
+                logger.info("Baseline seed already exists, skip: %s/%s", name, model)
+                continue
+            bid = self.set_baseline(name, model, executor_key, level, metrics, src, desc)
+            if bid:
+                created.append(bid)
+        logger.info("Seeded %d default baselines (of %d)", len(created), len(seeds))
+        return created
+
     def close(self) -> None:
         if self._conn:
             self._conn.close()

@@ -84,7 +84,23 @@ class TestGateEngine:
     def test_load_default_gates(self):
         ge = GateEngine()
         ge.load_default_gates()
-        assert len(ge._adhoc_gates) == 8
+        assert len(ge._adhoc_gates) == 14
+
+    def test_agent_intent_gates(self):
+        ge = GateEngine()
+        ge.load_default_gates()
+        results = ge.evaluate("agent", "agent_score", 0.85)
+        agent_results = [r for r in results if "agent-intent" in r.gate_id]
+        assert len(agent_results) == 3
+        assert all(r.passed for r in agent_results)
+
+    def test_code_gen_gates(self):
+        ge = GateEngine()
+        ge.load_default_gates()
+        results = ge.evaluate("code", "code_pass_rate", 0.2)
+        code_results = [r for r in results if "code-gen" in r.gate_id]
+        assert len(code_results) == 3
+        assert not all(r.passed for r in code_results)
 
     def test_evaluate_matching_gate(self):
         ge = GateEngine()

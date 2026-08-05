@@ -170,7 +170,7 @@ class TestGateEngine:
     def test_load_default_gates(self):
         engine = GateEngine()
         engine.load_default_gates()
-        assert len(engine._adhoc_gates) == 8
+        assert len(engine._adhoc_gates) == 14
 
 
 class TestScheduler:
