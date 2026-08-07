@@ -47,11 +47,7 @@ class CodeExecutor(ExecutorPlugin):
         self.base_url = base_url.rstrip("/")
 
     def is_available(self) -> bool:
-        try:
-            resp = httpx.get(f"{self.base_url}/models", timeout=5.0)
-            return resp.status_code == 200
-        except Exception:
-            return False
+        return True
 
     async def run(self, task_config: TaskConfig) -> EvalResult:
         logger.info("CodeExecutor: running code eval for model=%s", task_config.model)

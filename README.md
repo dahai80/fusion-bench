@@ -331,6 +331,10 @@ pytest tests/ --cov=fusion_bench
 ## Changelog
 
 
+### v0.3.7 (2026-08-07)
+
+- **验收修复 (reliability/docking)**: 统一 executor `is_available()` 语义 — agent/code/artifact/evalscope 不再用 `/models` 200 探测（gateway 401 时会被静默注销），改为依赖检查或 `return True`，与 speed/security/tune 惯例一致。修复后全部 9 个执行器在未授权 gateway 下均可注册。
+
 ### v0.3.6 (2026-08-07)
 
 - **Netlayer compliance (#14)**: Unified MLX URL default to gateway `localhost:11432` (reverts #10's 11434 direct-connect). `start.sh` now defaults to 11432; `FUSION_MLX_URL` still overrides for direct eval at 11434. No 11434 remains in any default value.

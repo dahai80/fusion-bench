@@ -54,12 +54,6 @@ class EvalScopeExecutor(ExecutorPlugin):
 
     def is_available(self) -> bool:
         try:
-            resp = httpx.get(f"{self.base_url}/models", timeout=5.0)
-            if resp.status_code != 200:
-                return False
-        except Exception:
-            return False
-        try:
             from evalscope.run import run_task  # noqa: F401
 
             return True
