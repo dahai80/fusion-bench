@@ -1,7 +1,7 @@
 [project]
 name = "fusion-bench"
 license = "Apache-2.0"
-version = "0.3.5"
+version = "0.3.6"
 description = "Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench"
 requires-python = ">=3.12"
 dependencies = [

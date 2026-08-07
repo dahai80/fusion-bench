@@ -331,6 +331,10 @@ pytest tests/ --cov=fusion_bench
 ## Changelog
 
 
+### v0.3.6 (2026-08-07)
+
+- **Netlayer compliance (#14)**: Unified MLX URL default to gateway `localhost:11432` (reverts #10's 11434 direct-connect). `start.sh` now defaults to 11432; `FUSION_MLX_URL` still overrides for direct eval at 11434. No 11434 remains in any default value.
+
 ### v0.3.5 (2026-08-05)
 
 - **Agent executor (#11)**: Multi-turn tool sandbox + trajectory scoring; safe arithmetic parser (no `eval()`); 5 default scenarios
