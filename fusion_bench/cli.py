@@ -183,6 +183,15 @@ def main():
     backup_parser.add_argument("--label", default="manual", help="Backup label")
     backup_parser.add_argument("--db", default=None, help="Specific DB name for restore")
 
+    # api-key
+    apikey_parser = subparsers.add_parser("api-key", help="Manage API keys")
+    apikey_parser.add_argument("action", choices=["create", "revoke", "list"], help="Action")
+    apikey_parser.add_argument("--user", default="", help="User ID (create)")
+    apikey_parser.add_argument("--role", default="viewer", help="Role: admin|operator|viewer (create)")
+    apikey_parser.add_argument("--workspace", default="default", help="Workspace ID (create)")
+    apikey_parser.add_argument("--scopes", default="", help="Comma-separated scopes (create)")
+    apikey_parser.add_argument("--key", default="", help="API key to revoke (revoke)")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -208,6 +217,7 @@ def main():
         "schedule": lambda: cmd_schedule(args),
         "dataset": lambda: cmd_dataset(args),
         "backup": lambda: cmd_backup(args),
+        "api-key": lambda: cmd_api_key(args),
     }
 
     handler = dispatch.get(args.command)
@@ -751,6 +761,40 @@ def cmd_backup(args):
     elif args.action == "restore":
         backup.restore(label=args.label, db_name=args.db)
         print(f"Restored from backup: {args.label}")
+
+
+def cmd_api_key(args):
+    import logging
+
+    from .auth.rbac import RBACStore
+    log = logging.getLogger(__name__)
+    store = RBACStore()
+    try:
+        if args.action == "create":
+            if not args.user:
+                print("Error: --user required for create", file=sys.stderr)
+                sys.exit(1)
+            scopes = [s.strip() for s in args.scopes.split(",") if s.strip()]
+            key = store.create_api_key(args.user, args.role, args.workspace, scopes)
+            print(key)
+            log.info("Created API key for user=%s role=%s", args.user, args.role)
+        elif args.action == "revoke":
+            if not args.key:
+                print("Error: --key required for revoke", file=sys.stderr)
+                sys.exit(1)
+            if store.revoke_api_key(args.key):
+                print(f"revoked: {args.key[:8]}...")
+            else:
+                print("key not found", file=sys.stderr)
+                sys.exit(1)
+        elif args.action == "list":
+            rows = store.list_api_keys()
+            if not rows:
+                print("(no API keys)")
+            for r in rows:
+                print(f"{r['user_id']}\t{r['workspace_id']}\t{r['role']}\trevoked={r['revoked']}\t{r['created_at']}")
+    finally:
+        store.close()
 
 
 if __name__ == "__main__":
