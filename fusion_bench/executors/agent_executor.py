@@ -24,6 +24,9 @@ from fusion_bench.core.plugin_base import (
     ExecutorType,
     TaskConfig,
 )
+from fusion_bench.judge import get_judge
+from fusion_bench.judge.config import JudgeInput
+from fusion_bench.storage.judge_store import JudgeStore
 
 logger = logging.getLogger(__name__)
 
@@ -336,21 +339,26 @@ class AgentExecutor(ExecutorPlugin):
             final_response = turns[-1].content if turns else ""
             criteria_eval = self._eval_response(scenario, final_response)
             traj = TrajectoryScorer.score(turns, scenario)
-            combined_score = 0.5 * criteria_eval["score"] + 0.5 * traj["trajectory_score"]
-            passed = combined_score >= 0.5
+            rule_score = 0.5 * criteria_eval["score"] + 0.5 * traj["trajectory_score"]
+            final_score, judge_source, judge_meta = await self._apply_judge(scenario, final_response, rule_score, task_config)
+            passed = final_score >= 0.5
+            meta = {
+                "scenario_id": scenario.scenario_id,
+                "turns": len(turns),
+                "trajectory": traj,
+                **criteria_eval["details"],
+            }
+            if judge_source:
+                meta["judge_source"] = judge_source
+                meta.update(judge_meta)
             return CaseResult(
                 input_text=scenario.instruction,
                 expected=scenario.expected_behavior,
                 actual=final_response[:500],
-                score=combined_score,
+                score=final_score,
                 passed=passed,
                 latency_ms=latency,
-                meta={
-                    "scenario_id": scenario.scenario_id,
-                    "turns": len(turns),
-                    "trajectory": traj,
-                    **criteria_eval["details"],
-                },
+                meta=meta,
             )
         except Exception as e:
             logger.error("Agent scenario %s failed: %s", scenario.scenario_id, e)
@@ -479,3 +487,43 @@ class AgentExecutor(ExecutorPlugin):
         score = passed_count / total if total > 0 else 0.0
         passed = score >= 0.5
         return {"score": score, "passed": passed, "details": criteria_checks}
+
+    async def _apply_judge(
+        self,
+        scenario: AgentScenario,
+        final_response: str,
+        rule_score: float,
+        task_config: TaskConfig,
+    ) -> tuple[float, str | None, dict]:
+        # Returns (final_score, judge_source, judge_meta). judge_source None = no judge.
+        judge_name = task_config.params.get("judge")
+        if not judge_name:
+            return rule_score, None, {}
+        store = JudgeStore()
+        judge_config = store.get(judge_name)
+        store.close()
+        if judge_config is None:
+            logger.warning("JudgeConfig '%s' not found; rule-only scoring", judge_name)
+            return rule_score, None, {}
+        if judge_config.judge_type == "rule":
+            return rule_score, "rule", {}
+        try:
+            judge = get_judge(judge_config)
+            verdict = await judge.judge(
+                JudgeInput(
+                    prompt=scenario.instruction,
+                    expected=scenario.expected_final_answer or scenario.expected_behavior,
+                    actual=final_response,
+                    criteria=judge_config.criteria,
+                    rubric=judge_config.rubric,
+                )
+            )
+        except Exception as e:
+            logger.warning("judge_fallback for scenario %s: %s", scenario.scenario_id, e)
+            return rule_score, "fallback", {"judge_fallback": str(e)}
+        weight = judge_config.weight
+        if judge_config.judge_type == "llm":
+            final = verdict.score
+        else:  # hybrid
+            final = weight * verdict.score + (1 - weight) * rule_score
+        return final, judge_config.judge_type, {"judge_score": verdict.score, "judge_reasoning": verdict.reasoning}

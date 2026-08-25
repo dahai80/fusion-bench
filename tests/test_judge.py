@@ -7,8 +7,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
+from fusion_bench.core.plugin_base import TaskConfig
+from fusion_bench.executors.agent_executor import AgentExecutor, AgentScenario, TurnRecord
 from fusion_bench.judge import get_judge
-from fusion_bench.judge.config import JudgeConfig, JudgeInput
+from fusion_bench.judge.config import JudgeConfig, JudgeInput, JudgeVerdict
 from fusion_bench.judge.llm_judge import LLMJudge
 from fusion_bench.storage.judge_store import JudgeStore
 
@@ -140,3 +142,56 @@ class TestLLMJudge:
         cfg = JudgeConfig(judge_model="qwen", judge_type="rule")
         with pytest.raises(ValueError):
             get_judge(cfg)
+
+
+class TestAgentJudgeBlend:
+    @pytest.mark.asyncio
+    async def test_hybrid_blend_applies_judge(self, tmp_path, monkeypatch):
+        # Seed a hybrid judge config; mock the judge call to a fixed verdict.
+        store = JudgeStore(db_path=str(tmp_path / "j.db"))
+        store.save("hybrid-j", JudgeConfig(judge_model="qwen", judge_type="hybrid", weight=0.5))
+        monkeypatch.setattr("fusion_bench.executors.agent_executor.JudgeStore", lambda *a, **k: store)
+
+        async def fake_judge(judge_input):
+            return JudgeVerdict(score=1.0, reasoning="perfect")
+
+        monkeypatch.setattr("fusion_bench.executors.agent_executor.get_judge", lambda cfg: type("J", (), {"judge": staticmethod(fake_judge)})())
+
+        executor = AgentExecutor()
+        cfg = TaskConfig(
+            task_id="t", model="qwen", executor_key="agent", params={"scenarios": [], "judge": "hybrid-j"},
+        )
+        scenario = AgentScenario(scenario_id="s1", instruction="hi", expected_behavior="x", max_turns=1)
+
+        async def fake_turns(sc, tc):
+            return [TurnRecord(turn=0, role="assistant", content="done")]
+        monkeypatch.setattr(executor, "_run_multi_turn", fake_turns)
+        monkeypatch.setattr(executor, "_eval_response", lambda sc, resp: {"score": 0.0, "passed": False, "details": {}})
+        monkeypatch.setattr(
+            "fusion_bench.executors.agent_executor.TrajectoryScorer.score",
+            lambda turns, scenario: {"trajectory_score": 0.0},
+        )
+        result = await executor._evaluate_scenario(scenario, cfg)
+        # rule_score = 0.5*0 + 0.5*0 = 0.0 (criteria 0, traj 0). hybrid = 0.5*1.0 + 0.5*0 = 0.5
+        assert abs(result.score - 0.5) < 1e-6
+        store.close()
+
+    @pytest.mark.asyncio
+    async def test_no_judge_param_unchanged(self, monkeypatch):
+        # No judge key -> pure rule scoring, zero behavior change.
+        executor = AgentExecutor()
+        scenario = AgentScenario(scenario_id="s1", instruction="hi", expected_behavior="x", max_turns=1)
+
+        async def fake_turns(sc, tc):
+            return [TurnRecord(turn=0, role="assistant", content="done")]
+        monkeypatch.setattr(executor, "_run_multi_turn", fake_turns)
+        monkeypatch.setattr(executor, "_eval_response", lambda sc, resp: {"score": 0.8, "passed": True, "details": {}})
+        monkeypatch.setattr(
+            "fusion_bench.executors.agent_executor.TrajectoryScorer.score",
+            lambda turns, scenario: {"trajectory_score": 0.0},
+        )
+        cfg = TaskConfig(task_id="t", model="qwen", executor_key="agent", params={"scenarios": []})
+        result = await executor._evaluate_scenario(scenario, cfg)
+        # rule_score = 0.5*0.8 + 0.5*0 = 0.4
+        assert abs(result.score - 0.4) < 1e-6
+        assert result.meta.get("judge_source") is None

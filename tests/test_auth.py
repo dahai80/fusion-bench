@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-import pytest
+from unittest.mock import AsyncMock, patch
 
-from fusion_bench.auth.identity import Identity
-from fusion_bench.auth.rbac import RBACStore, Role
+import pytest
+from fastapi import Depends, FastAPI
+from fastapi.testclient import TestClient
+
+from fusion_bench.auth.identity import Identity, IdentityMiddleware, OAuthResolver
+from fusion_bench.auth.rbac import Permission, RBACStore, Role, require_permission
 
 
 class TestIdentity:
@@ -45,7 +49,7 @@ class TestApiKeyStore:
 
     def test_list_api_keys_hides_secret(self, tmp_path):
         store = RBACStore(db_path=tmp_path / "rbac.db")
-        key = store.create_api_key("carol", "admin", workspace_id="team1")
+        store.create_api_key("carol", "admin", workspace_id="team1")
         rows = store.list_api_keys()
         assert len(rows) == 1
         assert rows[0]["user_id"] == "carol"
@@ -63,19 +67,12 @@ class TestApiKeyStore:
         store.close()
 
 
-import os
-from unittest.mock import AsyncMock, patch
-
-import pytest
-
-
 class TestOAuthResolver:
     def _make_resolver(self, monkeypatch, tmp_path, jwks_url="http://idp/jwks", issuer="idp", audience="fb"):
         monkeypatch.setenv("FUSION_BENCH_OAUTH_JWKS_URL", jwks_url)
         monkeypatch.setenv("FUSION_BENCH_OAUTH_ISSUER", issuer)
         monkeypatch.setenv("FUSION_BENCH_OAUTH_AUDIENCE", audience)
         monkeypatch.setenv("FUSION_BENCH_OAUTH_ROLE_CLAIM", "roles")
-        from fusion_bench.auth.identity import OAuthResolver
         return OAuthResolver()
 
     @pytest.mark.asyncio
@@ -111,21 +108,12 @@ class TestOAuthResolver:
 
     def test_disabled_when_no_jwks_url(self, monkeypatch):
         monkeypatch.delenv("FUSION_BENCH_OAUTH_JWKS_URL", raising=False)
-        from fusion_bench.auth.identity import OAuthResolver
         resolver = OAuthResolver()
         assert resolver.enabled is False
 
 
-from fastapi import Depends
-from fastapi import FastAPI, Request
-from fastapi.testclient import TestClient
-
-from fusion_bench.auth.rbac import Permission, require_permission
-
-
 def _make_app() -> FastAPI:
     app = FastAPI()
-    from fusion_bench.auth.identity import IdentityMiddleware
     app.add_middleware(IdentityMiddleware)
 
     @app.get("/public")
