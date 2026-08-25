@@ -61,3 +61,56 @@ class TestApiKeyStore:
         rows = store.list_api_keys()
         assert rows[0]["last_used"] is not None
         store.close()
+
+
+import os
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+
+class TestOAuthResolver:
+    def _make_resolver(self, monkeypatch, tmp_path, jwks_url="http://idp/jwks", issuer="idp", audience="fb"):
+        monkeypatch.setenv("FUSION_BENCH_OAUTH_JWKS_URL", jwks_url)
+        monkeypatch.setenv("FUSION_BENCH_OAUTH_ISSUER", issuer)
+        monkeypatch.setenv("FUSION_BENCH_OAUTH_AUDIENCE", audience)
+        monkeypatch.setenv("FUSION_BENCH_OAUTH_ROLE_CLAIM", "roles")
+        from fusion_bench.auth.identity import OAuthResolver
+        return OAuthResolver()
+
+    @pytest.mark.asyncio
+    async def test_valid_token_resolves_identity(self, monkeypatch, tmp_path):
+        resolver = self._make_resolver(monkeypatch, tmp_path)
+        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value={"sub": "user42", "roles": ["admin"], "workspace_id": "ws9"})):
+            ident = await resolver.resolve("valid.jwt.token")
+        assert ident is not None
+        assert ident.user_id == "user42"
+        assert ident.role.value == "admin"
+        assert ident.workspace_id == "ws9"
+        assert ident.source == "oauth"
+
+    @pytest.mark.asyncio
+    async def test_expired_token_returns_none(self, monkeypatch, tmp_path):
+        resolver = self._make_resolver(monkeypatch, tmp_path)
+        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value=None)):
+            assert await resolver.resolve("expired.jwt") is None
+
+    @pytest.mark.asyncio
+    async def test_unknown_role_claim_falls_back_to_viewer(self, monkeypatch, tmp_path):
+        resolver = self._make_resolver(monkeypatch, tmp_path)
+        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value={"sub": "u1", "roles": ["unknown_role"]})):
+            ident = await resolver.resolve("tok")
+        assert ident is not None
+        assert ident.role == Role.VIEWER
+
+    @pytest.mark.asyncio
+    async def test_missing_sub_returns_none(self, monkeypatch, tmp_path):
+        resolver = self._make_resolver(monkeypatch, tmp_path)
+        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value={"roles": ["admin"]})):
+            assert await resolver.resolve("tok") is None
+
+    def test_disabled_when_no_jwks_url(self, monkeypatch):
+        monkeypatch.delenv("FUSION_BENCH_OAUTH_JWKS_URL", raising=False)
+        from fusion_bench.auth.identity import OAuthResolver
+        resolver = OAuthResolver()
+        assert resolver.enabled is False
