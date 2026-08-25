@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from fusion_bench.judge.config import JudgeConfig
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import httpx
+import pytest
+
+from fusion_bench.judge import get_judge
+from fusion_bench.judge.config import JudgeConfig, JudgeInput
+from fusion_bench.judge.llm_judge import LLMJudge
 from fusion_bench.storage.judge_store import JudgeStore
 
 
@@ -56,3 +63,80 @@ class TestJudgeStore:
         store.save("x", JudgeConfig(judge_model="new"))
         assert store.get("x").judge_model == "new"
         store.close()
+
+
+def _mock_response(content: str) -> httpx.Response:
+    request = MagicMock(spec=httpx.Request)
+    return httpx.Response(
+        status_code=200,
+        request=request,
+        json={"choices": [{"message": {"content": content}}]},
+    )
+
+
+class TestLLMJudge:
+    @pytest.mark.asyncio
+    async def test_parse_valid_json(self):
+        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        judge = LLMJudge(cfg)
+        content = '{"score": 0.8, "reasoning": "mostly correct"}'
+        with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.post = AsyncMock(return_value=_mock_response(content))
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client_cls.return_value = mock_client
+            verdict = await judge.judge(JudgeInput(prompt="p", expected="e", actual="a", criteria=["correctness"]))
+        assert verdict.score == 0.8
+        assert "mostly correct" in verdict.reasoning
+
+    @pytest.mark.asyncio
+    async def test_parse_malformed_fallback_neutral(self):
+        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        judge = LLMJudge(cfg)
+        with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.post = AsyncMock(return_value=_mock_response("not json at all"))
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client_cls.return_value = mock_client
+            verdict = await judge.judge(JudgeInput(prompt="p", expected="e", actual="a"))
+        assert verdict.score == 0.5
+        assert verdict.reasoning != ""
+
+    @pytest.mark.asyncio
+    async def test_timeout_fallback_neutral(self):
+        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        judge = LLMJudge(cfg)
+        with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timed out"))
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client_cls.return_value = mock_client
+            verdict = await judge.judge(JudgeInput(prompt="p", expected="e", actual="a"))
+        assert verdict.score == 0.5
+
+    @pytest.mark.asyncio
+    async def test_score_clamped_to_unit_interval(self):
+        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        judge = LLMJudge(cfg)
+        content = '{"score": 1.5, "reasoning": "over"}'
+        with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.post = AsyncMock(return_value=_mock_response(content))
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client_cls.return_value = mock_client
+            verdict = await judge.judge(JudgeInput(prompt="p", expected="e", actual="a"))
+        assert verdict.score == 1.0
+
+    def test_get_judge_factory_llm(self):
+        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        judge = get_judge(cfg)
+        assert isinstance(judge, LLMJudge)
+
+    def test_get_judge_factory_rule_raises(self):
+        cfg = JudgeConfig(judge_model="qwen", judge_type="rule")
+        with pytest.raises(ValueError):
+            get_judge(cfg)
