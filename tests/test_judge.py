@@ -9,6 +9,11 @@ import pytest
 
 from fusion_bench.core.plugin_base import TaskConfig
 from fusion_bench.executors.agent_executor import AgentExecutor, AgentScenario, TurnRecord
+from fusion_bench.executors.artifact_executor import (
+    ArtifactCriteria,
+    ArtifactExecutor,
+    ArtifactTestCase,
+)
 from fusion_bench.judge import get_judge
 from fusion_bench.judge.config import JudgeConfig, JudgeInput, JudgeVerdict
 from fusion_bench.judge.llm_judge import LLMJudge
@@ -194,4 +199,53 @@ class TestAgentJudgeBlend:
         result = await executor._evaluate_scenario(scenario, cfg)
         # rule_score = 0.5*0.8 + 0.5*0 = 0.4
         assert abs(result.score - 0.4) < 1e-6
+        assert result.meta.get("judge_source") is None
+
+
+class TestArtifactJudgeBlend:
+    @pytest.mark.asyncio
+    async def test_hybrid_blend_applies_judge(self, tmp_path, monkeypatch):
+        store = JudgeStore(db_path=str(tmp_path / "j.db"))
+        store.save("art-j", JudgeConfig(judge_model="qwen", judge_type="hybrid", weight=0.5))
+        monkeypatch.setattr("fusion_bench.executors.artifact_executor.JudgeStore", lambda *a, **k: store)
+
+        async def fake_judge(judge_input):
+            return JudgeVerdict(score=1.0, reasoning="good")
+        monkeypatch.setattr(
+            "fusion_bench.executors.artifact_executor.get_judge",
+            lambda cfg: type("J", (), {"judge": staticmethod(fake_judge)})(),
+        )
+
+        executor = ArtifactExecutor()
+        tc = ArtifactTestCase(
+            test_id="t1",
+            artifact_type="json",
+            prompt="make config",
+            criteria=[ArtifactCriteria(name="valid_json", description="x", auto_check="json_valid")],
+            min_length=5,
+        )
+        cfg = TaskConfig(task_id="t", model="qwen", executor_key="artifact", params={"judge": "art-j"})
+
+        async def fake_gen(test_case, task_config):
+            return '{"host": "x"}'
+        monkeypatch.setattr(executor, "_generate_artifact", fake_gen)
+        monkeypatch.setattr(executor, "_eval_artifact", lambda tc, art: {"score": 0.0, "passed": False, "details": {}})
+        result = await executor._evaluate_artifact(tc, cfg)
+        # rule 0.0, judge 1.0, hybrid weight 0.5 -> 0.5*1.0 + 0.5*0 = 0.5
+        assert abs(result.score - 0.5) < 1e-6
+        assert result.meta.get("judge_source") == "hybrid"
+        store.close()
+
+    @pytest.mark.asyncio
+    async def test_no_judge_param_unchanged(self, monkeypatch):
+        executor = ArtifactExecutor()
+        tc = ArtifactTestCase(test_id="t1", artifact_type="json", prompt="p", min_length=5)
+
+        async def fake_gen(test_case, task_config):
+            return '{"a": 1}'
+        monkeypatch.setattr(executor, "_generate_artifact", fake_gen)
+        monkeypatch.setattr(executor, "_eval_artifact", lambda tc, art: {"score": 0.7, "passed": True, "details": {"k": True}})
+        cfg = TaskConfig(task_id="t", model="qwen", executor_key="artifact", params={})
+        result = await executor._evaluate_artifact(tc, cfg)
+        assert abs(result.score - 0.7) < 1e-6
         assert result.meta.get("judge_source") is None

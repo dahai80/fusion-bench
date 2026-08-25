@@ -23,6 +23,9 @@ from fusion_bench.core.plugin_base import (
     ExecutorType,
     TaskConfig,
 )
+from fusion_bench.judge import get_judge
+from fusion_bench.judge.config import JudgeInput
+from fusion_bench.storage.judge_store import JudgeStore
 
 logger = logging.getLogger(__name__)
 
@@ -172,14 +175,23 @@ class ArtifactExecutor(ExecutorPlugin):
             artifact = await self._generate_artifact(test_case, task_config)
             latency = (time.time() - t0) * 1000
             eval_result = self._eval_artifact(test_case, artifact)
+            rule_score = eval_result["score"]
+            final_score, judge_source, judge_meta = await self._apply_judge(
+                test_case, artifact, rule_score, task_config
+            )
+            meta = {"test_id": test_case.test_id, **eval_result["details"]}
+            if judge_source:
+                meta["judge_source"] = judge_source
+                meta.update(judge_meta)
+            passed = final_score >= 0.6 and eval_result["details"].get("min_length_check", True)
             return CaseResult(
                 input_text=test_case.prompt,
                 expected=f"{test_case.artifact_type} artifact",
                 actual=artifact[:500],
-                score=eval_result["score"],
-                passed=eval_result["passed"],
+                score=final_score,
+                passed=passed,
                 latency_ms=latency,
-                meta={"test_id": test_case.test_id, **eval_result["details"]},
+                meta=meta,
             )
         except Exception as e:
             logger.error("Artifact test %s failed: %s", test_case.test_id, e)
@@ -192,6 +204,45 @@ class ArtifactExecutor(ExecutorPlugin):
                 latency_ms=(time.time() - t0) * 1000,
                 meta={"test_id": test_case.test_id, "error": str(e)},
             )
+
+    async def _apply_judge(
+        self,
+        test_case: ArtifactTestCase,
+        artifact: str,
+        rule_score: float,
+        task_config: TaskConfig,
+    ) -> tuple[float, str | None, dict]:
+        judge_name = task_config.params.get("judge")
+        if not judge_name:
+            return rule_score, None, {}
+        store = JudgeStore()
+        judge_config = store.get(judge_name)
+        store.close()
+        if judge_config is None:
+            logger.warning("JudgeConfig '%s' not found; rule-only scoring", judge_name)
+            return rule_score, None, {}
+        if judge_config.judge_type == "rule":
+            return rule_score, "rule", {}
+        try:
+            judge = get_judge(judge_config)
+            verdict = await judge.judge(
+                JudgeInput(
+                    prompt=test_case.prompt,
+                    expected=f"{test_case.artifact_type} artifact meeting criteria",
+                    actual=artifact,
+                    criteria=judge_config.criteria or [c.name for c in test_case.criteria],
+                    rubric=judge_config.rubric,
+                )
+            )
+        except Exception as e:
+            logger.warning("judge_fallback for artifact %s: %s", test_case.test_id, e)
+            return rule_score, "fallback", {"judge_fallback": str(e)}
+        weight = judge_config.weight
+        if judge_config.judge_type == "llm":
+            final = verdict.score
+        else:  # hybrid
+            final = weight * verdict.score + (1 - weight) * rule_score
+        return final, judge_config.judge_type, {"judge_score": verdict.score, "judge_reasoning": verdict.reasoning}
 
     async def _generate_artifact(self, test_case: ArtifactTestCase, task_config: TaskConfig) -> str:
         messages = [
