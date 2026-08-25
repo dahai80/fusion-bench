@@ -18,6 +18,7 @@ import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field, model_validator
 
+from ..auth.identity import IdentityMiddleware
 from ..auth.rbac import Permission, require_permission
 from ..core.models import EvalLevel, GateTier, TaskStatus
 from ..storage.trace_store import TraceStore
@@ -70,6 +71,9 @@ app = FastAPI(
 if _os.environ.get("FUSION_BENCH_TLS_ENFORCE") == "1":
     app.add_middleware(_TLSRedirectMiddleware)
     logger.info("TLS enforcement middleware enabled — HTTP requests will be rejected")
+
+app.add_middleware(IdentityMiddleware)
+logger.info("Identity middleware registered")
 
 
 # ── Request/Response schemas ────────────────────────────────────────

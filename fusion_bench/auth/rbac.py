@@ -10,12 +10,18 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import secrets
 import sqlite3
 import time
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from fastapi import Request
+
+if TYPE_CHECKING:
+    from .identity import Identity
 
 logger = logging.getLogger(__name__)
 
@@ -211,16 +217,31 @@ class RBACStore:
             self._conn = None
 
 
-def require_permission(permission: Permission):
-    """FastAPI dependency factory for permission checks."""
+def has_permission(user_id: str, permission: Permission) -> bool:
+    store = RBACStore()
+    try:
+        return store.has_permission(user_id, permission)
+    finally:
+        store.close()
 
-    def _check(user_id: str = "anonymous") -> str:
-        store = RBACStore()
-        try:
-            if not store.has_permission(user_id, permission):
-                raise PermissionError(f"User {user_id} lacks permission {permission.value}")
-            return user_id
-        finally:
-            store.close()
+
+def require_permission(permission: Permission, allow_anonymous: bool = False):
+    # FastAPI dependency: resolves identity from request.state, enforces permission.
+    from fastapi import HTTPException, status
+
+    def _check(request: Request) -> str:
+        from .identity import Identity
+        identity: Identity = getattr(request.state, "identity", None) or Identity(user_id="anonymous")
+        if identity.is_anonymous:
+            if allow_anonymous:
+                return identity.user_id
+            strict = os.environ.get("FUSION_BENCH_AUTH_STRICT", "0") == "1"
+            if strict:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Authentication required")
+            logger.warning("Anonymous access to write endpoint %s (non-strict mode)", permission.value)
+            return identity.user_id
+        if permission not in ROLE_PERMISSIONS.get(identity.role, set()):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Permission {permission.value} required")
+        return identity.user_id
 
     return _check

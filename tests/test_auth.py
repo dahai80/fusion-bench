@@ -114,3 +114,70 @@ class TestOAuthResolver:
         from fusion_bench.auth.identity import OAuthResolver
         resolver = OAuthResolver()
         assert resolver.enabled is False
+
+
+from fastapi import Depends
+from fastapi import FastAPI, Request
+from fastapi.testclient import TestClient
+
+from fusion_bench.auth.rbac import Permission, require_permission
+
+
+def _make_app() -> FastAPI:
+    app = FastAPI()
+    from fusion_bench.auth.identity import IdentityMiddleware
+    app.add_middleware(IdentityMiddleware)
+
+    @app.get("/public")
+    async def public(_user: str = Depends(require_permission(Permission.TASK_READ, allow_anonymous=True))):
+        return {"ok": True}
+
+    @app.post("/write")
+    async def write(_user: str = Depends(require_permission(Permission.TASK_CREATE, allow_anonymous=False))):
+        return {"ok": True}
+    return app
+
+
+class TestIdentityMiddleware:
+    def test_anonymous_can_read_public(self, monkeypatch):
+        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "0")
+        client = TestClient(_make_app())
+        resp = client.get("/public")
+        assert resp.status_code == 200
+
+    def test_anonymous_denied_write_strict(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "1")
+        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
+        client = TestClient(_make_app())
+        resp = client.post("/write")
+        assert resp.status_code == 403
+
+    def test_anonymous_allowed_write_nonstrict(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "0")
+        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
+        client = TestClient(_make_app())
+        resp = client.post("/write")
+        assert resp.status_code == 200
+
+    def test_api_key_auth_write(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "1")
+        db = tmp_path / "rbac.db"
+        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", db)
+        store = RBACStore(db_path=db)
+        key = store.create_api_key("alice", "operator")
+        store.close()
+        client = TestClient(_make_app())
+        resp = client.post("/write", headers={"X-API-Key": key})
+        assert resp.status_code == 200
+
+    def test_revoked_key_denied(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "1")
+        db = tmp_path / "rbac.db"
+        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", db)
+        store = RBACStore(db_path=db)
+        key = store.create_api_key("alice", "admin")
+        store.revoke_api_key(key)
+        store.close()
+        client = TestClient(_make_app())
+        resp = client.post("/write", headers={"X-API-Key": key})
+        assert resp.status_code == 403

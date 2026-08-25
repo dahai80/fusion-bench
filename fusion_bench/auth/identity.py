@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 
-from .rbac import Role
+import httpx
+import jwt
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+from .rbac import RBACStore, Role
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +27,6 @@ class Identity:
     @property
     def is_anonymous(self) -> bool:
         return self.source == "anonymous"
-
-
-import os
-
-import httpx
-import jwt
 
 
 class OAuthResolver:
@@ -111,3 +111,35 @@ class OAuthResolver:
             source="oauth",
             scopes=payload.get("scope", "").split() if isinstance(payload.get("scope"), str) else [],
         )
+
+
+class IdentityMiddleware(BaseHTTPMiddleware):
+    # Resolves request identity via X-API-Key or Bearer token, else anonymous.
+
+    async def dispatch(self, request: Request, call_next):
+        identity = Identity(user_id="anonymous", role=Role.VIEWER, source="anonymous")
+        api_key_enabled = os.environ.get("FUSION_BENCH_API_KEY_ENABLED", "1") != "0"
+        oauth_enabled = os.environ.get("FUSION_BENCH_OAUTH_ENABLED", "0") == "1"
+
+        api_key = request.headers.get("x-api-key", "")
+        if api_key_enabled and api_key:
+            store = RBACStore()
+            try:
+                resolved = store.verify_api_key(api_key)
+                if resolved:
+                    identity = resolved
+            finally:
+                store.close()
+
+        if identity.is_anonymous and oauth_enabled:
+            auth = request.headers.get("authorization", "")
+            if auth.lower().startswith("bearer "):
+                token = auth[7:].strip()
+                resolver = OAuthResolver()
+                if resolver.enabled:
+                    resolved = await resolver.resolve(token)
+                    if resolved:
+                        identity = resolved
+
+        request.state.identity = identity
+        return await call_next(request)
