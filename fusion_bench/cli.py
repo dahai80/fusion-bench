@@ -201,6 +201,27 @@ def main():
     cache_parser.add_argument("--model", default="", help="Filter by model (clear)")
     cache_parser.add_argument("--task", default="", help="Filter by task (clear)")
 
+    # judge
+    judge_parser = subparsers.add_parser("judge", help="Manage LLM-as-Judge configs")
+    judge_sub = judge_parser.add_subparsers(dest="judge_action", required=True)
+
+    j_create = judge_sub.add_parser("create", help="Create or overwrite a judge config")
+    j_create.add_argument("--name", required=True)
+    j_create.add_argument("--model", required=True, help="Judge model name")
+    j_create.add_argument("--type", default="hybrid", choices=["llm", "rule", "hybrid"])
+    j_create.add_argument("--weight", type=float, default=0.5)
+    j_create.add_argument("--criteria", default="", help="Comma-separated criteria names")
+    j_create.add_argument("--rubric", default="")
+    j_create.add_argument("--temperature", type=float, default=0.0)
+
+    judge_sub.add_parser("list", help="List judge configs")
+
+    j_show = judge_sub.add_parser("show", help="Show a judge config")
+    j_show.add_argument("--name", required=True)
+
+    j_delete = judge_sub.add_parser("delete", help="Delete a judge config")
+    j_delete.add_argument("--name", required=True)
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -228,13 +249,15 @@ def main():
         "backup": lambda: cmd_backup(args),
         "api-key": lambda: cmd_api_key(args),
         "cache": lambda: cmd_cache(args),
+        "judge": lambda: cmd_judge(args),
     }
 
     handler = dispatch.get(args.command)
     if handler:
-        handler()
+        return handler() or 0
     else:
         parser.print_help()
+        return 1
 
 
 def cmd_list_tasks(args):
@@ -828,6 +851,59 @@ def cmd_cache(args):
             log.info("Cleared %s cache entries (model=%s task=%s)", count, args.model, args.task)
     finally:
         cache.close()
+
+
+def cmd_judge(args):
+    import logging
+
+    from .judge.config import JudgeConfig
+    from .storage.judge_store import JudgeStore
+
+    log = logging.getLogger(__name__)
+    store = JudgeStore()
+    try:
+        action = args.judge_action
+        if action == "create":
+            criteria = [c.strip() for c in args.criteria.split(",") if c.strip()]
+            cfg = JudgeConfig(
+                judge_model=args.model,
+                judge_type=args.type,
+                weight=args.weight,
+                criteria=criteria,
+                rubric=args.rubric,
+                temperature=args.temperature,
+            )
+            store.save(args.name, cfg)
+            print(f"Saved judge config: {args.name} (type={cfg.judge_type}, model={cfg.judge_model}, weight={cfg.weight})")
+            log.info("Saved judge config: %s type=%s", args.name, cfg.judge_type)
+        elif action == "list":
+            names = store.list()
+            if not names:
+                print("No judge configs.")
+            else:
+                for n in names:
+                    print(n)
+            log.info("Listed %d judge configs", len(names))
+        elif action == "show":
+            cfg = store.get(args.name)
+            if cfg is None:
+                print(f"Judge config '{args.name}' not found.")
+                log.info("Judge config '%s' not found", args.name)
+            else:
+                print(f"name: {args.name}")
+                print(f"model: {cfg.judge_model}")
+                print(f"type: {cfg.judge_type}")
+                print(f"weight: {cfg.weight}")
+                print(f"criteria: {cfg.criteria}")
+                print(f"rubric: {cfg.rubric}")
+                print(f"temperature: {cfg.temperature}")
+        elif action == "delete":
+            deleted = store.delete(args.name)
+            print(f"Deleted judge config: {args.name}" if deleted else f"Judge config '{args.name}' not found.")
+            log.info("Deleted judge config: %s (existed=%s)", args.name, deleted)
+        return 0
+    finally:
+        store.close()
 
 
 if __name__ == "__main__":
