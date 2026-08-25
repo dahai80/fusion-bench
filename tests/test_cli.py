@@ -235,3 +235,29 @@ class TestApiKeyCLI:
         args2 = argparse.Namespace(command="api-key", action="revoke", user="", role="", workspace="", scopes="", key=key)
         cli.cmd_api_key(args2)
         assert "revoked" in capsys.readouterr().out.lower()
+
+
+class TestCacheCLI:
+    def test_cache_stats_empty(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr("fusion_bench.cache.BenchmarkCache._DEFAULT_DB_PATH", tmp_path / "cache.db")
+        import argparse
+
+        import fusion_bench.cli as cli
+        args = argparse.Namespace(command="cache", action="stats", model="", task="")
+        cli.cmd_cache(args)
+        out = capsys.readouterr().out
+        assert "0" in out  # total_entries 0
+
+    def test_cache_clear(self, tmp_path, monkeypatch, capsys):
+        from fusion_bench.cache import BenchmarkCache
+        cache = BenchmarkCache(db_path=str(tmp_path / "cache.db"))
+        cache.set("m", {}, "t1", "speed", {"score": 0.8})
+        cache.close()
+        import argparse
+
+        import fusion_bench.cli as cli
+        args = argparse.Namespace(command="cache", action="clear", model="", task="")
+        monkeypatch.setattr("fusion_bench.cli.BenchmarkCache", lambda **kw: BenchmarkCache(db_path=str(tmp_path / "cache.db")))
+        cli.cmd_cache(args)
+        out = capsys.readouterr().out
+        assert "1" in out  # cleared 1 entry

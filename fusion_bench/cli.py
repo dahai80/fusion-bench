@@ -22,6 +22,7 @@ import json
 import sys
 from pathlib import Path
 
+from .cache import BenchmarkCache
 from .engine.benchmark import BenchmarkRunner
 from .engine.task_runner import LMEvalTaskRunner
 from .optimizer.tuner import ParameterTuner
@@ -65,6 +66,8 @@ def main():
     run_parser.add_argument("task", help="Task name (e.g., mmlu, gsm8k)")
     run_parser.add_argument("--max-samples", type=int, default=0, help="Max samples to evaluate")
     run_parser.add_argument("--output", default="", help="Output file path (JSON)")
+    run_parser.add_argument("--no-cache", action="store_true", help="Disable result cache")
+    run_parser.add_argument("--cache-ttl", type=int, default=0, help="Cache TTL seconds (0=forever)")
 
     # suite (NEW)
     suite_parser = subparsers.add_parser("suite", help="Run a benchmark suite with quality gates")
@@ -77,8 +80,8 @@ def main():
         help="Quality gate tier",
     )
     suite_parser.add_argument("--output", default="", help="Output file path (JSON)")
-
-    # speed
+    suite_parser.add_argument("--no-cache", action="store_true", help="Disable result cache")
+    suite_parser.add_argument("--cache-ttl", type=int, default=0, help="Cache TTL seconds (0=forever)")
     speed_parser = subparsers.add_parser("speed", help="Benchmark model speed")
     speed_parser.add_argument("--runs", type=int, default=3, help="Number of runs")
     speed_parser.add_argument("--output", default="", help="Output file path (JSON)")
@@ -192,6 +195,12 @@ def main():
     apikey_parser.add_argument("--scopes", default="", help="Comma-separated scopes (create)")
     apikey_parser.add_argument("--key", default="", help="API key to revoke (revoke)")
 
+    # cache
+    cache_parser = subparsers.add_parser("cache", help="Manage benchmark cache")
+    cache_parser.add_argument("action", choices=["stats", "clear"], help="Action")
+    cache_parser.add_argument("--model", default="", help="Filter by model (clear)")
+    cache_parser.add_argument("--task", default="", help="Filter by task (clear)")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -218,6 +227,7 @@ def main():
         "dataset": lambda: cmd_dataset(args),
         "backup": lambda: cmd_backup(args),
         "api-key": lambda: cmd_api_key(args),
+        "cache": lambda: cmd_cache(args),
     }
 
     handler = dispatch.get(args.command)
@@ -291,7 +301,10 @@ async def cmd_suite(args):
         print(f"Error: {e}")
         return
 
-    pipeline = Pipeline(gate_engine=gate_engine, trace_callback=store.insert)
+    no_cache = getattr(args, "no_cache", False)
+    cache_ttl = getattr(args, "cache_ttl", 0)
+    cache = None if no_cache else BenchmarkCache(ttl_seconds=cache_ttl or None)
+    pipeline = Pipeline(gate_engine=gate_engine, trace_callback=store.insert, cache=cache, use_cache=not no_cache)
 
     print(f"Running suite '{args.suite_name}' with model '{args.model}'...")
     result = await pipeline.run_suite(
@@ -795,6 +808,26 @@ def cmd_api_key(args):
                 print(f"{r['user_id']}\t{r['workspace_id']}\t{r['role']}\trevoked={r['revoked']}\t{r['created_at']}")
     finally:
         store.close()
+
+
+def cmd_cache(args):
+    import logging
+
+    log = logging.getLogger(__name__)
+    cache = BenchmarkCache()
+    try:
+        if args.action == "stats":
+            s = cache.stats()
+            print(f"total_entries: {s['total_entries']}")
+            for m in s.get("models", []):
+                print(f"  {m['model']}: {m['cnt']}")
+            log.info("Cache stats: %s entries", s["total_entries"])
+        elif args.action == "clear":
+            count = cache.clear(model=args.model, task=args.task)
+            print(f"cleared: {count}")
+            log.info("Cleared %s cache entries (model=%s task=%s)", count, args.model, args.task)
+    finally:
+        cache.close()
 
 
 if __name__ == "__main__":

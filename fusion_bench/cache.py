@@ -16,9 +16,11 @@ class BenchmarkCache:
     Avoids re-running the same benchmark with the same model+config+tasks.
     """
 
+    _DEFAULT_DB_PATH = Path.home() / ".fusion-bench" / "cache.db"
+
     def __init__(self, db_path: str = "", ttl_seconds: float | None = None):
         if not db_path:
-            db_path = str(Path.home() / ".fusion-bench" / "cache.db")
+            db_path = str(self._DEFAULT_DB_PATH)
         self.db_path = db_path
         self.ttl_seconds = ttl_seconds
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
