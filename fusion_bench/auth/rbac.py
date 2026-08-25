@@ -8,7 +8,9 @@ User instruction: "把所有没完全做完，没启动做，有差距的全部�
 
 from __future__ import annotations
 
+import json
 import logging
+import secrets
 import sqlite3
 import time
 from enum import StrEnum
@@ -77,13 +79,30 @@ class RBACStore:
 
     def _ensure_table(self) -> None:
         self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS api_keys (
+                api_key TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                workspace_id TEXT NOT NULL DEFAULT 'default',
+                role TEXT NOT NULL DEFAULT 'viewer',
+                scopes TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                last_used REAL,
+                revoked INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        self.conn.execute("""
             CREATE TABLE IF NOT EXISTS user_roles (
                 user_id TEXT PRIMARY KEY,
                 role TEXT NOT NULL DEFAULT 'viewer',
+                workspace_id TEXT NOT NULL DEFAULT 'default',
                 assigned_by TEXT DEFAULT 'system',
                 assigned_at TEXT NOT NULL
             )
         """)
+        # Migrate existing DBs: add workspace_id to user_roles if missing
+        cols = {r[1] for r in self.conn.execute("PRAGMA table_info(user_roles)").fetchall()}
+        if "workspace_id" not in cols:
+            self.conn.execute("ALTER TABLE user_roles ADD COLUMN workspace_id TEXT NOT NULL DEFAULT 'default'")
         self.conn.commit()
 
     def assign_role(self, user_id: str, role: str, assigned_by: str = "system") -> None:
@@ -127,6 +146,64 @@ class RBACStore:
         cursor = self.conn.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
         self.conn.commit()
         return cursor.rowcount > 0
+
+    def create_api_key(self, user_id: str, role: str, workspace_id: str = "default", scopes: list[str] | None = None) -> str:
+        key = secrets.token_urlsafe(32)
+        now = time.strftime("%Y-%m-%dT%H:%M:%S")
+        self.conn.execute(
+            "INSERT INTO api_keys (api_key, user_id, workspace_id, role, scopes, created_at, revoked) VALUES (?, ?, ?, ?, ?, ?, 0)",
+            (key, user_id, workspace_id, role, json.dumps(scopes or []), now),
+        )
+        self.conn.commit()
+        logger.info("API key created for user=%s role=%s workspace=%s", user_id, role, workspace_id)
+        return key
+
+    def verify_api_key(self, api_key: str) -> Identity | None:
+        row = self.conn.execute(
+            "SELECT api_key, user_id, workspace_id, role, scopes FROM api_keys WHERE api_key = ? AND revoked = 0",
+            (api_key,),
+        ).fetchone()
+        if not row:
+            return None
+        self.conn.execute("UPDATE api_keys SET last_used = ? WHERE api_key = ?", (time.time(), api_key))
+        self.conn.commit()
+        try:
+            role = Role(row["role"])
+        except ValueError:
+            role = Role.VIEWER
+        from .identity import Identity
+        return Identity(
+            user_id=row["user_id"],
+            workspace_id=row["workspace_id"],
+            role=role,
+            source="apikey",
+            scopes=json.loads(row["scopes"]) if row["scopes"] else [],
+        )
+
+    def revoke_api_key(self, api_key: str) -> bool:
+        cursor = self.conn.execute("UPDATE api_keys SET revoked = 1 WHERE api_key = ?", (api_key,))
+        self.conn.commit()
+        revoked = cursor.rowcount > 0
+        if revoked:
+            logger.info("API key revoked (prefix=%s)", api_key[:8])
+        return revoked
+
+    def list_api_keys(self) -> list[dict[str, Any]]:
+        rows = self.conn.execute(
+            "SELECT user_id, workspace_id, role, scopes, created_at, last_used, revoked FROM api_keys ORDER BY created_at DESC"
+        ).fetchall()
+        return [
+            {
+                "user_id": r["user_id"],
+                "workspace_id": r["workspace_id"],
+                "role": r["role"],
+                "scopes": json.loads(r["scopes"]) if r["scopes"] else [],
+                "created_at": r["created_at"],
+                "last_used": r["last_used"],
+                "revoked": r["revoked"],
+            }
+            for r in rows
+        ]
 
     def close(self) -> None:
         if self._conn:
