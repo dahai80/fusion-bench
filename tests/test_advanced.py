@@ -82,7 +82,7 @@ class TestBenchmarkCache:
     def test_set_and_get(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = BenchmarkCache(str(Path(tmpdir) / "cache.db"))
-            cache.set("model1", {}, "mmlu", {"accuracy": 0.85})
+            cache.set("model1", {}, "mmlu", "speed", {"accuracy": 0.85})
             result = cache.get("model1", {}, "mmlu")
             assert result is not None
             assert result["accuracy"] == 0.85
@@ -96,7 +96,7 @@ class TestBenchmarkCache:
     def test_get_with_config(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = BenchmarkCache(str(Path(tmpdir) / "cache.db"))
-            cache.set("model1", {"temperature": 0.7}, "gsm8k", {"accuracy": 0.75})
+            cache.set("model1", {"temperature": 0.7}, "gsm8k", "speed", {"accuracy": 0.75})
             result = cache.get("model1", {"temperature": 0.7}, "gsm8k")
             assert result["accuracy"] == 0.75
             # Different config should miss
@@ -106,9 +106,9 @@ class TestBenchmarkCache:
     def test_clear_all(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = BenchmarkCache(str(Path(tmpdir) / "cache.db"))
-            cache.set("m1", {}, "t1", {"a": 1})
-            cache.set("m1", {}, "t2", {"a": 2})
-            cache.set("m2", {}, "t1", {"a": 3})
+            cache.set("m1", {}, "t1", "speed", {"a": 1})
+            cache.set("m1", {}, "t2", "speed", {"a": 2})
+            cache.set("m2", {}, "t1", "speed", {"a": 3})
             assert cache.stats()["total_entries"] == 3
             deleted = cache.clear()
             assert deleted == 3
@@ -117,9 +117,9 @@ class TestBenchmarkCache:
     def test_clear_by_model(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = BenchmarkCache(str(Path(tmpdir) / "cache.db"))
-            cache.set("m1", {}, "t1", {"a": 1})
-            cache.set("m1", {}, "t2", {"a": 2})
-            cache.set("m2", {}, "t1", {"a": 3})
+            cache.set("m1", {}, "t1", "speed", {"a": 1})
+            cache.set("m1", {}, "t2", "speed", {"a": 2})
+            cache.set("m2", {}, "t1", "speed", {"a": 3})
             deleted = cache.clear(model="m1")
             assert deleted == 2
             assert cache.stats()["total_entries"] == 1
@@ -129,7 +129,7 @@ class TestBenchmarkCache:
             cache = BenchmarkCache(str(Path(tmpdir) / "cache.db"))
             stats = cache.stats()
             assert stats["total_entries"] == 0
-            cache.set("m1", {}, "t1", {"a": 1})
+            cache.set("m1", {}, "t1", "speed", {"a": 1})
             stats = cache.stats()
             assert stats["total_entries"] == 1
 

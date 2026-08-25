@@ -16,10 +16,11 @@ class BenchmarkCache:
     Avoids re-running the same benchmark with the same model+config+tasks.
     """
 
-    def __init__(self, db_path: str = ""):
+    def __init__(self, db_path: str = "", ttl_seconds: float | None = None):
         if not db_path:
             db_path = str(Path.home() / ".fusion-bench" / "cache.db")
         self.db_path = db_path
+        self.ttl_seconds = ttl_seconds
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._conn: sqlite3.Connection | None = None
         self._init_db()
@@ -28,6 +29,7 @@ class BenchmarkCache:
         if self._conn is None:
             self._conn = sqlite3.connect(str(self.db_path))
             self._conn.row_factory = sqlite3.Row
+            self._conn.execute("PRAGMA journal_mode=WAL")
         return self._conn
 
     @contextmanager
@@ -48,36 +50,48 @@ class BenchmarkCache:
                     model TEXT NOT NULL,
                     config_json TEXT NOT NULL,
                     task TEXT NOT NULL,
+                    executor_key TEXT NOT NULL DEFAULT 'speed',
                     result_json TEXT NOT NULL,
                     created_at REAL NOT NULL,
-                    UNIQUE(model, config_json, task)
+                    UNIQUE(model, config_json, task, executor_key)
                 );
                 CREATE INDEX IF NOT EXISTS idx_benchmarks_lookup
-                    ON benchmarks(model, config_json, task);
+                    ON benchmarks(model, config_json, task, executor_key);
             """)
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(benchmarks)").fetchall()}
+            if "executor_key" not in cols:
+                conn.execute("ALTER TABLE benchmarks ADD COLUMN executor_key TEXT NOT NULL DEFAULT 'speed'")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_benchmarks_lookup ON benchmarks(model, config_json, task, executor_key)")
 
-    def get(self, model: str, config: dict | None, task: str) -> dict | None:
-        """Get cached result for a model+config+task combination."""
+    def get(self, model: str, config: dict | None, task: str, executor_key: str = "speed") -> dict | None:
+        """Get cached result for a model+config+task+executor_key combination."""
         config_json = json.dumps(config or {}, sort_keys=True)
         with self._cursor() as conn:
             row = conn.execute(
-                "SELECT result_json FROM benchmarks WHERE model = ? AND config_json = ? AND task = ?",
-                (model, config_json, task),
+                "SELECT result_json, created_at FROM benchmarks WHERE model = ? AND config_json = ? AND task = ? AND executor_key = ?",
+                (model, config_json, task, executor_key),
             ).fetchone()
-        if row:
-            return json.loads(row["result_json"])
-        return None
+        if not row:
+            return None
+        if self.ttl_seconds is not None and (time.time() - row["created_at"]) > self.ttl_seconds:
+            with self._cursor() as conn:
+                conn.execute(
+                    "DELETE FROM benchmarks WHERE model = ? AND config_json = ? AND task = ? AND executor_key = ?",
+                    (model, config_json, task, executor_key),
+                )
+            return None
+        return json.loads(row["result_json"])
 
-    def set(self, model: str, config: dict | None, task: str, result: dict) -> None:
+    def set(self, model: str, config: dict | None, task: str, executor_key: str, result: dict) -> None:
         """Cache a benchmark result."""
         config_json = json.dumps(config or {}, sort_keys=True)
         result_json = json.dumps(result, ensure_ascii=False)
         with self._cursor() as conn:
             conn.execute(
                 """INSERT OR REPLACE INTO benchmarks
-                   (model, config_json, task, result_json, created_at)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (model, config_json, task, result_json, time.time()),
+                   (model, config_json, task, executor_key, result_json, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (model, config_json, task, executor_key, result_json, time.time()),
             )
 
     def clear(self, model: str = "", task: str = "") -> int:
