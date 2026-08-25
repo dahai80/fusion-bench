@@ -1,10 +1,12 @@
-# Fusion-Bench + Fusion-MLX docker-compose.
+# Fusion-Bench + Fusion-MLX docker-compose (Apple Silicon).
 # Importers/callers: `docker-compose up`; DevOps deployment.
 # Affected API: no API changes; orchestration only.
 # Data schema: N/A.
-# User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-14 containerization).
-
-version: "3.8"
+#
+# fusion-mlx runs on Metal (Apple Silicon) — no GPU passthrough in containers.
+# On an Apple Silicon host run fusion-mlx natively via start.sh and set
+# FUSION_MLX_URL=http://host.docker.internal:11432/v1. The fusion-mlx service
+# below is optional (CPU image, non-Apple CI); uncomment for CI-only use.
 
 services:
   fusion-bench:
@@ -13,33 +15,32 @@ services:
     ports:
       - "11450:11450"
     volumes:
-      - fusion-bench-data:/root/.fusion-bench
-      - fusion-bench-tasks:/root/bench
+      - fusion-bench-data:/home/fusion/.fusion-bench
+      - fusion-bench-tasks:/home/fusion/bench
     environment:
-      - FUSION_MLX_URL=http://fusion-mlx:11432/v1
+      # Point at host fusion-mlx on macOS Docker Desktop.
+      - FUSION_MLX_URL=http://host.docker.internal:11432/v1
       - FUSION_BENCH_LOG_LEVEL=INFO
-    depends_on:
-      fusion-mlx:
-        condition: service_started
+      # Post-R1 AUTH config (enable when IdP configured):
+      # - FUSION_BENCH_OAUTH_ENABLED=0
+      # - FUSION_BENCH_OAUTH_JWKS_URL=
+      # - FUSION_BENCH_OAUTH_ISSUER=
+      # - FUSION_BENCH_OAUTH_AUDIENCE=
     restart: unless-stopped
 
-  fusion-mlx:
-    image: ghcr.io/dahai80/fusion-mlx:latest
-    container_name: fusion-mlx
-    ports:
-      - "11432:11432"
-    volumes:
-      - mlx-models:/root/.cache/huggingface
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    restart: unless-stopped
+  # OPTIONAL: CPU-only fusion-mlx for non-Apple CI. Disabled by default — Apple
+  # Silicon runs fusion-mlx natively. Uncomment + set FUSION_MLX_URL above to
+  # http://fusion-mlx:11432/v1 to use this service instead of host.
+  # fusion-mlx:
+  #   image: ghcr.io/dahai80/fusion-mlx:latest
+  #   container_name: fusion-mlx
+  #   ports:
+  #     - "11432:11432"
+  #   volumes:
+  #     - mlx-models:/root/.cache/huggingface
+  #   restart: unless-stopped
 
 volumes:
   fusion-bench-data:
   fusion-bench-tasks:
-  mlx-models:
+  # mlx-models:
