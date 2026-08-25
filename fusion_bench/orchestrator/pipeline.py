@@ -17,6 +17,7 @@ from typing import Any
 
 from ..api.gpu_monitor import GPUStats, get_gpu_stats
 from ..api.sse import get_progress_stream
+from ..cache import BenchmarkCache
 from ..core.models import EvalLevel, GateResult, SuiteResult, TaskStatus, TraceRecord
 from ..core.plugin_base import EvalResult, TaskConfig
 from ..core.registry import executor_registry
@@ -27,6 +28,21 @@ from .root_cause import analyze as root_cause_analyze
 logger = logging.getLogger(__name__)
 
 _DEFAULT_CHECKPOINT_DIR = Path.home() / ".fusion-bench" / "checkpoints"
+
+_EVAL_RESULT_FIELDS = {
+    "task_id", "executor_key", "model", "level", "metric_name", "metric_value",
+    "cases", "duration_seconds", "errors", "meta", "failure_category",
+    "failure_detail", "optimization_hints",
+}
+
+
+def _is_deterministic(config: TaskConfig) -> bool:
+    # Cache only safe when temperature=0, fixed seed, bounded samples.
+    params = config.params or {}
+    temp = params.get("temperature", params.get("temp", 0))
+    if temp not in (0, 0.0):
+        return False
+    return config.max_samples is not None
 
 
 class Pipeline:
@@ -48,6 +64,8 @@ class Pipeline:
         max_retries: int = 2,
         checkpoint_dir: str | Path | None = None,
         circuit_breaker: CircuitBreaker | None = None,
+        cache: BenchmarkCache | None = None,
+        use_cache: bool = True,
     ):
         self.gate_engine = gate_engine or GateEngine()
         self.max_concurrent = max_concurrent
@@ -56,6 +74,8 @@ class Pipeline:
         self.checkpoint_dir = Path(checkpoint_dir) if checkpoint_dir else _DEFAULT_CHECKPOINT_DIR
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.circuit_breaker = circuit_breaker or CircuitBreaker()
+        self.cache = cache
+        self.use_cache = use_cache
         self._trace_records: list[TraceRecord] = []
         self._cancelled = False
         self._paused = False
@@ -377,6 +397,16 @@ class Pipeline:
                 priority=task_cfg.get("priority", 0),
             )
 
+            if self.use_cache and self.cache and _is_deterministic(config):
+                cached = self.cache.get(model, config.params, task_id, executor_key)
+                if cached:
+                    logger.info("Cache hit for task %s executor %s", task_id, executor_key)
+                    stream.emit(suite_id, "cache_hit", {"task_id": task_id, "executor_key": executor_key})
+                    cached_result = EvalResult(**{k: v for k, v in cached.items() if k in _EVAL_RESULT_FIELDS})
+                    completed[task_id] = cached_result
+                    return cached_result
+                logger.debug("Cache miss for task %s", task_id)
+
             if not self.circuit_breaker.can_execute(executor_key):
                 cb_state = self.circuit_breaker.get_state(executor_key)
                 logger.warning("Circuit OPEN for %s, skipping task %s", executor_key, task_id)
@@ -431,6 +461,9 @@ class Pipeline:
                         )
                         self.circuit_breaker.record_success(executor_key)
                         self._record_trace(result, TaskStatus.COMPLETED)
+                        if self.use_cache and self.cache and _is_deterministic(config):
+                            with contextlib.suppress(Exception):
+                                self.cache.set(model, config.params, task_id, executor_key, result.to_dict())
                         completed[task_id] = result
                         self._save_checkpoint(suite_id, completed, remaining)
                         if self._pipeline_triggers:
