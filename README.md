@@ -132,6 +132,9 @@ asyncio.run(main())
 | `fusion-bench traces [--model] [--executor]` | Query trace store |
 | `fusion-bench compare --models <m1,m2> [--tasks]` | Compare multiple models |
 | `fusion-bench bench-site <action> [options]` | Manage bench-site web UI (dev/build/deploy/stats) |
+| `fusion-bench api-key <create\|revoke\|list> [options]` | Manage API keys (R1 AUTH identity) |
+| `fusion-bench cache <stats\|clear> [--model] [--task]` | Inspect/clear benchmark result cache |
+| `fusion-bench judge <create\|list\|show\|delete> [options]` | Manage LLM-as-Judge scoring configs (R1 JUDGE) |
 
 ### Options
 
