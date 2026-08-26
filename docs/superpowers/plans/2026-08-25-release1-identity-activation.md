@@ -30,9 +30,8 @@
 | `fusion_bench/cache.py` | BenchmarkCache (executor_key + WAL + TTL) | Modify |
 | `fusion_bench/judge/base.py` | Judge ABC, JudgeInput, JudgeVerdict | Create |
 | `fusion_bench/judge/llm_judge.py` | LLMJudge — fusion-mlx HTTP judge | Create |
-| `fusion_bench/judge/config.py` | JudgeConfig dataclass | Create |
-| `fusion_bench/judge/__init__.py` | get_judge factory | Create |
-| `fusion_bench/storage/judge_store.py` | JudgeStore — SQLite CRUD for JudgeConfig | Create |
+| `fusion_bench/judge/__init__.py` | get_judge factory (re-exports JudgeConfig/JudgeStore from core) | Create |
+| `fusion_bench/core/judge_config.py` | JudgeConfig (+ judge_type/weight/rubric) + schema migration | Modify |
 | `fusion_bench/orchestrator/pipeline.py` | cache integration + determinism helper | Modify |
 | `fusion_bench/executors/agent_executor.py` | judge blend in _evaluate_scenario | Modify |
 | `fusion_bench/executors/artifact_executor.py` | judge blend in _evaluate_artifact | Modify |
@@ -2620,3 +2619,16 @@ git commit -m "docs: Release 1 — api-key/cache/judge CLI commands"
 ```
 
 Release 1 complete. R2 (multi-tenant/distributed/scheduler), R3 (PB storage/HA), R4 (K8s/sandbox/ecosystem) deferred to future cycles per spec out-of-scope section.
+
+## Post-Release Reconciliation: JudgeConfig single source of truth
+
+During R1 review, a divergence was detected: two `JudgeConfig` classes existed — the pre-existing `core/judge_config.py` (judge_id-keyed, `judge_model`) and R1's new `judge/config.py` (name-keyed, `judge_type`/`weight`/`rubric`). Decision: reconcile to core as the canonical module.
+
+Applied post-R1 (commit `01f6b66`):
+
+- `core/judge_config.py` — full rewrite as canonical: `JudgeConfig` superset (`name`, `model`, `judge_type`, `weight`, `criteria`, `rubric`, `temperature`, `prompt_template`, `score_range`, `max_tokens`) + `to_dict`/`from_dict`; `JudgeStore` name-keyed schema (`judges` table, name PK, drop `judge_id`), `save`/`get`/`list`/`delete`/`close`.
+- `judge/config.py` + `storage/judge_store.py` — re-export `JudgeConfig`/`JudgeStore`/`_DEFAULT_DB_PATH` from core; keep only judge DTOs (`JudgeInput`/`JudgeVerdict`) local to `judge/`.
+- Field rename: `judge_model` → `model` across `llm_judge.py`, `cli.py`, `api/app.py` `/judges` endpoints (now `save(name, cfg)` / `list()` + `get` / `delete(name)`), executor blends, and tests.
+- `judge/__init__.py` `get_judge` factory unchanged (raises on `judge_type="rule"`).
+
+Verified: 431 tests green, ruff clean.
