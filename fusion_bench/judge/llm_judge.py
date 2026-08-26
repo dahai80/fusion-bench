@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from typing import Any
 
@@ -43,9 +44,16 @@ def _extract_json(content: str) -> dict[str, Any] | None:
 class LLMJudge(Judge):
     # Scores output via fusion-mlx LLM call. Deterministic at temperature=0.
 
-    def __init__(self, config: JudgeConfig, base_url: str = "http://localhost:11432/v1"):
+    def __init__(
+        self,
+        config: JudgeConfig,
+        base_url: str = "http://localhost:11432/v1",
+        api_key: str | None = None,
+    ):
         self.config = config
         self.base_url = base_url.rstrip("/")
+        # Match MLXModel/BenchmarkRunner convention: env override, default "local".
+        self.api_key = api_key or os.environ.get("FUSION_MLX_API_KEY", "local")
 
     async def judge(self, judge_input: JudgeInput) -> JudgeVerdict:
         prompt = self._build_prompt(judge_input)
@@ -95,7 +103,10 @@ class LLMJudge(Judge):
             {"role": "system", "content": "You are an evaluation judge. Output valid JSON only."},
             {"role": "user", "content": prompt},
         ]
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(
+            timeout=120.0,
+            headers={"Authorization": f"Bearer {self.api_key}"},
+        ) as client:
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
                 json={
