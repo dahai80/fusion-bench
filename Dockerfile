@@ -26,8 +26,14 @@ COPY fusion_bench/ ./fusion_bench/
 ARG PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 RUN pip install --no-cache-dir -e ".[test]"
 
-# Non-root user for production safety.
-RUN useradd -m -r fusion && chown -R fusion:fusion /app
+# Non-root user for production safety. Pre-create the data dirs the app
+# writes to (~/.fusion-bench for sqlite DBs, ~/bench for task output) and
+# chown them to the fusion user — named volumes inherit ownership from the
+# image path on first mount, so without this the volume is root-owned and
+# the non-root process hits "unable to open database file" at startup.
+RUN useradd -m -r fusion && \
+    mkdir -p /home/fusion/.fusion-bench /home/fusion/bench && \
+    chown -R fusion:fusion /app /home/fusion/.fusion-bench /home/fusion/bench
 USER fusion
 
 # Default serve port (cli.py `serve` default = 11450).
