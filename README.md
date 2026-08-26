@@ -334,6 +334,11 @@ pytest tests/ --cov=fusion_bench
 ## Changelog
 
 
+### v0.3.8 (2026-08-26)
+
+- **Release 1 — Identity & Activation (enterprise track)**: Real authentication (API Key store + OAuth2 JWKS IdP via `IdentityMiddleware`), Pipeline cache integration (executor_key + WAL + TTL + determinism gate), LLM-as-Judge for Agent/Artifact executors (hybrid/llm/rule blend with neutral fallback), Docker hardening (python:3.12-slim, non-root user, port 11450, healthcheck `/api/v1/system/health`, no NVIDIA GPU). New CLI subcommands: `api-key`, `cache`, `judge`. New `/api/v1/judges` CRUD endpoints with RBAC guards.
+- **fix(api)**: TLS enforcement middleware referenced nonexistent `BaseRequestMiddleware` — `FUSION_BENCH_TLS_ENFORCE=1` crashed the app at import. Fixed to `BaseHTTPMiddleware`. Added 15 API tests (IdentityMiddleware, /judges CRUD, authz guards, TLS). 446 tests green.
+
 ### v0.3.7 (2026-08-07)
 
 - **验收修复 (reliability/docking)**: 统一 executor `is_available()` 语义 — agent/code/artifact/evalscope 不再用 `/models` 200 探测（gateway 401 时会被静默注销），改为依赖检查或 `return True`，与 speed/security/tune 惯例一致。修复后全部 9 个执行器在未授权 gateway 下均可注册。
