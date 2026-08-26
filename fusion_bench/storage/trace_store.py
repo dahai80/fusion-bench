@@ -32,7 +32,10 @@ class TraceStore:
     @property
     def conn(self) -> sqlite3.Connection:
         if self._conn is None:
-            self._conn = sqlite3.connect(str(self.db_path))
+            # check_same_thread=False: app caches a global store, but FastAPI
+            # serves sync endpoints across a thread pool — one shared conn must
+            # be usable from any worker thread. Safe under WAL journal mode.
+            self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             self._conn.row_factory = sqlite3.Row
             self._conn.execute("PRAGMA journal_mode=WAL")
         return self._conn
