@@ -99,7 +99,7 @@ class LLMJudge(Judge):
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
                 json={
-                    "model": self.config.judge_model,
+                    "model": self.config.model,
                     "messages": messages,
                     "max_tokens": 512,
                     "temperature": self.config.temperature,

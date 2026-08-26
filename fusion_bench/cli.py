@@ -866,7 +866,7 @@ def cmd_judge(args):
         if action == "create":
             criteria = [c.strip() for c in args.criteria.split(",") if c.strip()]
             cfg = JudgeConfig(
-                judge_model=args.model,
+                model=args.model,
                 judge_type=args.type,
                 weight=args.weight,
                 criteria=criteria,
@@ -874,7 +874,7 @@ def cmd_judge(args):
                 temperature=args.temperature,
             )
             store.save(args.name, cfg)
-            print(f"Saved judge config: {args.name} (type={cfg.judge_type}, model={cfg.judge_model}, weight={cfg.weight})")
+            print(f"Saved judge config: {args.name} (type={cfg.judge_type}, model={cfg.model}, weight={cfg.weight})")
             log.info("Saved judge config: %s type=%s", args.name, cfg.judge_type)
         elif action == "list":
             names = store.list()
@@ -891,7 +891,7 @@ def cmd_judge(args):
                 log.info("Judge config '%s' not found", args.name)
             else:
                 print(f"name: {args.name}")
-                print(f"model: {cfg.judge_model}")
+                print(f"model: {cfg.model}")
                 print(f"type: {cfg.judge_type}")
                 print(f"weight: {cfg.weight}")
                 print(f"criteria: {cfg.criteria}")

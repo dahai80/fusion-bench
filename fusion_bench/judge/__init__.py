@@ -1,11 +1,17 @@
-"""Judge module — LLM-as-Judge scoring for subjective evaluation."""
+"""Judge module — LLM-as-Judge scoring for subjective evaluation.
+
+JudgeConfig + JudgeStore are canonical in fusion_bench.core.judge_config and
+re-exported here. JudgeInput/JudgeVerdict are judge DTOs (judge/config.py).
+"""
 
 from __future__ import annotations
 
-from .base import Judge
-from .config import JudgeConfig, JudgeInput, JudgeVerdict
+from fusion_bench.core.judge_config import JudgeConfig, JudgeStore
 
-__all__ = ["Judge", "JudgeConfig", "JudgeInput", "JudgeVerdict", "get_judge"]
+from .base import Judge
+from .config import JudgeInput, JudgeVerdict
+
+__all__ = ["Judge", "JudgeConfig", "JudgeStore", "JudgeInput", "JudgeVerdict", "get_judge"]
 
 
 def get_judge(config: JudgeConfig) -> Judge:

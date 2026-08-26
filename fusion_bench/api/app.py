@@ -1094,8 +1094,11 @@ async def load_dataset_file(
 class JudgeCreateRequest(BaseModel):
     name: str
     model: str = "qwen3.5-9b"
+    judge_type: str = "hybrid"
+    weight: float = 0.5
     prompt_template: str = ""
     criteria: list[str] = Field(default_factory=list)
+    rubric: str = ""
     score_range: tuple[int, int] = (1, 10)
     temperature: float = 0.3
     max_tokens: int = 256
@@ -1107,17 +1110,19 @@ async def create_judge(req: JudgeCreateRequest):
 
     store = JudgeStore()
     cfg = JudgeConfig(
-        judge_id=f"judge-{uuid.uuid4().hex[:8]}",
         name=req.name,
         model=req.model,
+        judge_type=req.judge_type,
+        weight=req.weight,
         prompt_template=req.prompt_template,
         criteria=req.criteria,
-        score_range=req.score_range,
+        rubric=req.rubric,
+        score_range=tuple(float(x) for x in req.score_range),
         temperature=req.temperature,
         max_tokens=req.max_tokens,
     )
-    store.add(cfg)
-    return {"judge_id": cfg.judge_id, "created": True}
+    store.save(req.name, cfg)
+    return {"name": req.name, "created": True}
 
 
 @app.get("/api/v1/judges")
@@ -1125,16 +1130,22 @@ async def list_judges():
     from ..core.judge_config import JudgeStore
 
     store = JudgeStore()
-    return {"judges": [vars(j) for j in store.list_judges()]}
+    names = store.list()
+    judges = []
+    for n in names:
+        cfg = store.get(n)
+        if cfg:
+            judges.append(cfg.to_dict())
+    return {"judges": judges}
 
 
-@app.delete("/api/v1/judges/{judge_id}")
-async def delete_judge(judge_id: str):
+@app.delete("/api/v1/judges/{name}")
+async def delete_judge(name: str):
     from ..core.judge_config import JudgeStore
 
     store = JudgeStore()
-    store.delete(judge_id)
-    return {"deleted": True}
+    deleted = store.delete(name)
+    return {"deleted": deleted}
 
 
 # ── Approvals ────────────────────────────────────────────────────────

@@ -22,14 +22,14 @@ from fusion_bench.storage.judge_store import JudgeStore
 
 class TestJudgeConfig:
     def test_defaults(self):
-        cfg = JudgeConfig(judge_model="qwen")
+        cfg = JudgeConfig(model="qwen")
         assert cfg.judge_type == "hybrid"
         assert cfg.weight == 0.5
         assert cfg.temperature == 0
         assert cfg.criteria == []
 
     def test_to_dict_roundtrip(self):
-        cfg = JudgeConfig(judge_model="m", judge_type="llm", weight=0.7, criteria=["correctness"], rubric="strict")
+        cfg = JudgeConfig(model="m", judge_type="llm", weight=0.7, criteria=["correctness"], rubric="strict")
         d = cfg.to_dict()
         assert d["judge_type"] == "llm"
         cfg2 = JudgeConfig.from_dict(d)
@@ -40,11 +40,11 @@ class TestJudgeConfig:
 class TestJudgeStore:
     def test_save_and_get(self, tmp_path):
         store = JudgeStore(db_path=str(tmp_path / "judge.db"))
-        cfg = JudgeConfig(judge_model="qwen", criteria=["helpfulness"])
+        cfg = JudgeConfig(model="qwen", criteria=["helpfulness"])
         store.save("default", cfg)
         got = store.get("default")
         assert got is not None
-        assert got.judge_model == "qwen"
+        assert got.model == "qwen"
         assert got.criteria == ["helpfulness"]
         store.close()
 
@@ -55,8 +55,8 @@ class TestJudgeStore:
 
     def test_list_and_delete(self, tmp_path):
         store = JudgeStore(db_path=str(tmp_path / "judge.db"))
-        store.save("a", JudgeConfig(judge_model="m1"))
-        store.save("b", JudgeConfig(judge_model="m2"))
+        store.save("a", JudgeConfig(model="m1"))
+        store.save("b", JudgeConfig(model="m2"))
         names = store.list()
         assert set(names) == {"a", "b"}
         assert store.delete("a") is True
@@ -66,9 +66,9 @@ class TestJudgeStore:
 
     def test_overwrite_on_save(self, tmp_path):
         store = JudgeStore(db_path=str(tmp_path / "judge.db"))
-        store.save("x", JudgeConfig(judge_model="old"))
-        store.save("x", JudgeConfig(judge_model="new"))
-        assert store.get("x").judge_model == "new"
+        store.save("x", JudgeConfig(model="old"))
+        store.save("x", JudgeConfig(model="new"))
+        assert store.get("x").model == "new"
         store.close()
 
 
@@ -84,7 +84,7 @@ def _mock_response(content: str) -> httpx.Response:
 class TestLLMJudge:
     @pytest.mark.asyncio
     async def test_parse_valid_json(self):
-        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        cfg = JudgeConfig(model="qwen", judge_type="llm")
         judge = LLMJudge(cfg)
         content = '{"score": 0.8, "reasoning": "mostly correct"}'
         with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
@@ -99,7 +99,7 @@ class TestLLMJudge:
 
     @pytest.mark.asyncio
     async def test_parse_malformed_fallback_neutral(self):
-        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        cfg = JudgeConfig(model="qwen", judge_type="llm")
         judge = LLMJudge(cfg)
         with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -113,7 +113,7 @@ class TestLLMJudge:
 
     @pytest.mark.asyncio
     async def test_timeout_fallback_neutral(self):
-        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        cfg = JudgeConfig(model="qwen", judge_type="llm")
         judge = LLMJudge(cfg)
         with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -126,7 +126,7 @@ class TestLLMJudge:
 
     @pytest.mark.asyncio
     async def test_score_clamped_to_unit_interval(self):
-        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        cfg = JudgeConfig(model="qwen", judge_type="llm")
         judge = LLMJudge(cfg)
         content = '{"score": 1.5, "reasoning": "over"}'
         with patch("fusion_bench.judge.llm_judge.httpx.AsyncClient") as mock_client_cls:
@@ -139,12 +139,12 @@ class TestLLMJudge:
         assert verdict.score == 1.0
 
     def test_get_judge_factory_llm(self):
-        cfg = JudgeConfig(judge_model="qwen", judge_type="llm")
+        cfg = JudgeConfig(model="qwen", judge_type="llm")
         judge = get_judge(cfg)
         assert isinstance(judge, LLMJudge)
 
     def test_get_judge_factory_rule_raises(self):
-        cfg = JudgeConfig(judge_model="qwen", judge_type="rule")
+        cfg = JudgeConfig(model="qwen", judge_type="rule")
         with pytest.raises(ValueError):
             get_judge(cfg)
 
@@ -154,7 +154,7 @@ class TestAgentJudgeBlend:
     async def test_hybrid_blend_applies_judge(self, tmp_path, monkeypatch):
         # Seed a hybrid judge config; mock the judge call to a fixed verdict.
         store = JudgeStore(db_path=str(tmp_path / "j.db"))
-        store.save("hybrid-j", JudgeConfig(judge_model="qwen", judge_type="hybrid", weight=0.5))
+        store.save("hybrid-j", JudgeConfig(model="qwen", judge_type="hybrid", weight=0.5))
         monkeypatch.setattr("fusion_bench.executors.agent_executor.JudgeStore", lambda *a, **k: store)
 
         async def fake_judge(judge_input):
@@ -206,7 +206,7 @@ class TestArtifactJudgeBlend:
     @pytest.mark.asyncio
     async def test_hybrid_blend_applies_judge(self, tmp_path, monkeypatch):
         store = JudgeStore(db_path=str(tmp_path / "j.db"))
-        store.save("art-j", JudgeConfig(judge_model="qwen", judge_type="hybrid", weight=0.5))
+        store.save("art-j", JudgeConfig(model="qwen", judge_type="hybrid", weight=0.5))
         monkeypatch.setattr("fusion_bench.executors.artifact_executor.JudgeStore", lambda *a, **k: store)
 
         async def fake_judge(judge_input):

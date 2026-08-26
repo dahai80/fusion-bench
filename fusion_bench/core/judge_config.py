@@ -1,9 +1,13 @@
-"""Judge model configuration — LLM-as-judge evaluation settings.
+"""Judge model configuration — LLM-as-judge evaluation settings (canonical).
 
-Importers/callers: api/app.py /judges endpoints; executors that use LLM-as-judge pattern.
-Affected API: /judges CRUD endpoints (GET/POST/DELETE).
-Data schema: JudgeConfig dataclass (judge_id, name, model, prompt_template, criteria, score_range); judges table (judge_id PK, name, model, prompt_template, criteria JSON, score_range JSON, temperature, max_tokens, created_at).
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-16 judge model config).
+Importers/callers: api/app.py /judges endpoints; executors that use LLM-as-judge
+blend (agent/artifact); cli.py judge subcommand; judge/ package re-exports.
+Affected API: /judges CRUD endpoints (GET/POST/DELETE); judge CLI subcommand.
+Data schema: JudgeConfig dataclass (name, model, judge_type, weight, criteria,
+rubric, temperature, prompt_template, score_range, max_tokens); judges table
+(name PK, model, judge_type, weight, criteria JSON, rubric, temperature,
+prompt_template, score_range JSON, max_tokens, created_at).
+Canonical source of truth — judge/config.py + storage/judge_store.py re-export.
 """
 
 from __future__ import annotations
@@ -13,7 +17,6 @@ import json
 import logging
 import sqlite3
 import time
-import uuid
 from pathlib import Path
 from typing import Any
 
@@ -23,26 +26,30 @@ _DEFAULT_DB_PATH = Path.home() / ".fusion-bench" / "judges.db"
 
 
 class JudgeConfig:
-    """Configuration for an LLM-as-judge evaluator."""
+    """Configuration for an LLM-as-judge evaluator (canonical)."""
 
     def __init__(
         self,
-        judge_id: str = "",
         name: str = "",
         model: str = "qwen3.5-9b",
-        prompt_template: str = "",
+        judge_type: str = "hybrid",
+        weight: float = 0.5,
         criteria: list[str] | None = None,
-        score_range: tuple[float, float] = (0.0, 1.0),
+        rubric: str = "",
         temperature: float = 0.0,
+        prompt_template: str = "",
+        score_range: tuple[float, float] = (0.0, 1.0),
         max_tokens: int = 1024,
     ):
-        self.judge_id = judge_id or f"judge-{uuid.uuid4().hex[:8]}"
         self.name = name
         self.model = model
-        self.prompt_template = prompt_template or self._default_template()
-        self.criteria = criteria or ["relevance", "accuracy", "completeness"]
-        self.score_range = score_range
+        self.judge_type = judge_type
+        self.weight = weight
+        self.criteria = criteria or []
+        self.rubric = rubric
         self.temperature = temperature
+        self.prompt_template = prompt_template or self._default_template()
+        self.score_range = score_range
         self.max_tokens = max_tokens
         self.created_at = time.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -59,13 +66,15 @@ class JudgeConfig:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "judge_id": self.judge_id,
             "name": self.name,
             "model": self.model,
-            "prompt_template": self.prompt_template,
+            "judge_type": self.judge_type,
+            "weight": self.weight,
             "criteria": self.criteria,
-            "score_range": list(self.score_range),
+            "rubric": self.rubric,
             "temperature": self.temperature,
+            "prompt_template": self.prompt_template,
+            "score_range": list(self.score_range),
             "max_tokens": self.max_tokens,
             "created_at": self.created_at,
         }
@@ -73,13 +82,15 @@ class JudgeConfig:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> JudgeConfig:
         cfg = cls(
-            judge_id=data.get("judge_id", ""),
             name=data.get("name", ""),
             model=data.get("model", "qwen3.5-9b"),
-            prompt_template=data.get("prompt_template", ""),
+            judge_type=data.get("judge_type", "hybrid"),
+            weight=data.get("weight", 0.5),
             criteria=data.get("criteria"),
-            score_range=tuple(data.get("score_range", [0.0, 1.0])),
+            rubric=data.get("rubric", ""),
             temperature=data.get("temperature", 0.0),
+            prompt_template=data.get("prompt_template", ""),
+            score_range=tuple(data.get("score_range", [0.0, 1.0])),
             max_tokens=data.get("max_tokens", 1024),
         )
         cfg.created_at = data.get("created_at", cfg.created_at)
@@ -87,7 +98,7 @@ class JudgeConfig:
 
 
 class JudgeStore:
-    """SQLite-backed judge configuration store."""
+    """SQLite-backed judge configuration store (name-keyed, canonical)."""
 
     def __init__(self, db_path: str | Path | None = None):
         self.db_path = Path(db_path) if db_path else _DEFAULT_DB_PATH
@@ -106,63 +117,63 @@ class JudgeStore:
     def _ensure_table(self) -> None:
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS judges (
-                judge_id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
+                name TEXT PRIMARY KEY,
                 model TEXT NOT NULL,
-                prompt_template TEXT NOT NULL,
+                judge_type TEXT NOT NULL DEFAULT 'hybrid',
+                weight REAL NOT NULL DEFAULT 0.5,
                 criteria TEXT NOT NULL DEFAULT '[]',
-                score_range TEXT DEFAULT '[0.0, 1.0]',
+                rubric TEXT NOT NULL DEFAULT '',
                 temperature REAL DEFAULT 0.0,
+                prompt_template TEXT NOT NULL DEFAULT '',
+                score_range TEXT DEFAULT '[0.0, 1.0]',
                 max_tokens INTEGER DEFAULT 1024,
                 created_at TEXT NOT NULL
             )
         """)
         self.conn.commit()
 
-    def add(self, config: JudgeConfig) -> str:
-        try:
-            self.conn.execute(
-                """INSERT OR REPLACE INTO judges
-                   (judge_id, name, model, prompt_template, criteria, score_range,
-                    temperature, max_tokens, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    config.judge_id,
-                    config.name,
-                    config.model,
-                    config.prompt_template,
-                    json.dumps(config.criteria),
-                    json.dumps(list(config.score_range)),
-                    config.temperature,
-                    config.max_tokens,
-                    config.created_at,
-                ),
-            )
-            self.conn.commit()
-            logger.info("Judge config added: %s (%s)", config.name, config.model)
-            return config.judge_id
-        except sqlite3.Error as e:
-            logger.error("Failed to add judge config %s: %s", config.name, e)
-            return ""
+    def save(self, name: str, config: JudgeConfig) -> None:
+        config.name = name
+        self.conn.execute(
+            """INSERT OR REPLACE INTO judges
+               (name, model, judge_type, weight, criteria, rubric, temperature,
+                prompt_template, score_range, max_tokens, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                name,
+                config.model,
+                config.judge_type,
+                config.weight,
+                json.dumps(config.criteria),
+                config.rubric,
+                config.temperature,
+                config.prompt_template,
+                json.dumps(list(config.score_range)),
+                config.max_tokens,
+                config.created_at,
+            ),
+        )
+        self.conn.commit()
+        logger.info("Judge config saved: %s (type=%s, model=%s)", name, config.judge_type, config.model)
 
-    def get(self, judge_id: str) -> JudgeConfig | None:
-        row = self.conn.execute("SELECT * FROM judges WHERE judge_id = ?", (judge_id,)).fetchone()
+    def get(self, name: str) -> JudgeConfig | None:
+        row = self.conn.execute("SELECT * FROM judges WHERE name = ?", (name,)).fetchone()
         if not row:
             return None
         return self._row_to_config(row)
 
-    def list_judges(self) -> list[JudgeConfig]:
-        rows = self.conn.execute("SELECT * FROM judges ORDER BY created_at DESC").fetchall()
-        return [self._row_to_config(r) for r in rows]
+    def list(self) -> list[str]:
+        rows = self.conn.execute("SELECT name FROM judges ORDER BY name").fetchall()
+        return [r["name"] for r in rows]
 
-    def delete(self, judge_id: str) -> bool:
-        cursor = self.conn.execute("DELETE FROM judges WHERE judge_id = ?", (judge_id,))
+    def delete(self, name: str) -> bool:
+        cursor = self.conn.execute("DELETE FROM judges WHERE name = ?", (name,))
         self.conn.commit()
         return cursor.rowcount > 0
 
     @staticmethod
     def _row_to_config(row: sqlite3.Row) -> JudgeConfig:
-        criteria = []
+        criteria: list[str] = []
         if row["criteria"]:
             with contextlib.suppress(json.JSONDecodeError):
                 criteria = json.loads(row["criteria"])
@@ -174,13 +185,15 @@ class JudgeStore:
             except (json.JSONDecodeError, TypeError):
                 pass
         cfg = JudgeConfig(
-            judge_id=row["judge_id"],
             name=row["name"],
             model=row["model"],
-            prompt_template=row["prompt_template"],
+            judge_type=row["judge_type"],
+            weight=row["weight"],
             criteria=criteria,
-            score_range=score_range,
+            rubric=row["rubric"],
             temperature=row["temperature"],
+            prompt_template=row["prompt_template"],
+            score_range=score_range,
             max_tokens=row["max_tokens"],
         )
         cfg.created_at = row["created_at"]
