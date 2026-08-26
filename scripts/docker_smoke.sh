@@ -10,6 +10,7 @@ echo "[smoke] Building image ${IMAGE}..."
 docker build -t "${IMAGE}" .
 
 echo "[smoke] Running fusion-bench --help..."
-docker run --rm "${IMAGE}" fusion-bench --help
+# ENTRYPOINT is fusion-bench, so --help is passed as args (not the command name).
+docker run --rm "${IMAGE}" --help
 
 echo "[smoke] PASS: image builds and CLI starts."

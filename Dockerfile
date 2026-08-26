@@ -19,6 +19,11 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY fusion_bench/ ./fusion_bench/
 
+# Use Aliyun PyPI mirror: direct PyPI is throttled/unreachable inside the
+# build VM (~17 kB/s vs mirror's ~4 MB/s). Same mirror used for uv pip
+# compile (see root CLAUDE.md). Override at build time with --build-arg
+# PIP_INDEX_URL=... for environments with direct PyPI access.
+ARG PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 RUN pip install --no-cache-dir -e ".[test]"
 
 # Non-root user for production safety.
