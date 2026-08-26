@@ -334,6 +334,13 @@ pytest tests/ --cov=fusion_bench
 ## Changelog
 
 
+### v0.4.0rc1 (2026-08-26)
+
+- **Release Candidate — R1 hardening + trial deployment**: Promotion of the R1 identity/activation track to a release candidate. All prior R1 work (identity middleware, RBAC, pipeline cache, LLM-as-Judge, Docker) now trial-deployed and verified end-to-end.
+- **Docker production fixes**: Dropped `build-essential` apt layer (pure-Python project, all deps ship arm64 wheels → no C compile); added Aliyun PyPI mirror `ARG PIP_INDEX_URL` (build VM PyPI throttled 17 kB/s → mirror 4 MB/s, ~3 min builds); fixed `docker_smoke.sh` ENTRYPOINT/CMD arg double (`fusion-bench fusion-bench --help` → `fusion-bench --help`); replaced curl HEALTHCHECK with stdlib `urllib` (no system packages); pre-created `~/.fusion-bench` + `~/bench` data dirs and chowned to non-root `fusion` user — without this named volumes mount root-owned and the container crashes at startup with `unable to open database file`.
+- **Trial deploy verified**: `docker compose up` → container Up (healthy); `GET /api/v1/system/health` 200; `/openapi.json` 39 paths v0.4.0rc1; `POST /api/v1/judges` 201; `GET /api/v1/judges` 200 persisted; volume `fusion:fusion` with WAL files. All test artifacts cleaned up post-verification.
+- **Test status**: 475 unit tests + 3 judge e2e (live Qwen3-0.6B-4bit) green; ruff clean.
+
 ### v0.3.8 (2026-08-26)
 
 - **Release 1 — Identity & Activation (enterprise track)**: Real authentication (API Key store + OAuth2 JWKS IdP via `IdentityMiddleware`), Pipeline cache integration (executor_key + WAL + TTL + determinism gate), LLM-as-Judge for Agent/Artifact executors (hybrid/llm/rule blend with neutral fallback), Docker hardening (python:3.12-slim, non-root user, port 11450, healthcheck `/api/v1/system/health`, no NVIDIA GPU). New CLI subcommands: `api-key`, `cache`, `judge`. New `/api/v1/judges` CRUD endpoints with RBAC guards.
