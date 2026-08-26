@@ -24,11 +24,11 @@ from ..core.models import EvalLevel, GateTier, TaskStatus
 from ..storage.trace_store import TraceStore
 
 if _os.environ.get("FUSION_BENCH_TLS_ENFORCE") == "1":
-    from starlette.middleware.base import BaseRequestMiddleware
+    from starlette.middleware.base import BaseHTTPMiddleware
     from starlette.requests import Request
     from starlette.responses import JSONResponse
 
-    class _TLSRedirectMiddleware(BaseRequestMiddleware):
+    class _TLSRedirectMiddleware(BaseHTTPMiddleware):
         async def dispatch(self, request: Request, call_next):
             scheme = request.url.scheme
             if scheme == "http":
