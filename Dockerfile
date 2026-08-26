@@ -10,9 +10,11 @@ LABEL description="Fusion-Bench: MLX model benchmarking and auto-tuning workbenc
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl build-essential && \
-    rm -rf /var/lib/apt/lists/*
+# No apt layer: all deps (pyjwt[crypto]→cryptography, matplotlib, pydantic-core)
+# ship prebuilt linux/arm64 wheels — no C compilation, no system packages.
+# git/curl unused at runtime (no git subprocess calls; HEALTHCHECK uses
+# Python urllib from the base image). Skipping apt also sidesteps slow
+# Debian mirror fetches inside the build VM.
 
 COPY pyproject.toml ./
 COPY fusion_bench/ ./fusion_bench/
@@ -29,8 +31,9 @@ EXPOSE 11450
 
 VOLUME ["/home/fusion/.fusion-bench", "/home/fusion/bench"]
 
+# HEALTHCHECK uses Python urllib (present in base image) — no curl needed.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -f http://localhost:11450/api/v1/system/health || exit 1
+    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:11450/api/v1/system/health', timeout=4).status==200 else 1)" || exit 1
 
 ENTRYPOINT ["fusion-bench"]
 CMD ["serve", "--host", "0.0.0.0", "--port", "11450"]
