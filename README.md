@@ -300,9 +300,27 @@ pytest tests/ --cov=fusion_bench
 ```
 
 ### Test Stats
-- **336 tests**, 0 failures
-- **95%+ statement coverage**
+- **475 tests** (+ 3 live judge e2e, gated), 0 failures
+- **66% statement coverage** on `api/app.py` (full suite higher)
 - **Python 3.12+** compatible
+
+### Releasing
+
+The in-code version (`pyproject.toml` + `app.py` OpenAPI + README Changelog), the Git tag, and the GitHub Release are kept in sync by `scripts/release.sh`. The version in `pyproject.toml` is the single source of truth.
+
+```bash
+# 1. Bump the version in all three places, update the README Changelog,
+#    commit, and push to main.
+git add pyproject.toml fusion_bench/api/app.py README.md
+git commit -m "release: vX.Y.Z — <summary>"
+git push origin main
+
+# 2. Cut the aligned tag + GitHub release (runs ruff + pytest first).
+scripts/release.sh
+
+# A version containing rc/alpha/beta is published as a GitHub prerelease
+# (never Latest); a stable version is auto-marked Latest.
+```
 
 ---
 
