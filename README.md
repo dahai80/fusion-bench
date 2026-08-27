@@ -352,6 +352,11 @@ scripts/release.sh
 ## Changelog
 
 
+### v0.4.0rc2 (2026-08-27)
+
+- **Release tooling hardening**: Added `scripts/release.sh` — single-command release that keeps the Git tag, GitHub Release, and in-code version (pyproject.toml = single source of truth) aligned. Pre-flight gates (tag-not-exists, clean tree, HEAD on origin) plus a pre-release ruff+pytest gate prevent drift; release notes are extracted from the README changelog; rc/alpha/beta versions auto-publish as GitHub prereleases, stable versions auto-marked Latest. Backfilled the missing v0.3.0–v0.3.8 tags/releases and fixed the test-stat in the Development section (336→475).
+- **Three-way alignment verified**: code version = v0.4.0rc2, latest tag = v0.4.0rc1 (prior), latest stable release = v0.3.8.
+
 ### v0.4.0rc1 (2026-08-26)
 
 - **Release Candidate — R1 hardening + trial deployment**: Promotion of the R1 identity/activation track to a release candidate. All prior R1 work (identity middleware, RBAC, pipeline cache, LLM-as-Judge, Docker) now trial-deployed and verified end-to-end.
