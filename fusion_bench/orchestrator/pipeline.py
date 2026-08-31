@@ -30,9 +30,19 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CHECKPOINT_DIR = Path.home() / ".fusion-bench" / "checkpoints"
 
 _EVAL_RESULT_FIELDS = {
-    "task_id", "executor_key", "model", "level", "metric_name", "metric_value",
-    "cases", "duration_seconds", "errors", "meta", "failure_category",
-    "failure_detail", "optimization_hints",
+    "task_id",
+    "executor_key",
+    "model",
+    "level",
+    "metric_name",
+    "metric_value",
+    "cases",
+    "duration_seconds",
+    "errors",
+    "meta",
+    "failure_category",
+    "failure_detail",
+    "optimization_hints",
 }
 
 

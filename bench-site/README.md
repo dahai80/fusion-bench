@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:11461](http://localhost:11461).
+Open [http://localhost:3000](http://localhost:3000) (manual `npm run dev`). The `fusion-bench bench-site dev` CLI wrapper defaults to port 11468.
 
 ## Database Schema
 

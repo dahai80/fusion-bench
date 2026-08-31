@@ -131,7 +131,7 @@ def main():
     # serve (API server)
     serve_parser = subparsers.add_parser("serve", help="Start REST API server")
     serve_parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
-    serve_parser.add_argument("--port", type=int, default=11450, help="Bind port (default: 11450)")
+    serve_parser.add_argument("--port", type=int, default=11467, help="Bind port (default: 11467)")
     serve_parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
     serve_parser.add_argument("--ssl-certfile", default="", help="TLS certificate file")
     serve_parser.add_argument("--ssl-keyfile", default="", help="TLS private key file")
@@ -148,7 +148,7 @@ def main():
         choices=["dev", "build", "deploy", "stats"],
         help="Action: dev/build/deploy/stats",
     )
-    benchsite_parser.add_argument("--port", type=int, default=11461, help="Dev server port (default: 11461)")
+    benchsite_parser.add_argument("--port", type=int, default=11468, help="Dev server port (default: 11468)")
     benchsite_parser.add_argument("--skip-build", action="store_true", help="Deploy: skip build step")
     benchsite_parser.add_argument("--skip-restart", action="store_true", help="Deploy: skip service restart")
 
@@ -803,6 +803,7 @@ def cmd_api_key(args):
     import logging
 
     from .auth.rbac import RBACStore
+
     log = logging.getLogger(__name__)
     store = RBACStore()
     try:

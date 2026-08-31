@@ -17,7 +17,20 @@ def _run_cli(argv: list[str], tmp_path, monkeypatch):
 class TestJudgeCLI:
     def test_create_then_list_then_show(self, tmp_path, monkeypatch, capsys):
         rc = _run_cli(
-            ["judge", "create", "--name", "default", "--model", "qwen", "--type", "hybrid", "--weight", "0.6", "--criteria", "correctness,helpfulness"],
+            [
+                "judge",
+                "create",
+                "--name",
+                "default",
+                "--model",
+                "qwen",
+                "--type",
+                "hybrid",
+                "--weight",
+                "0.6",
+                "--criteria",
+                "correctness,helpfulness",
+            ],
             tmp_path,
             monkeypatch,
         )

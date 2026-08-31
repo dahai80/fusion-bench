@@ -64,7 +64,5 @@ async def test_judge_neutral_fallback_on_bad_url():
     # Unreachable base_url must not crash — neutral fallback (Rule 12).
     config = JudgeConfig(name="e2e3", model=_MODEL, judge_type="llm")
     judge = LLMJudge(config, base_url="http://127.0.0.1:9/v1", api_key="x")
-    verdict = await judge.judge(
-        JudgeInput(prompt="x", expected="y", actual="z", criteria=["c"])
-    )
+    verdict = await judge.judge(JudgeInput(prompt="x", expected="y", actual="z", criteria=["c"]))
     assert verdict.score == 0.5

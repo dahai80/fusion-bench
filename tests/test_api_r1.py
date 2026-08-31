@@ -11,19 +11,11 @@ from fusion_bench.auth.rbac import RBACStore
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     # Redirect all default DB paths to tmp so tests never touch home dir.
-    monkeypatch.setattr(
-        "fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db"
-    )
-    monkeypatch.setattr(
-        "fusion_bench.core.judge_config._DEFAULT_DB_PATH", tmp_path / "judges.db"
-    )
-    monkeypatch.setattr(
-        "fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db"
-    )
+    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
+    monkeypatch.setattr("fusion_bench.core.judge_config._DEFAULT_DB_PATH", tmp_path / "judges.db")
+    monkeypatch.setattr("fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db")
     # Re-exported alias used by storage.judge_store.
-    monkeypatch.setattr(
-        "fusion_bench.storage.judge_store._DEFAULT_DB_PATH", tmp_path / "judges.db"
-    )
+    monkeypatch.setattr("fusion_bench.storage.judge_store._DEFAULT_DB_PATH", tmp_path / "judges.db")
     monkeypatch.setenv("FUSION_BENCH_API_KEY_ENABLED", "1")
     monkeypatch.delenv("FUSION_BENCH_OAUTH_ENABLED", raising=False)
     monkeypatch.delenv("FUSION_BENCH_TLS_ENFORCE", raising=False)
@@ -38,9 +30,7 @@ def client(tmp_path, monkeypatch):
 
 @pytest.fixture
 def admin_key(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        "fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db"
-    )
+    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
     store = RBACStore()
     try:
         key = store.create_api_key("u-admin", role="admin", workspace_id="ws1")
@@ -51,9 +41,7 @@ def admin_key(tmp_path, monkeypatch):
 
 @pytest.fixture
 def viewer_key(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        "fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db"
-    )
+    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
     store = RBACStore()
     try:
         key = store.create_api_key("u-viewer", role="viewer", workspace_id="ws1")
@@ -178,17 +166,13 @@ class TestAuthGuards:
 
     def test_invalid_api_key_falls_back_anonymous(self, client):
         # Bogus key resolves to None -> anonymous (non-strict) -> not 403.
-        resp = client.get(
-            "/api/v1/tasks", headers={"x-api-key": "bogus-not-real"}
-        )
+        resp = client.get("/api/v1/tasks", headers={"x-api-key": "bogus-not-real"})
         assert resp.status_code == 200
 
     def test_api_key_disabled_anonymous(self, client, monkeypatch):
         monkeypatch.setenv("FUSION_BENCH_API_KEY_ENABLED", "0")
         # Even with a header, key disabled -> anonymous.
-        resp = client.get(
-            "/api/v1/tasks", headers={"x-api-key": "whatever"}
-        )
+        resp = client.get("/api/v1/tasks", headers={"x-api-key": "whatever"})
         assert resp.status_code == 200
 
 
@@ -197,9 +181,7 @@ class TestAuthGuards:
 
 class TestTLSEnforcement:
     def test_tls_enforce_rejects_http(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db"
-        )
+        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
         monkeypatch.setattr(
             "fusion_bench.core.judge_config._DEFAULT_DB_PATH",
             tmp_path / "judges.db",

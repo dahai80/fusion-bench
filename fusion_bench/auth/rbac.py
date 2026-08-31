@@ -153,7 +153,9 @@ class RBACStore:
         self.conn.commit()
         return cursor.rowcount > 0
 
-    def create_api_key(self, user_id: str, role: str, workspace_id: str = "default", scopes: list[str] | None = None) -> str:
+    def create_api_key(
+        self, user_id: str, role: str, workspace_id: str = "default", scopes: list[str] | None = None
+    ) -> str:
         key = secrets.token_urlsafe(32)
         now = time.strftime("%Y-%m-%dT%H:%M:%S")
         self.conn.execute(
@@ -178,6 +180,7 @@ class RBACStore:
         except ValueError:
             role = Role.VIEWER
         from .identity import Identity
+
         return Identity(
             user_id=row["user_id"],
             workspace_id=row["workspace_id"],
@@ -231,6 +234,7 @@ def require_permission(permission: Permission, allow_anonymous: bool = False):
 
     def _check(request: Request) -> str:
         from .identity import Identity
+
         identity: Identity = getattr(request.state, "identity", None) or Identity(user_id="anonymous")
         if identity.is_anonymous:
             if allow_anonymous:

@@ -7,7 +7,7 @@
 
 ## REST API
 
-Base URL: `http://localhost:11450` (default)
+Base URL: `http://localhost:11467` (default)
 
 ### Task Management
 

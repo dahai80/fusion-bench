@@ -36,15 +36,16 @@ RUN useradd -m -r fusion && \
     chown -R fusion:fusion /app /home/fusion/.fusion-bench /home/fusion/bench
 USER fusion
 
-# Default serve port (cli.py `serve` default = 11450).
-ENV FUSION_BENCH_PORT=11450
-EXPOSE 11450
+# Default serve port (cli.py `serve` default = 11467). 11467 allocated from free
+# pool — 11450 belongs to fusion-multi-node-discovery (cross-repo port conflict, see #15).
+ENV FUSION_BENCH_PORT=11467
+EXPOSE 11467
 
 VOLUME ["/home/fusion/.fusion-bench", "/home/fusion/bench"]
 
 # HEALTHCHECK uses Python urllib (present in base image) — no curl needed.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:11450/api/v1/system/health', timeout=4).status==200 else 1)" || exit 1
+    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:11467/api/v1/system/health', timeout=4).status==200 else 1)" || exit 1
 
 ENTRYPOINT ["fusion-bench"]
-CMD ["serve", "--host", "0.0.0.0", "--port", "11450"]
+CMD ["serve", "--host", "0.0.0.0", "--port", "11467"]

@@ -10,18 +10,10 @@ from fusion_bench.core.models import EvalLevel, TaskStatus, TraceRecord
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        "fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db"
-    )
-    monkeypatch.setattr(
-        "fusion_bench.core.judge_config._DEFAULT_DB_PATH", tmp_path / "judges.db"
-    )
-    monkeypatch.setattr(
-        "fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db"
-    )
-    monkeypatch.setattr(
-        "fusion_bench.storage.judge_store._DEFAULT_DB_PATH", tmp_path / "judges.db"
-    )
+    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
+    monkeypatch.setattr("fusion_bench.core.judge_config._DEFAULT_DB_PATH", tmp_path / "judges.db")
+    monkeypatch.setattr("fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db")
+    monkeypatch.setattr("fusion_bench.storage.judge_store._DEFAULT_DB_PATH", tmp_path / "judges.db")
     monkeypatch.setenv("FUSION_BENCH_API_KEY_ENABLED", "1")
     monkeypatch.delenv("FUSION_BENCH_OAUTH_ENABLED", raising=False)
     monkeypatch.delenv("FUSION_BENCH_TLS_ENFORCE", raising=False)
@@ -142,12 +134,20 @@ class TestTaskLifecycle:
         from fusion_bench.api import app as app_module
 
         app_module._background_tasks["t-a"] = {
-            "task_id": "t-a", "status": "pending", "model": "alpha",
-            "executor_key": "speed", "level": "L1", "created_at": "2026-08-26T10:00:00",
+            "task_id": "t-a",
+            "status": "pending",
+            "model": "alpha",
+            "executor_key": "speed",
+            "level": "L1",
+            "created_at": "2026-08-26T10:00:00",
         }
         app_module._background_tasks["t-b"] = {
-            "task_id": "t-b", "status": "pending", "model": "beta",
-            "executor_key": "speed", "level": "L1", "created_at": "2026-08-26T10:00:00",
+            "task_id": "t-b",
+            "status": "pending",
+            "model": "beta",
+            "executor_key": "speed",
+            "level": "L1",
+            "created_at": "2026-08-26T10:00:00",
         }
         resp = client.get("/api/v1/tasks?model=alpha")
         assert resp.status_code == 200
@@ -158,8 +158,12 @@ class TestTaskLifecycle:
         from fusion_bench.api import app as app_module
 
         app_module._background_tasks["task-can"] = {
-            "task_id": "task-can", "status": "running", "model": "m",
-            "executor_key": "speed", "level": "L1", "created_at": "2026-08-26T10:00:00",
+            "task_id": "task-can",
+            "status": "running",
+            "model": "m",
+            "executor_key": "speed",
+            "level": "L1",
+            "created_at": "2026-08-26T10:00:00",
         }
         resp = client.post("/api/v1/tasks/task-can/cancel")
         assert resp.status_code == 200
@@ -169,8 +173,12 @@ class TestTaskLifecycle:
         from fusion_bench.api import app as app_module
 
         app_module._background_tasks["task-done"] = {
-            "task_id": "task-done", "status": "completed", "model": "m",
-            "executor_key": "speed", "level": "L1", "created_at": "2026-08-26T10:00:00",
+            "task_id": "task-done",
+            "status": "completed",
+            "model": "m",
+            "executor_key": "speed",
+            "level": "L1",
+            "created_at": "2026-08-26T10:00:00",
         }
         resp = client.post("/api/v1/tasks/task-done/cancel")
         assert resp.status_code == 400
@@ -183,8 +191,12 @@ class TestTaskLifecycle:
         from fusion_bench.api import app as app_module
 
         app_module._background_tasks["task-fail"] = {
-            "task_id": "task-fail", "status": "failed", "model": "m",
-            "executor_key": "speed", "level": "L1", "created_at": "2026-08-26T10:00:00",
+            "task_id": "task-fail",
+            "status": "failed",
+            "model": "m",
+            "executor_key": "speed",
+            "level": "L1",
+            "created_at": "2026-08-26T10:00:00",
             "request": {"model": "m", "executor_key": "speed"},
         }
         resp = client.post("/api/v1/tasks/task-fail/retry")
@@ -196,8 +208,12 @@ class TestTaskLifecycle:
         from fusion_bench.api import app as app_module
 
         app_module._background_tasks["task-run"] = {
-            "task_id": "task-run", "status": "running", "model": "m",
-            "executor_key": "speed", "level": "L1", "created_at": "2026-08-26T10:00:00",
+            "task_id": "task-run",
+            "status": "running",
+            "model": "m",
+            "executor_key": "speed",
+            "level": "L1",
+            "created_at": "2026-08-26T10:00:00",
         }
         resp = client.post("/api/v1/tasks/task-run/retry")
         assert resp.status_code == 400
@@ -206,8 +222,12 @@ class TestTaskLifecycle:
         from fusion_bench.api import app as app_module
 
         app_module._background_tasks["task-log"] = {
-            "task_id": "task-log", "status": "failed", "model": "m",
-            "executor_key": "speed", "level": "L1", "created_at": "2026-08-26T10:00:00",
+            "task_id": "task-log",
+            "status": "failed",
+            "model": "m",
+            "executor_key": "speed",
+            "level": "L1",
+            "created_at": "2026-08-26T10:00:00",
             "error": "boom",
         }
         resp = client.get("/api/v1/tasks/task-log/logs")
@@ -269,15 +289,11 @@ class TestGates:
         assert resp.json()["gate"]["name"] == "my-gate"
 
     def test_check_gate_missing_task_404(self, client):
-        resp = client.post(
-            "/api/v1/gates/check", json={"task_id": "no-such-task"}
-        )
+        resp = client.post("/api/v1/gates/check", json={"task_id": "no-such-task"})
         assert resp.status_code == 404
 
     def test_check_gate_for_seeded_task(self, client, seeded_trace):
-        resp = client.post(
-            "/api/v1/gates/check", json={"task_id": "task-seed-1"}
-        )
+        resp = client.post("/api/v1/gates/check", json={"task_id": "task-seed-1"})
         assert resp.status_code == 200
         assert "passed" in resp.json()
         assert "gates" in resp.json()
@@ -320,9 +336,7 @@ class TestResults:
         assert resp.status_code == 404
 
     def test_compare_results_too_few(self, client, seeded_trace):
-        resp = client.post(
-            "/api/v1/results/compare", json={"task_ids": ["task-seed-1"]}
-        )
+        resp = client.post("/api/v1/results/compare", json={"task_ids": ["task-seed-1"]})
         assert resp.status_code == 400
 
     def test_compare_results_missing(self, client, seeded_trace):

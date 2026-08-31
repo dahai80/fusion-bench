@@ -13,7 +13,7 @@ services:
     build: .
     container_name: fusion-bench
     ports:
-      - "11450:11450"
+      - "11467:11467"
     volumes:
       - fusion-bench-data:/home/fusion/.fusion-bench
       - fusion-bench-tasks:/home/fusion/bench

@@ -23,5 +23,6 @@ def get_judge(config: JudgeConfig) -> Judge:
     if config.judge_type == "rule":
         raise ValueError("judge_type='rule' has no LLM judge; executor uses rule_score directly")
     from .llm_judge import LLMJudge
+
     base_url = os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")
     return LLMJudge(config, base_url=base_url)

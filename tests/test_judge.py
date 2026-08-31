@@ -160,16 +160,23 @@ class TestAgentJudgeBlend:
         async def fake_judge(judge_input):
             return JudgeVerdict(score=1.0, reasoning="perfect")
 
-        monkeypatch.setattr("fusion_bench.executors.agent_executor.get_judge", lambda cfg: type("J", (), {"judge": staticmethod(fake_judge)})())
+        monkeypatch.setattr(
+            "fusion_bench.executors.agent_executor.get_judge",
+            lambda cfg: type("J", (), {"judge": staticmethod(fake_judge)})(),
+        )
 
         executor = AgentExecutor()
         cfg = TaskConfig(
-            task_id="t", model="qwen", executor_key="agent", params={"scenarios": [], "judge": "hybrid-j"},
+            task_id="t",
+            model="qwen",
+            executor_key="agent",
+            params={"scenarios": [], "judge": "hybrid-j"},
         )
         scenario = AgentScenario(scenario_id="s1", instruction="hi", expected_behavior="x", max_turns=1)
 
         async def fake_turns(sc, tc):
             return [TurnRecord(turn=0, role="assistant", content="done")]
+
         monkeypatch.setattr(executor, "_run_multi_turn", fake_turns)
         monkeypatch.setattr(executor, "_eval_response", lambda sc, resp: {"score": 0.0, "passed": False, "details": {}})
         monkeypatch.setattr(
@@ -189,6 +196,7 @@ class TestAgentJudgeBlend:
 
         async def fake_turns(sc, tc):
             return [TurnRecord(turn=0, role="assistant", content="done")]
+
         monkeypatch.setattr(executor, "_run_multi_turn", fake_turns)
         monkeypatch.setattr(executor, "_eval_response", lambda sc, resp: {"score": 0.8, "passed": True, "details": {}})
         monkeypatch.setattr(
@@ -211,6 +219,7 @@ class TestArtifactJudgeBlend:
 
         async def fake_judge(judge_input):
             return JudgeVerdict(score=1.0, reasoning="good")
+
         monkeypatch.setattr(
             "fusion_bench.executors.artifact_executor.get_judge",
             lambda cfg: type("J", (), {"judge": staticmethod(fake_judge)})(),
@@ -228,6 +237,7 @@ class TestArtifactJudgeBlend:
 
         async def fake_gen(test_case, task_config):
             return '{"host": "x"}'
+
         monkeypatch.setattr(executor, "_generate_artifact", fake_gen)
         monkeypatch.setattr(executor, "_eval_artifact", lambda tc, art: {"score": 0.0, "passed": False, "details": {}})
         result = await executor._evaluate_artifact(tc, cfg)
@@ -243,8 +253,11 @@ class TestArtifactJudgeBlend:
 
         async def fake_gen(test_case, task_config):
             return '{"a": 1}'
+
         monkeypatch.setattr(executor, "_generate_artifact", fake_gen)
-        monkeypatch.setattr(executor, "_eval_artifact", lambda tc, art: {"score": 0.7, "passed": True, "details": {"k": True}})
+        monkeypatch.setattr(
+            executor, "_eval_artifact", lambda tc, art: {"score": 0.7, "passed": True, "details": {"k": True}}
+        )
         cfg = TaskConfig(task_id="t", model="qwen", executor_key="artifact", params={})
         result = await executor._evaluate_artifact(tc, cfg)
         assert abs(result.score - 0.7) < 1e-6

@@ -63,7 +63,9 @@ class BenchmarkCache:
             cols = {r[1] for r in conn.execute("PRAGMA table_info(benchmarks)").fetchall()}
             if "executor_key" not in cols:
                 conn.execute("ALTER TABLE benchmarks ADD COLUMN executor_key TEXT NOT NULL DEFAULT 'speed'")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_benchmarks_lookup ON benchmarks(model, config_json, task, executor_key)")
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_benchmarks_lookup ON benchmarks(model, config_json, task, executor_key)"
+                )
 
     def get(self, model: str, config: dict | None, task: str, executor_key: str = "speed") -> dict | None:
         """Get cached result for a model+config+task+executor_key combination."""

@@ -270,7 +270,7 @@ fusion-bench bench-site stats
 ```bash
 cd bench-site
 npm install
-npm run dev          # http://localhost:11461
+npm run dev          # http://localhost:3000 (manual) — CLI `fusion-bench bench-site dev` uses 11468
 ./deploy.sh         # Build + deploy to production
 ```
 
@@ -351,6 +351,12 @@ scripts/release.sh
 
 ## Changelog
 
+
+### v0.4.0rc3 (2026-08-31)
+
+- **Port conflict fix (#15)**: Moved bench's own listen defaults off ports claimed by sibling services — `serve` 11450→**11467** (11450 belongs to fusion-multi-node-discovery), `bench-site` 11461→**11468** (11461 belongs to fusion-security). Updated all call sites: cli.py `serve`/`bench-site` arg defaults, Dockerfile `ENV`/`EXPOSE`/HEALTHCHECK/CMD, docker-compose port mapping, `FusionBenchClient`/SDK default `base_url`, `run_benchmark` default + `INPUT_BASE_URL` env, `.github/action.yml` `base-url`, docs/api.md. Bench code that *connects* to multi-node/security as a client is untouched.
+- **CI lint green**: `ruff format --check .` was red on 14 pre-existing files (line-length wrap drift); reformatted them so the lint job passes. test job already green (475 passed).
+- **Doc accuracy**: README + bench-site README/CLAUDE.md listed the wrong port for manual `npm run dev` (11461, but `next dev` binds 3000); corrected to 3000 with a note that the CLI wrapper uses 11468.
 
 ### v0.4.0rc2 (2026-08-27)
 

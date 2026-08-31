@@ -340,7 +340,9 @@ class AgentExecutor(ExecutorPlugin):
             criteria_eval = self._eval_response(scenario, final_response)
             traj = TrajectoryScorer.score(turns, scenario)
             rule_score = 0.5 * criteria_eval["score"] + 0.5 * traj["trajectory_score"]
-            final_score, judge_source, judge_meta = await self._apply_judge(scenario, final_response, rule_score, task_config)
+            final_score, judge_source, judge_meta = await self._apply_judge(
+                scenario, final_response, rule_score, task_config
+            )
             passed = final_score >= 0.5
             meta = {
                 "scenario_id": scenario.scenario_id,

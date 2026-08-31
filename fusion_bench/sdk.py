@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class FusionBenchClient:
-    def __init__(self, base_url: str = "http://localhost:11450", timeout: int = 30):
+    def __init__(self, base_url: str = "http://localhost:11467", timeout: int = 30):
         self.base_url = base_url.rstrip("/")
         self._client = httpx.Client(base_url=self.base_url, timeout=timeout)
 

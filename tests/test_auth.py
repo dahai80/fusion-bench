@@ -78,7 +78,11 @@ class TestOAuthResolver:
     @pytest.mark.asyncio
     async def test_valid_token_resolves_identity(self, monkeypatch, tmp_path):
         resolver = self._make_resolver(monkeypatch, tmp_path)
-        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value={"sub": "user42", "roles": ["admin"], "workspace_id": "ws9"})):
+        with patch.object(
+            resolver,
+            "_verify_jwt",
+            new=AsyncMock(return_value={"sub": "user42", "roles": ["admin"], "workspace_id": "ws9"}),
+        ):
             ident = await resolver.resolve("valid.jwt.token")
         assert ident is not None
         assert ident.user_id == "user42"
@@ -95,7 +99,9 @@ class TestOAuthResolver:
     @pytest.mark.asyncio
     async def test_unknown_role_claim_falls_back_to_viewer(self, monkeypatch, tmp_path):
         resolver = self._make_resolver(monkeypatch, tmp_path)
-        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value={"sub": "u1", "roles": ["unknown_role"]})):
+        with patch.object(
+            resolver, "_verify_jwt", new=AsyncMock(return_value={"sub": "u1", "roles": ["unknown_role"]})
+        ):
             ident = await resolver.resolve("tok")
         assert ident is not None
         assert ident.role == Role.VIEWER
@@ -123,6 +129,7 @@ def _make_app() -> FastAPI:
     @app.post("/write")
     async def write(_user: str = Depends(require_permission(Permission.TASK_CREATE, allow_anonymous=False))):
         return {"ok": True}
+
     return app
 
 
