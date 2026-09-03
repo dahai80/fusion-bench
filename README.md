@@ -44,7 +44,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 | **SDK** | ✅ Python httpx client | ❌ | ❌ |
 | **CI/CD** | ✅ GitHub Action | ❌ | ❌ |
 | **Remote distribution** | ✅ HTTP dispatch | ❌ | ❌ |
-| **RBAC** | ✅ 3-role 8-permission | ❌ | ❌ |
+| **Tenant Auth** | ✅ fusion-identity JWT + tenant isolation | ❌ | ❌ |
 | **TLS enforcement** | ✅ --tls-enforce | ❌ | ❌ |
 
 **One sentence:** Fusion-Bench is the fastest way to benchmark and auto-tune MLX models on Apple Silicon — with direct integration to [bench.dpdns.org](https://bench.dpdns.org).
@@ -132,7 +132,7 @@ asyncio.run(main())
 | `fusion-bench traces [--model] [--executor]` | Query trace store |
 | `fusion-bench compare --models <m1,m2> [--tasks]` | Compare multiple models |
 | `fusion-bench bench-site <action> [options]` | Manage bench-site web UI (dev/build/deploy/stats) |
-| `fusion-bench api-key <create\|revoke\|list> [options]` | Manage API keys (R1 AUTH identity) |
+| `fusion-bench api-key [options]` | Prints retirement guidance — API keys now issued by fusion-identity (#16) |
 | `fusion-bench cache <stats\|clear> [--model] [--task]` | Inspect/clear benchmark result cache |
 | `fusion-bench judge <create\|list\|show\|delete> [options]` | Manage LLM-as-Judge scoring configs (R1 JUDGE) |
 
@@ -211,7 +211,7 @@ asyncio.run(main())
 | **SSE Progress** | `api/sse.py` | Server-Sent Events real-time progress stream |
 | **Webhook** | `api/webhook.py` | HMAC-signed webhook notifications on gate failure |
 | **GPU Monitor** | `api/gpu_monitor.py` | Real-time GPU utilization, memory, temperature |
-| **RBAC Auth** | `auth/rbac.py` | Role(ADMIN/OPERATOR/VIEWER) → Permission mapping |
+| **Tenant Auth** | `auth/tenant.py` + `auth/rbac.py` | fusion-identity JWT verify + X-Tenant-Id isolation; role→permission matrix |
 | **SDK** | `sdk.py` | Python httpx client for all /api/v1/* endpoints |
 | **CI/CD** | `cicd/github_action.py` | GitHub Action composite action for CI benchmarks |
 | **CLI** | `cli.py` | Command-line interface v2 |
@@ -351,6 +351,11 @@ scripts/release.sh
 
 ## Changelog
 
+
+### v0.4.0 (2026-09-03)
+
+- **Tenant auth via fusion-identity (#16)**: fusion-identity (port 11470) is now the sole JWT issuer + tenant registry. Local `api_keys`/`user_roles` tables and the `IdentityMiddleware`/OAuth resolver are retired. Bench mounts `fusion_core.tenant.install_tenant_middleware` with a fail-closed `verify_jwt` callback that calls `POST /api/v1/auth/verify` — missing `X-Tenant-Id`, missing/invalid token, `jwt.tid` ↔ header mismatch, inactive or revoked tenant all return 401 (no default-tenant degradation). Identity roles (`tenant_admin`/`operator`/`member`/`viewer`) map onto bench's `admin`/`operator`/`viewer` permission matrix; `require_permission` now reads `TenantContext.role`. Trace records gained a `tenant_id` column (auto-migrated) and every `TraceStore.query` call is scoped by tenant, so tenant A cannot read tenant B's traces. Benchmark usage is reported best-effort to identity `POST /api/v1/tenants/{tid}/usage`. The `api-key` CLI subcommand now prints retirement guidance pointing at fusion-identity.
+- **Tests**: 485 unit tests green (added cross-tenant isolation, fail-closed verify, role mapping, permission matrix, middleware integration). `ruff check` + `ruff format --check` clean.
 
 ### v0.4.0rc3 (2026-08-31)
 

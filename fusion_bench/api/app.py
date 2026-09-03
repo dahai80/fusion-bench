@@ -16,10 +16,11 @@ from typing import Any
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fusion_core.tenant import install_tenant_middleware
 from pydantic import BaseModel, Field, model_validator
 
-from ..auth.identity import IdentityMiddleware
 from ..auth.rbac import Permission, require_permission
+from ..auth.tenant import _report_usage, _verify_jwt
 from ..core.models import EvalLevel, GateTier, TaskStatus
 from ..storage.trace_store import TraceStore
 
@@ -53,6 +54,14 @@ def _get_store() -> TraceStore:
     return _store
 
 
+def _tenant_id() -> str:
+    """Current tenant id from contextvar, or '' if unset. Scopes trace reads."""
+    from fusion_core.tenant import current
+
+    ctx = current()
+    return ctx.tenant_id if ctx else ""
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _get_store()
@@ -63,7 +72,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Fusion-Bench API",
-    version="0.4.0rc3",
+    version="0.4.0",
     description="Fusion-Bench — MLX model benchmarking REST API",
     lifespan=lifespan,
 )
@@ -72,8 +81,12 @@ if _os.environ.get("FUSION_BENCH_TLS_ENFORCE") == "1":
     app.add_middleware(_TLSRedirectMiddleware)
     logger.info("TLS enforcement middleware enabled — HTTP requests will be rejected")
 
-app.add_middleware(IdentityMiddleware)
-logger.info("Identity middleware registered")
+install_tenant_middleware(
+    app,
+    verify_jwt=_verify_jwt,
+    exempt_paths=frozenset({"/api/v1/system/health", "/docs", "/openapi.json", "/redoc"}),
+)
+logger.info("Tenant middleware registered (fusion-identity integration, fail-closed)")
 
 
 # ── Request/Response schemas ────────────────────────────────────────
@@ -221,6 +234,11 @@ async def create_task(
     req: TaskCreateRequest,
     _user: str = Depends(require_permission(Permission.TASK_CREATE)),
 ):
+    from fusion_core.tenant import current
+
+    ctx = current()
+    tenant_id = ctx.tenant_id if ctx else ""
+    user_id = ctx.user_id if ctx else None
     task_id = f"task-{uuid.uuid4().hex[:8]}"
     record = {
         "task_id": task_id,
@@ -230,9 +248,11 @@ async def create_task(
         "level": req.level,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "request": req.model_dump(),
+        "tenant_id": tenant_id,
+        "user_id": user_id,
     }
     _background_tasks[task_id] = record
-    asyncio.create_task(_run_task(task_id, req))
+    asyncio.create_task(_run_task(task_id, req, tenant_id, user_id))
     logger.info("Created task %s for model=%s executor=%s", task_id, req.model, req.executor_key)
     return TaskResponse(
         task_id=task_id,
@@ -245,7 +265,7 @@ async def create_task(
     )
 
 
-async def _run_task(task_id: str, req: TaskCreateRequest):
+async def _run_task(task_id: str, req: TaskCreateRequest, tenant_id: str = "", user_id: str | None = None):
     info = _background_tasks.get(task_id)
     if not info:
         return
@@ -285,8 +305,14 @@ async def _run_task(task_id: str, req: TaskCreateRequest):
             status=TaskStatus.COMPLETED,
             eval_result=result.to_dict(),
             duration_seconds=result.duration_seconds,
+            tenant_id=tenant_id,
         )
         _get_store().insert(trace)
+        if tenant_id:
+            result_dict = result.to_dict() or {}
+            token_count = int(result_dict.get("meta", {}).get("total_tokens", 0))
+            if token_count:
+                _report_usage(tenant_id, "tokens", token_count, model=req.model, user_id=user_id)
     except TimeoutError:
         info["status"] = "failed"
         info["error"] = f"Timeout after {req.timeout_seconds}s"
@@ -326,7 +352,7 @@ async def list_tasks(
     model: str | None = None,
 ):
     store = _get_store()
-    records = store.query(model=model, status=status, limit=page_size * page)
+    records = store.query(model=model, status=status, limit=page_size * page, tenant_id=_tenant_id())
     items = []
     for r in records:
         items.append(
@@ -339,7 +365,10 @@ async def list_tasks(
                 created_at=r.timestamp[:19],
             )
         )
+    current_tenant = _tenant_id()
     for tid, info in _background_tasks.items():
+        if current_tenant and info.get("tenant_id", "") != current_tenant:
+            continue
         if model and info.get("model") != model:
             continue
         if status and info.get("status") != status:
@@ -375,7 +404,7 @@ async def get_task(task_id: str):
             duration_seconds=info.get("duration_seconds", 0.0),
         )
     store = _get_store()
-    records = store.query(limit=1000)
+    records = store.query(limit=1000, tenant_id=_tenant_id())
     for r in records:
         if r.trace_id == task_id or r.task_id == task_id:
             return TaskDetailResponse(
@@ -579,7 +608,7 @@ async def list_suite_cases(suite_id: str, page: int = Query(1, ge=1), page_size:
 @app.get("/api/v1/results/{task_id}", response_model=ResultResponse)
 async def get_result(task_id: str):
     store = _get_store()
-    records = store.query(limit=1000)
+    records = store.query(limit=1000, tenant_id=_tenant_id())
     for r in records:
         if r.trace_id == task_id or r.task_id == task_id:
             er = r.eval_result or {}
@@ -604,7 +633,7 @@ async def compare_results(req: CompareRequest):
     store = _get_store()
     results = []
     for tid in req.task_ids:
-        records = store.query(limit=1000)
+        records = store.query(limit=1000, tenant_id=_tenant_id())
         for r in records:
             if r.trace_id == tid or r.task_id == tid:
                 results.append({"task_id": tid, "result": r.eval_result})
@@ -617,7 +646,7 @@ async def compare_results(req: CompareRequest):
 @app.post("/api/v1/results/{task_id}/export")
 async def export_result(task_id: str, format: str = Query("json", pattern="^(json|markdown|html)$")):
     store = _get_store()
-    records = store.query(limit=1000)
+    records = store.query(limit=1000, tenant_id=_tenant_id())
     for r in records:
         if r.trace_id == task_id or r.task_id == task_id:
             if format == "markdown":
@@ -646,7 +675,7 @@ async def get_trend(
     limit: int = Query(50, ge=1, le=200),
 ):
     store = _get_store()
-    records = store.query(model=model, executor_key=executor_key, level=level, limit=limit)
+    records = store.query(model=model, executor_key=executor_key, level=level, limit=limit, tenant_id=_tenant_id())
     return [
         TrendPoint(
             timestamp=r.timestamp[:19],
@@ -666,7 +695,7 @@ async def get_result_cases(
     status: str | None = None,
 ):
     store = _get_store()
-    records = store.query(limit=1000)
+    records = store.query(limit=1000, tenant_id=_tenant_id())
     for r in records:
         if r.trace_id == task_id or r.task_id == task_id:
             er = r.eval_result or {}
@@ -699,7 +728,7 @@ async def check_gate(req: GateCheckRequest):
     engine.load_default_gates()
 
     store = _get_store()
-    records = store.query(limit=1000)
+    records = store.query(limit=1000, tenant_id=_tenant_id())
     target = None
     for r in records:
         if r.trace_id == req.task_id or r.task_id == req.task_id:
@@ -821,7 +850,7 @@ async def audit_logs(
         return {"total": stats["total"], "page": page, "items": result}
     except Exception:
         store = _get_store()
-        records = store.query(limit=page_size * page)
+        records = store.query(limit=page_size * page, tenant_id=_tenant_id())
         items = [
             {
                 "trace_id": r.trace_id,

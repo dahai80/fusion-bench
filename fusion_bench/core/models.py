@@ -200,6 +200,7 @@ class TraceRecord:
     host_info: dict[str, Any] = field(default_factory=dict)
     agent_version: str = ""
     app_version: str = ""
+    tenant_id: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -217,4 +218,5 @@ class TraceRecord:
             "host_info": self.host_info,
             "agent_version": self.agent_version,
             "app_version": self.app_version,
+            "tenant_id": self.tenant_id,
         }

@@ -210,8 +210,7 @@ class TestCLISuite:
 
 
 class TestApiKeyCLI:
-    def test_api_key_create_and_list(self, tmp_path, monkeypatch, capsys):
-        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
+    def test_api_key_retired_prints_guidance(self, capsys):
         import argparse
 
         import fusion_bench.cli as cli
@@ -221,28 +220,8 @@ class TestApiKeyCLI:
         )
         cli.cmd_api_key(args)
         out = capsys.readouterr().out
-        assert "api_key" in out.lower() or len(out.strip()) >= 32
-        args2 = argparse.Namespace(command="api-key", action="list", user="", role="", workspace="", scopes="")
-        cli.cmd_api_key(args2)
-        out2 = capsys.readouterr().out
-        assert "alice" in out2
-
-    def test_api_key_revoke(self, tmp_path, monkeypatch, capsys):
-        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
-        import argparse
-
-        import fusion_bench.cli as cli
-
-        args = argparse.Namespace(
-            command="api-key", action="create", user="bob", role="viewer", workspace="default", scopes=""
-        )
-        cli.cmd_api_key(args)
-        key = capsys.readouterr().out.strip().split()[-1]
-        args2 = argparse.Namespace(
-            command="api-key", action="revoke", user="", role="", workspace="", scopes="", key=key
-        )
-        cli.cmd_api_key(args2)
-        assert "revoked" in capsys.readouterr().out.lower()
+        assert "fusion-identity" in out
+        assert "retired" in out
 
 
 class TestCacheCLI:

@@ -802,36 +802,15 @@ def cmd_backup(args):
 def cmd_api_key(args):
     import logging
 
-    from .auth.rbac import RBACStore
-
     log = logging.getLogger(__name__)
-    store = RBACStore()
-    try:
-        if args.action == "create":
-            if not args.user:
-                print("Error: --user required for create", file=sys.stderr)
-                sys.exit(1)
-            scopes = [s.strip() for s in args.scopes.split(",") if s.strip()]
-            key = store.create_api_key(args.user, args.role, args.workspace, scopes)
-            print(key)
-            log.info("Created API key for user=%s role=%s", args.user, args.role)
-        elif args.action == "revoke":
-            if not args.key:
-                print("Error: --key required for revoke", file=sys.stderr)
-                sys.exit(1)
-            if store.revoke_api_key(args.key):
-                print(f"revoked: {args.key[:8]}...")
-            else:
-                print("key not found", file=sys.stderr)
-                sys.exit(1)
-        elif args.action == "list":
-            rows = store.list_api_keys()
-            if not rows:
-                print("(no API keys)")
-            for r in rows:
-                print(f"{r['user_id']}\t{r['workspace_id']}\t{r['role']}\trevoked={r['revoked']}\t{r['created_at']}")
-    finally:
-        store.close()
+    log.info("api-key command invoked (retired)")
+    print(
+        "API keys are now issued by fusion-identity.\n"
+        "  POST /api/v1/tenants/{tenant_id}/api-keys\n"
+        "Set FUSION_IDENTITY_URL (default http://127.0.0.1:11470) and\n"
+        "FUSION_IDENTITY_SERVICE_TOKEN in your environment.\n"
+        "Local api_keys/user_roles tables have been retired (issue #16)."
+    )
 
 
 def cmd_cache(args):

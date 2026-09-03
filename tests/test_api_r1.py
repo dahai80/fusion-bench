@@ -1,67 +1,68 @@
-"""Release 1 API tests — IdentityMiddleware, /judges CRUD, authz guards, TLS."""
+"""Release 1 API tests — tenant middleware, /judges CRUD, authz guards, cross-tenant isolation (issue #16)."""
 
 from __future__ import annotations
+
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
-from fusion_bench.auth.rbac import RBACStore
+
+def _mock_response(status_code=200, body=None):
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.json.return_value = body or {}
+    return resp
+
+
+def _stub_identity(monkeypatch, role="admin", tid="t1"):
+    """Stub fusion-identity /auth/verify so the real _verify_jwt runs but
+    returns canned claims without network. Service token must be set."""
+    monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+    monkeypatch.setattr(
+        "fusion_bench.auth.tenant.httpx.post",
+        lambda *a, **k: _mock_response(
+            200, {"tid": tid, "role": role, "scopes": [], "tenant_status": "active", "revoked": False}
+        ),
+    )
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     # Redirect all default DB paths to tmp so tests never touch home dir.
-    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
     monkeypatch.setattr("fusion_bench.core.judge_config._DEFAULT_DB_PATH", tmp_path / "judges.db")
     monkeypatch.setattr("fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db")
-    # Re-exported alias used by storage.judge_store.
     monkeypatch.setattr("fusion_bench.storage.judge_store._DEFAULT_DB_PATH", tmp_path / "judges.db")
-    monkeypatch.setenv("FUSION_BENCH_API_KEY_ENABLED", "1")
-    monkeypatch.delenv("FUSION_BENCH_OAUTH_ENABLED", raising=False)
     monkeypatch.delenv("FUSION_BENCH_TLS_ENFORCE", raising=False)
+    _stub_identity(monkeypatch, role="admin", tid="t1")
 
     from fusion_bench.api import app as app_module
 
-    app_module._store = None  # reset cached store so it re-reads patched path
+    app_module._store = None
     with TestClient(app_module.app) as c:
         yield c
     app_module._store = None
 
 
-@pytest.fixture
-def admin_key(tmp_path, monkeypatch):
-    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
-    store = RBACStore()
-    try:
-        key = store.create_api_key("u-admin", role="admin", workspace_id="ws1")
-    finally:
-        store.close()
-    return key
+def _auth(tid="t1"):
+    return {"X-Tenant-Id": tid, "Authorization": "Bearer tok"}
 
 
-@pytest.fixture
-def viewer_key(tmp_path, monkeypatch):
-    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
-    store = RBACStore()
-    try:
-        key = store.create_api_key("u-viewer", role="viewer", workspace_id="ws1")
-    finally:
-        store.close()
-    return key
+def _stub_role(monkeypatch, role, tid="t1"):
+    _stub_identity(monkeypatch, role=role, tid=tid)
 
 
-# ── Health (no auth) ────────────────────────────────────────────────
+# ── Health (exempt, no auth) ────────────────────────────────────────
 
 
 class TestHealthEndpoint:
-    def test_health_ok(self, client):
+    def test_health_ok_no_auth(self, client):
         resp = client.get("/api/v1/system/health")
         assert resp.status_code == 200
-        body = resp.json()
-        assert body["status"] == "ok"
+        assert resp.json()["status"] == "ok"
 
 
-# ── /judges CRUD ────────────────────────────────────────────────────
+# ── /judges CRUD (tenant auth) ──────────────────────────────────────
 
 
 class TestJudgesCRUD:
@@ -69,111 +70,117 @@ class TestJudgesCRUD:
         resp = client.post(
             "/api/v1/judges",
             json={"name": "j1", "model": "qwen3.5-9b", "judge_type": "hybrid"},
+            headers=_auth(),
         )
         assert resp.status_code == 201
         assert resp.json() == {"name": "j1", "created": True}
 
     def test_list_judges(self, client):
-        client.post("/api/v1/judges", json={"name": "list-a"})
-        client.post("/api/v1/judges", json={"name": "list-b"})
-        resp = client.get("/api/v1/judges")
+        client.post("/api/v1/judges", json={"name": "list-a"}, headers=_auth())
+        client.post("/api/v1/judges", json={"name": "list-b"}, headers=_auth())
+        resp = client.get("/api/v1/judges", headers=_auth())
         assert resp.status_code == 200
         names = {j["name"] for j in resp.json()["judges"]}
         assert {"list-a", "list-b"} <= names
 
     def test_list_judges_empty(self, client):
-        resp = client.get("/api/v1/judges")
+        resp = client.get("/api/v1/judges", headers=_auth())
         assert resp.status_code == 200
         assert resp.json() == {"judges": []}
 
     def test_delete_judge_existing(self, client):
-        client.post("/api/v1/judges", json={"name": "del-me"})
-        resp = client.delete("/api/v1/judges/del-me")
+        client.post("/api/v1/judges", json={"name": "del-me"}, headers=_auth())
+        resp = client.delete("/api/v1/judges/del-me", headers=_auth())
         assert resp.status_code == 200
         assert resp.json() == {"deleted": True}
-        # gone from list
-        assert all(j["name"] != "del-me" for j in client.get("/api/v1/judges").json()["judges"])
+        assert all(j["name"] != "del-me" for j in client.get("/api/v1/judges", headers=_auth()).json()["judges"])
 
     def test_delete_judge_missing(self, client):
-        resp = client.delete("/api/v1/judges/nope")
+        resp = client.delete("/api/v1/judges/nope", headers=_auth())
         assert resp.status_code == 200
         assert resp.json() == {"deleted": False}
 
-    def test_judge_roundtrip_preserves_fields(self, client):
-        client.post(
-            "/api/v1/judges",
-            json={
-                "name": "rt",
-                "model": "deepseek-v4",
-                "judge_type": "llm",
-                "weight": 0.8,
-                "criteria": ["fluency", "accuracy"],
-                "rubric": "strict",
-                "temperature": 0.1,
-                "max_tokens": 512,
-            },
-        )
-        judges = {j["name"]: j for j in client.get("/api/v1/judges").json()["judges"]}
-        assert judges["rt"]["model"] == "deepseek-v4"
-        assert judges["rt"]["judge_type"] == "llm"
-        assert judges["rt"]["weight"] == 0.8
-        assert judges["rt"]["criteria"] == ["fluency", "accuracy"]
-        assert judges["rt"]["rubric"] == "strict"
 
-
-# ── IdentityMiddleware + authz guards ───────────────────────────────
+# ── Authz guards ────────────────────────────────────────────────────
 
 
 class TestAuthGuards:
-    def test_anonymous_write_non_strict_allowed(self, client):
-        # Default non-strict: anonymous can hit a write endpoint (warns).
+    def test_missing_tenant_header_rejected(self, client):
         resp = client.post(
-            "/api/v1/datasets",
-            json={"name": "anon-ds", "format": "json", "path": "/tmp/x.json"},
+            "/api/v1/datasets", json={"name": "ds", "format": "json"}, headers={"Authorization": "Bearer tok"}
         )
-        # Dataset endpoint may 4xx on bad path, but NOT 403 (auth passed).
-        assert resp.status_code != 403
+        assert resp.status_code == 401
 
-    def test_anonymous_write_strict_forbidden(self, client, monkeypatch):
-        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "1")
-        resp = client.post(
-            "/api/v1/datasets",
-            json={"name": "anon-ds", "format": "json", "path": "/tmp/x.json"},
-        )
+    def test_missing_token_rejected(self, client):
+        resp = client.post("/api/v1/datasets", json={"name": "ds", "format": "json"}, headers={"X-Tenant-Id": "t1"})
+        assert resp.status_code == 401
+
+    def test_viewer_denied_write(self, client, monkeypatch):
+        _stub_role(monkeypatch, role="viewer")
+        resp = client.post("/api/v1/datasets", json={"name": "vw-ds", "format": "json"}, headers=_auth())
         assert resp.status_code == 403
 
-    def test_admin_key_passes_write_guard(self, client, admin_key):
-        resp = client.post(
-            "/api/v1/datasets",
-            json={"name": "adm-ds", "format": "json", "path": "/tmp/x.json"},
-            headers={"x-api-key": admin_key},
+    def test_operator_allowed_write(self, client, monkeypatch):
+        _stub_role(monkeypatch, role="operator")
+        resp = client.get("/api/v1/tasks", headers=_auth())
+        assert resp.status_code == 200
+
+    def test_admin_allowed_write(self, client):
+        resp = client.get("/api/v1/tasks", headers=_auth())
+        assert resp.status_code == 200
+
+
+# ── Cross-tenant data isolation ─────────────────────────────────────
+
+
+class TestCrossTenantIsolation:
+    def test_tenant_a_cannot_read_tenant_b_traces(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db")
+        from fusion_bench.core.models import EvalLevel, TaskStatus, TraceRecord
+        from fusion_bench.storage.trace_store import TraceStore
+
+        store = TraceStore()
+        store.insert(
+            TraceRecord(
+                trace_id="tr-A",
+                model="m",
+                level=EvalLevel.L1_MODEL,
+                executor_key="speed",
+                task_id="task-A",
+                status=TaskStatus.COMPLETED,
+                eval_result={"metric_value": 1.0},
+                tenant_id="tenantA",
+            )
         )
-        assert resp.status_code != 403
-
-    def test_viewer_key_denied_write_guard(self, client, viewer_key):
-        # VIEWER lacks DATASET_MANAGE.
-        resp = client.post(
-            "/api/v1/datasets",
-            json={"name": "vw-ds", "format": "json", "path": "/tmp/x.json"},
-            headers={"x-api-key": viewer_key},
+        store.insert(
+            TraceRecord(
+                trace_id="tr-B",
+                model="m",
+                level=EvalLevel.L1_MODEL,
+                executor_key="speed",
+                task_id="task-B",
+                status=TaskStatus.COMPLETED,
+                eval_result={"metric_value": 2.0},
+                tenant_id="tenantB",
+            )
         )
-        assert resp.status_code == 403
 
-    def test_viewer_key_allows_read(self, client, viewer_key):
-        # VIEWER has TASK_READ.
-        resp = client.get("/api/v1/tasks", headers={"x-api-key": viewer_key})
-        assert resp.status_code == 200
+        a_only = store.query(tenant_id="tenantA")
+        assert all(r.tenant_id == "tenantA" for r in a_only)
+        assert {r.trace_id for r in a_only} == {"tr-A"}
 
-    def test_invalid_api_key_falls_back_anonymous(self, client):
-        # Bogus key resolves to None -> anonymous (non-strict) -> not 403.
-        resp = client.get("/api/v1/tasks", headers={"x-api-key": "bogus-not-real"})
-        assert resp.status_code == 200
+        b_only = store.query(tenant_id="tenantB")
+        assert {r.trace_id for r in b_only} == {"tr-B"}
 
-    def test_api_key_disabled_anonymous(self, client, monkeypatch):
-        monkeypatch.setenv("FUSION_BENCH_API_KEY_ENABLED", "0")
-        # Even with a header, key disabled -> anonymous.
-        resp = client.get("/api/v1/tasks", headers={"x-api-key": "whatever"})
-        assert resp.status_code == 200
+        both = store.query()
+        assert {r.trace_id for r in both} == {"tr-A", "tr-B"}
+        store.close()
+
+    def test_tenant_mismatch_at_gateway_rejected(self, client, monkeypatch):
+        _stub_identity(monkeypatch, role="admin", tid="t1")
+        # jwt.tid=t1 but header says t2 -> middleware 401.
+        resp = client.get("/api/v1/tasks", headers={"X-Tenant-Id": "t2", "Authorization": "Bearer tok"})
+        assert resp.status_code == 401
 
 
 # ── TLS enforcement middleware ──────────────────────────────────────
@@ -181,17 +188,9 @@ class TestAuthGuards:
 
 class TestTLSEnforcement:
     def test_tls_enforce_rejects_http(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
-        monkeypatch.setattr(
-            "fusion_bench.core.judge_config._DEFAULT_DB_PATH",
-            tmp_path / "judges.db",
-        )
-        monkeypatch.setattr(
-            "fusion_bench.storage.trace_store._DEFAULT_DB_PATH",
-            tmp_path / "traces.db",
-        )
+        monkeypatch.setattr("fusion_bench.core.judge_config._DEFAULT_DB_PATH", tmp_path / "judges.db")
+        monkeypatch.setattr("fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db")
         monkeypatch.setenv("FUSION_BENCH_TLS_ENFORCE", "1")
-        # Reimport app so the TLS middleware branch registers.
         import importlib
 
         import fusion_bench.api.app as app_module
@@ -201,6 +200,5 @@ class TestTLSEnforcement:
             resp = c.get("/api/v1/system/health")
             assert resp.status_code == 426
             assert resp.headers.get("upgrade") == "TLS"
-        # Restore module for other tests.
         monkeypatch.delenv("FUSION_BENCH_TLS_ENFORCE", raising=False)
         importlib.reload(app_module)

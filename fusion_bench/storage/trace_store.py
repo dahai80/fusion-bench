@@ -54,12 +54,18 @@ class TraceStore:
                 error_message TEXT,
                 duration_seconds REAL DEFAULT 0,
                 timestamp TEXT NOT NULL,
-                host_info TEXT
+                host_info TEXT,
+                tenant_id TEXT NOT NULL DEFAULT ''
             )
         """)
+        # Migrate pre-tenant DBs: add tenant_id column if missing (before index).
+        cols = {r[1] for r in self.conn.execute("PRAGMA table_info(traces)").fetchall()}
+        if "tenant_id" not in cols:
+            self.conn.execute("ALTER TABLE traces ADD COLUMN tenant_id TEXT NOT NULL DEFAULT ''")
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_traces_model ON traces(model)")
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_traces_executor ON traces(executor_key)")
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_traces_level ON traces(level)")
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_traces_tenant ON traces(tenant_id)")
         self.conn.commit()
 
     def insert(self, record: TraceRecord) -> None:
@@ -68,8 +74,8 @@ class TraceStore:
                 """INSERT OR REPLACE INTO traces
                    (trace_id, model, level, executor_key, task_id, status,
                     eval_result, gate_results, error_message, duration_seconds,
-                    timestamp, host_info)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    timestamp, host_info, tenant_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     record.trace_id,
                     record.model,
@@ -83,6 +89,7 @@ class TraceStore:
                     record.duration_seconds,
                     record.timestamp,
                     json.dumps(record.host_info) if record.host_info else None,
+                    record.tenant_id,
                 ),
             )
             self.conn.commit()
@@ -97,8 +104,9 @@ class TraceStore:
         level: str | None = None,
         status: str | None = None,
         limit: int = 100,
+        tenant_id: str | None = None,
     ) -> list[TraceRecord]:
-        """Query traces with optional filters."""
+        """Query traces with optional filters. tenant_id scopes data isolation."""
         conditions = []
         params: list[Any] = []
 
@@ -114,6 +122,9 @@ class TraceStore:
         if status:
             conditions.append("status = ?")
             params.append(status)
+        if tenant_id is not None:
+            conditions.append("tenant_id = ?")
+            params.append(tenant_id)
 
         where = " AND ".join(conditions) if conditions else "1=1"
         params.append(limit)
@@ -269,4 +280,5 @@ class TraceStore:
             duration_seconds=row["duration_seconds"],
             timestamp=row["timestamp"],
             host_info=host_info,
+            tenant_id=row["tenant_id"],
         )

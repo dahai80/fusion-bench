@@ -2,21 +2,41 @@
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 from fastapi.testclient import TestClient
 
 from fusion_bench.core.models import EvalLevel, TaskStatus, TraceRecord
 
 
+def _mock_response(status_code=200, body=None):
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.json.return_value = body or {}
+    return resp
+
+
+def _stub_identity(monkeypatch, role="admin", tid="t1"):
+    monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+    monkeypatch.setattr(
+        "fusion_bench.auth.tenant.httpx.post",
+        lambda *a, **k: _mock_response(
+            200, {"tid": tid, "role": role, "scopes": [], "tenant_status": "active", "revoked": False}
+        ),
+    )
+
+
+_AUTH = {"X-Tenant-Id": "t1", "Authorization": "Bearer tok"}
+
+
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
     monkeypatch.setattr("fusion_bench.core.judge_config._DEFAULT_DB_PATH", tmp_path / "judges.db")
     monkeypatch.setattr("fusion_bench.storage.trace_store._DEFAULT_DB_PATH", tmp_path / "traces.db")
     monkeypatch.setattr("fusion_bench.storage.judge_store._DEFAULT_DB_PATH", tmp_path / "judges.db")
-    monkeypatch.setenv("FUSION_BENCH_API_KEY_ENABLED", "1")
-    monkeypatch.delenv("FUSION_BENCH_OAUTH_ENABLED", raising=False)
     monkeypatch.delenv("FUSION_BENCH_TLS_ENFORCE", raising=False)
+    _stub_identity(monkeypatch, role="admin", tid="t1")
 
     from fusion_bench.api import app as app_module
 
@@ -25,12 +45,12 @@ def client(tmp_path, monkeypatch):
     app_module._gate_approvals.clear()
 
     # Stub background runner so create_task does not launch a real executor.
-    async def _noop_run(task_id, req):
+    async def _noop_run(task_id, req, tenant_id="", user_id=None):
         app_module._background_tasks[task_id]["status"] = "completed"
 
     monkeypatch.setattr(app_module, "_run_task", _noop_run)
 
-    with TestClient(app_module.app) as c:
+    with TestClient(app_module.app, headers=_AUTH) as c:
         yield c
     app_module._store = None
     app_module._background_tasks.clear()
@@ -59,6 +79,7 @@ def seeded_trace(client):
             "meta": {"host": "mac"},
         },
         duration_seconds=5.2,
+        tenant_id="t1",
     )
     store.insert(rec)
     return rec
@@ -124,6 +145,7 @@ class TestTaskLifecycle:
             "executor_key": "speed",
             "level": "L1",
             "created_at": "2026-08-26T10:00:00",
+            "tenant_id": "t1",
         }
         resp = client.get("/api/v1/tasks")
         assert resp.status_code == 200
@@ -140,6 +162,7 @@ class TestTaskLifecycle:
             "executor_key": "speed",
             "level": "L1",
             "created_at": "2026-08-26T10:00:00",
+            "tenant_id": "t1",
         }
         app_module._background_tasks["t-b"] = {
             "task_id": "t-b",
@@ -148,6 +171,7 @@ class TestTaskLifecycle:
             "executor_key": "speed",
             "level": "L1",
             "created_at": "2026-08-26T10:00:00",
+            "tenant_id": "t1",
         }
         resp = client.get("/api/v1/tasks?model=alpha")
         assert resp.status_code == 200

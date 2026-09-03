@@ -1,178 +1,249 @@
-"""Tests for auth identity + API Key resolution."""
+"""Tests for fusion-identity tenant integration + RBAC permission matrix (issue #16)."""
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from fusion_bench.auth.identity import Identity, IdentityMiddleware, OAuthResolver
-from fusion_bench.auth.rbac import Permission, RBACStore, Role, require_permission
+from fusion_bench.auth.rbac import ROLE_PERMISSIONS, Permission, Role, require_permission
+from fusion_bench.auth.tenant import TenantVerifyError, _map_role, _report_usage, _verify_jwt
+
+# ── Role mapping ────────────────────────────────────────────────────
 
 
-class TestIdentity:
-    def test_identity_fields(self):
-        ident = Identity(user_id="u1", workspace_id="ws1", role=Role.ADMIN, source="apikey", scopes=["task:create"])
-        assert ident.user_id == "u1"
-        assert ident.role == Role.ADMIN
-        assert ident.source == "apikey"
-        assert ident.scopes == ["task:create"]
+class TestRoleMapping:
+    def test_tenant_admin_maps_to_admin(self):
+        assert _map_role("tenant_admin") == "admin"
+
+    def test_operator_maps_to_operator(self):
+        assert _map_role("operator") == "operator"
+
+    def test_member_maps_to_operator(self):
+        assert _map_role("member") == "operator"
+
+    def test_viewer_maps_to_viewer(self):
+        assert _map_role("viewer") == "viewer"
+
+    def test_unknown_role_falls_back_to_viewer(self):
+        assert _map_role("superuser") == "viewer"
+
+    def test_none_role_falls_back_to_viewer(self):
+        assert _map_role(None) == "viewer"
 
 
-class TestApiKeyStore:
-    def test_create_and_verify_api_key(self, tmp_path):
-        store = RBACStore(db_path=tmp_path / "rbac.db")
-        key = store.create_api_key("alice", "operator")
-        assert isinstance(key, str) and len(key) >= 32
-        ident = store.verify_api_key(key)
-        assert ident is not None
-        assert ident.user_id == "alice"
-        assert ident.role == Role.OPERATOR
-        assert ident.source == "apikey"
-        assert ident.workspace_id == "default"
-        store.close()
-
-    def test_verify_unknown_key_returns_none(self, tmp_path):
-        store = RBACStore(db_path=tmp_path / "rbac.db")
-        assert store.verify_api_key("bogus-key") is None
-        store.close()
-
-    def test_revoke_api_key(self, tmp_path):
-        store = RBACStore(db_path=tmp_path / "rbac.db")
-        key = store.create_api_key("bob", "viewer")
-        assert store.revoke_api_key(key) is True
-        assert store.verify_api_key(key) is None
-        assert store.revoke_api_key("missing") is False
-        store.close()
-
-    def test_list_api_keys_hides_secret(self, tmp_path):
-        store = RBACStore(db_path=tmp_path / "rbac.db")
-        store.create_api_key("carol", "admin", workspace_id="team1")
-        rows = store.list_api_keys()
-        assert len(rows) == 1
-        assert rows[0]["user_id"] == "carol"
-        assert rows[0]["workspace_id"] == "team1"
-        assert rows[0]["revoked"] == 0
-        assert "api_key" not in rows[0]  # secret never returned in list
-        store.close()
-
-    def test_api_key_last_used_updated(self, tmp_path):
-        store = RBACStore(db_path=tmp_path / "rbac.db")
-        key = store.create_api_key("dave", "operator")
-        store.verify_api_key(key)
-        rows = store.list_api_keys()
-        assert rows[0]["last_used"] is not None
-        store.close()
+# ── Permission matrix ───────────────────────────────────────────────
 
 
-class TestOAuthResolver:
-    def _make_resolver(self, monkeypatch, tmp_path, jwks_url="http://idp/jwks", issuer="idp", audience="fb"):
-        monkeypatch.setenv("FUSION_BENCH_OAUTH_JWKS_URL", jwks_url)
-        monkeypatch.setenv("FUSION_BENCH_OAUTH_ISSUER", issuer)
-        monkeypatch.setenv("FUSION_BENCH_OAUTH_AUDIENCE", audience)
-        monkeypatch.setenv("FUSION_BENCH_OAUTH_ROLE_CLAIM", "roles")
-        return OAuthResolver()
+class TestPermissionMatrix:
+    def test_admin_has_all_permissions(self):
+        assert ROLE_PERMISSIONS[Role.ADMIN] == set(Permission)
 
-    @pytest.mark.asyncio
-    async def test_valid_token_resolves_identity(self, monkeypatch, tmp_path):
-        resolver = self._make_resolver(monkeypatch, tmp_path)
-        with patch.object(
-            resolver,
-            "_verify_jwt",
-            new=AsyncMock(return_value={"sub": "user42", "roles": ["admin"], "workspace_id": "ws9"}),
-        ):
-            ident = await resolver.resolve("valid.jwt.token")
-        assert ident is not None
-        assert ident.user_id == "user42"
-        assert ident.role.value == "admin"
-        assert ident.workspace_id == "ws9"
-        assert ident.source == "oauth"
+    def test_operator_has_no_system_admin(self):
+        assert Permission.SYSTEM_ADMIN not in ROLE_PERMISSIONS[Role.OPERATOR]
 
-    @pytest.mark.asyncio
-    async def test_expired_token_returns_none(self, monkeypatch, tmp_path):
-        resolver = self._make_resolver(monkeypatch, tmp_path)
-        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value=None)):
-            assert await resolver.resolve("expired.jwt") is None
+    def test_operator_has_task_create(self):
+        assert Permission.TASK_CREATE in ROLE_PERMISSIONS[Role.OPERATOR]
 
-    @pytest.mark.asyncio
-    async def test_unknown_role_claim_falls_back_to_viewer(self, monkeypatch, tmp_path):
-        resolver = self._make_resolver(monkeypatch, tmp_path)
-        with patch.object(
-            resolver, "_verify_jwt", new=AsyncMock(return_value={"sub": "u1", "roles": ["unknown_role"]})
-        ):
-            ident = await resolver.resolve("tok")
-        assert ident is not None
-        assert ident.role == Role.VIEWER
-
-    @pytest.mark.asyncio
-    async def test_missing_sub_returns_none(self, monkeypatch, tmp_path):
-        resolver = self._make_resolver(monkeypatch, tmp_path)
-        with patch.object(resolver, "_verify_jwt", new=AsyncMock(return_value={"roles": ["admin"]})):
-            assert await resolver.resolve("tok") is None
-
-    def test_disabled_when_no_jwks_url(self, monkeypatch):
-        monkeypatch.delenv("FUSION_BENCH_OAUTH_JWKS_URL", raising=False)
-        resolver = OAuthResolver()
-        assert resolver.enabled is False
+    def test_viewer_is_read_only(self):
+        viewer = ROLE_PERMISSIONS[Role.VIEWER]
+        assert Permission.TASK_READ in viewer
+        assert Permission.GATE_READ in viewer
+        assert Permission.AUDIT_READ in viewer
+        assert Permission.TASK_CREATE not in viewer
 
 
-def _make_app() -> FastAPI:
+# ── _verify_jwt (mocked httpx) ──────────────────────────────────────
+
+
+def _mock_response(status_code=200, body=None):
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.json.return_value = body or {}
+    return resp
+
+
+class TestVerifyJwt:
+    def test_valid_token_returns_mapped_claims(self, monkeypatch):
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        monkeypatch.setattr(
+            "fusion_bench.auth.tenant.httpx.post",
+            lambda *a, **k: _mock_response(
+                200, {"tid": "t1", "role": "tenant_admin", "scopes": ["x"], "tenant_status": "active", "revoked": False}
+            ),
+        )
+        claims = _verify_jwt("good-token")
+        assert claims["tid"] == "t1"
+        assert claims["role"] == "admin"
+        assert claims["scopes"] == ["x"]
+
+    def test_missing_service_token_fail_closed(self, monkeypatch):
+        monkeypatch.delenv("FUSION_IDENTITY_SERVICE_TOKEN", raising=False)
+        with pytest.raises(TenantVerifyError):
+            _verify_jwt("tok")
+
+    def test_identity_unreachable_fail_closed(self, monkeypatch):
+        import httpx
+
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        monkeypatch.setattr("fusion_bench.auth.tenant.httpx.post", MagicMock(side_effect=httpx.ConnectError("nope")))
+        with pytest.raises(TenantVerifyError):
+            _verify_jwt("tok")
+
+    def test_non_200_rejected(self, monkeypatch):
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        monkeypatch.setattr("fusion_bench.auth.tenant.httpx.post", lambda *a, **k: _mock_response(401))
+        with pytest.raises(TenantVerifyError):
+            _verify_jwt("tok")
+
+    def test_inactive_tenant_rejected(self, monkeypatch):
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        monkeypatch.setattr(
+            "fusion_bench.auth.tenant.httpx.post",
+            lambda *a, **k: _mock_response(200, {"tid": "t1", "role": "viewer", "tenant_status": "suspended"}),
+        )
+        with pytest.raises(TenantVerifyError):
+            _verify_jwt("tok")
+
+    def test_revoked_token_rejected(self, monkeypatch):
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        monkeypatch.setattr(
+            "fusion_bench.auth.tenant.httpx.post",
+            lambda *a, **k: _mock_response(
+                200, {"tid": "t1", "role": "viewer", "tenant_status": "active", "revoked": True}
+            ),
+        )
+        with pytest.raises(TenantVerifyError):
+            _verify_jwt("tok")
+
+
+# ── _report_usage (best-effort, never raises) ───────────────────────
+
+
+class TestReportUsage:
+    def test_success_no_raise(self, monkeypatch):
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        post = MagicMock(return_value=_mock_response(200))
+        monkeypatch.setattr("fusion_bench.auth.tenant.httpx.post", post)
+        _report_usage("t1", "tokens", 42, model="m", user_id="u")  # must not raise
+        assert post.called
+
+    def test_failure_does_not_raise(self, monkeypatch):
+        import httpx
+
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        monkeypatch.setattr(
+            "fusion_bench.auth.tenant.httpx.post", MagicMock(side_effect=httpx.TimeoutException("slow"))
+        )
+        _report_usage("t1", "tokens", 42)  # must not raise
+
+    def test_no_service_token_skips_silently(self, monkeypatch):
+        monkeypatch.delenv("FUSION_IDENTITY_SERVICE_TOKEN", raising=False)
+        post = MagicMock()
+        monkeypatch.setattr("fusion_bench.auth.tenant.httpx.post", post)
+        _report_usage("t1", "tokens", 42)
+        assert not post.called
+
+
+# ── Tenant middleware integration ───────────────────────────────────
+
+
+def _stub_identity(monkeypatch, role="admin", tid="t1"):
+    """Make _verify_jwt (already bound in app middleware) return canned claims.
+
+    Patches httpx.post inside tenant module so the real _verify_jwt runs but
+    talks to a fake identity. Service token must be set to avoid fail-closed.
+    """
+    monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+    monkeypatch.setattr(
+        "fusion_bench.auth.tenant.httpx.post",
+        lambda *a, **k: _mock_response(
+            200, {"tid": tid, "role": role, "scopes": [], "tenant_status": "active", "revoked": False}
+        ),
+    )
+
+
+def _make_app():
+    from fusion_core.tenant import install_tenant_middleware
+
     app = FastAPI()
-    app.add_middleware(IdentityMiddleware)
+    install_tenant_middleware(
+        app,
+        verify_jwt=_verify_jwt,
+        exempt_paths=frozenset({"/public", "/docs", "/openapi.json", "/redoc"}),
+    )
 
     @app.get("/public")
-    async def public(_user: str = Depends(require_permission(Permission.TASK_READ, allow_anonymous=True))):
+    async def public():
+        return {"ok": True}
+
+    @app.get("/read")
+    async def read(_u: str = Depends(require_permission(Permission.TASK_READ))):
         return {"ok": True}
 
     @app.post("/write")
-    async def write(_user: str = Depends(require_permission(Permission.TASK_CREATE, allow_anonymous=False))):
+    async def write(_u: str = Depends(require_permission(Permission.TASK_CREATE))):
         return {"ok": True}
 
     return app
 
 
-class TestIdentityMiddleware:
-    def test_anonymous_can_read_public(self, monkeypatch):
-        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "0")
+class TestTenantMiddleware:
+    def test_exempt_path_passes_without_auth(self, monkeypatch):
+        _stub_identity(monkeypatch)
         client = TestClient(_make_app())
         resp = client.get("/public")
         assert resp.status_code == 200
 
-    def test_anonymous_denied_write_strict(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "1")
-        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
+    def test_missing_tenant_header_rejected(self, monkeypatch):
+        _stub_identity(monkeypatch)
         client = TestClient(_make_app())
-        resp = client.post("/write")
-        assert resp.status_code == 403
+        resp = client.get("/read", headers={"Authorization": "Bearer tok"})
+        assert resp.status_code == 401
 
-    def test_anonymous_allowed_write_nonstrict(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "0")
-        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", tmp_path / "rbac.db")
+    def test_missing_token_rejected(self, monkeypatch):
+        _stub_identity(monkeypatch)
         client = TestClient(_make_app())
-        resp = client.post("/write")
+        resp = client.get("/read", headers={"X-Tenant-Id": "t1"})
+        assert resp.status_code == 401
+
+    def test_valid_token_matching_tenant_passes(self, monkeypatch):
+        _stub_identity(monkeypatch, role="operator", tid="t1")
+        client = TestClient(_make_app())
+        resp = client.get("/read", headers={"X-Tenant-Id": "t1", "Authorization": "Bearer tok"})
         assert resp.status_code == 200
 
-    def test_api_key_auth_write(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "1")
-        db = tmp_path / "rbac.db"
-        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", db)
-        store = RBACStore(db_path=db)
-        key = store.create_api_key("alice", "operator")
-        store.close()
+    def test_tenant_mismatch_rejected(self, monkeypatch):
+        _stub_identity(monkeypatch, role="admin", tid="t1")
         client = TestClient(_make_app())
-        resp = client.post("/write", headers={"X-API-Key": key})
+        resp = client.get("/read", headers={"X-Tenant-Id": "t2", "Authorization": "Bearer tok"})
+        assert resp.status_code == 401
+
+    def test_invalid_token_rejected(self, monkeypatch):
+        import httpx
+
+        monkeypatch.setenv("FUSION_IDENTITY_SERVICE_TOKEN", "svc-tok")
+        monkeypatch.setattr("fusion_bench.auth.tenant.httpx.post", MagicMock(side_effect=httpx.ConnectError("down")))
+        client = TestClient(_make_app())
+        resp = client.get("/read", headers={"X-Tenant-Id": "t1", "Authorization": "Bearer tok"})
+        assert resp.status_code == 401
+
+    def test_viewer_denied_write(self, monkeypatch):
+        _stub_identity(monkeypatch, role="viewer", tid="t1")
+        client = TestClient(_make_app())
+        resp = client.post("/write", headers={"X-Tenant-Id": "t1", "Authorization": "Bearer tok"})
+        assert resp.status_code == 403
+
+    def test_operator_allowed_write(self, monkeypatch):
+        _stub_identity(monkeypatch, role="operator", tid="t1")
+        client = TestClient(_make_app())
+        resp = client.post("/write", headers={"X-Tenant-Id": "t1", "Authorization": "Bearer tok"})
         assert resp.status_code == 200
 
-    def test_revoked_key_denied(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("FUSION_BENCH_AUTH_STRICT", "1")
-        db = tmp_path / "rbac.db"
-        monkeypatch.setattr("fusion_bench.auth.rbac._DEFAULT_DB_PATH", db)
-        store = RBACStore(db_path=db)
-        key = store.create_api_key("alice", "admin")
-        store.revoke_api_key(key)
-        store.close()
+    def test_no_service_token_fail_closed(self, monkeypatch):
+        monkeypatch.delenv("FUSION_IDENTITY_SERVICE_TOKEN", raising=False)
         client = TestClient(_make_app())
-        resp = client.post("/write", headers={"X-API-Key": key})
-        assert resp.status_code == 403
+        resp = client.get("/read", headers={"X-Tenant-Id": "t1", "Authorization": "Bearer tok"})
+        assert resp.status_code == 401

@@ -1,7 +1,7 @@
 [project]
 name = "fusion-bench"
 license = "Apache-2.0"
-version = "0.4.0rc3"
+version = "0.4.0"
 description = "Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench"
 requires-python = ">=3.12"
 dependencies = [
@@ -14,6 +14,8 @@ dependencies = [
     "uvicorn>=0.32.0",
     "datasets>=2.18.0",
     "pyjwt[crypto]>=2.8.0",
+    "fusion-core",
+    "fusion-identity",
 ]
 
 [project.scripts]
