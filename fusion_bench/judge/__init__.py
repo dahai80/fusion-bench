@@ -13,7 +13,18 @@ from fusion_bench.core.judge_config import JudgeConfig, JudgeStore
 from .base import Judge
 from .config import JudgeInput, JudgeVerdict
 
-__all__ = ["Judge", "JudgeConfig", "JudgeStore", "JudgeInput", "JudgeVerdict", "get_judge"]
+__all__ = [
+    "Judge",
+    "JudgeConfig",
+    "JudgeStore",
+    "JudgeInput",
+    "JudgeVerdict",
+    "get_judge",
+    "get_sxs_judge",
+    "SxSConfig",
+    "SxSVerdict",
+    "aggregate_verdicts",
+]
 
 
 def get_judge(config: JudgeConfig) -> Judge:
@@ -26,3 +37,13 @@ def get_judge(config: JudgeConfig) -> Judge:
 
     base_url = os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")
     return LLMJudge(config, base_url=base_url)
+
+
+def get_sxs_judge(config=None, base_url: str | None = None):
+    # Factory for SxS pairwise judge. base_url defaults to FUSION_MLX_URL.
+    from .sxs_config import SxSConfig
+    from .sxs_judge import SxSJudge
+
+    cfg = config or SxSConfig()
+    url = base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")
+    return SxSJudge(cfg, base_url=url)
