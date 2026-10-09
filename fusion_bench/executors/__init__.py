@@ -2,6 +2,7 @@
 
 from .agent_executor import AgentExecutor
 from .artifact_executor import ArtifactExecutor
+from .bnup_executor import BNUPEvaluator
 from .code_executor import CodeExecutor
 from .evalscope_executor import EvalScopeExecutor
 from .garak_executor import GarakExecutor
@@ -26,6 +27,7 @@ __all__ = [
     "EvalScopeExecutor",
     "HelmAdapter",
     "GarakExecutor",
+    "BNUPEvaluator",
 ]
 
 
@@ -45,6 +47,7 @@ def register_all() -> None:
         EvalScopeExecutor,
         HelmAdapter,
         GarakExecutor,
+        BNUPEvaluator,
     ]
     for cls in _all_executors:
         try:

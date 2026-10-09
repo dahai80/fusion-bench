@@ -23,6 +23,7 @@ class ExecutorType(StrEnum):
     ARTIFACT = "artifact"
     SPEED = "speed"
     QUANT = "quant"
+    BNUP = "bnup"
 
 
 @dataclass
