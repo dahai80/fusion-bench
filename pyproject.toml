@@ -1,7 +1,7 @@
 [project]
 name = "fusion-bench"
 license = "Apache-2.0"
-version = "0.4.0"
+version = "0.4.1"
 description = "Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench"
 requires-python = ">=3.12"
 dependencies = [
@@ -13,7 +13,8 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.32.0",
     "datasets>=2.18.0",
-    "fusion-core @ git+https://github.com/dahai80/fusion-core.git@v0.4.0",
+    "jsonschema>=4.20.0",
+    "fusion-core @ git+https://github.com/dahai80/fusion-core.git@v0.5.0",
 ]
 
 [project.scripts]

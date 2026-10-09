@@ -352,6 +352,18 @@ scripts/release.sh
 ## Changelog
 
 
+### v0.4.1 (2026-10-10)
+
+- **BNUP 4-dimension evaluation suite (#17, #18, #19, #20, #21)**: Added a full BNUP (北师大版 K-12 math) evaluation pipeline implementing the spec's four-dimension metric system.
+  - **#20 DSL eval executor** (`fusion_bench/checkers/dsl_eval_executor.py`): AST-based safe pipeline `eval` expression evaluator — no `eval()`/`exec()`. Supports `+ - * / **`, `abs/round/min/max`, `params.<name>` and `results[n]` substitution; rejects all other attribute access, dunder walks, unknown functions, and imports (fail-closed, shared security posture with agent/code/security executors).
+  - **#19 DSL format checker** (`fusion_bench/checkers/dsl_format_checker.py` + `tag_extractor.py`): 4 hard-constraint checks — tag isolation (`<thinking>`/`<dsl>` both present, no illegal nesting), JSON syntax (`json.loads`), schema adherence (`fusion_core.validate_dsl` Draft 2020-12), eval executable (delegates to #20).
+  - **#18 SxS double-blind judge** (`fusion_bench/judge/sxs_judge.py` + `sxs_config.py`): pairwise LLM judge with seeded A/B position shuffle (eliminates position bias), 1-5 scoring on Socratic Guidance / BNUP Misconception Alignment / DSL Feasibility, win/loss/tie aggregation. Reuses `_extract_json` fallback pattern.
+  - **#17 BNUP executor** (`fusion_bench/executors/bnup_executor.py`): `BNUPEvaluator(ExecutorPlugin)` orchestrates all four dimensions (format, math reasoning, Socratic quality via SxS, system perf via streaming TTFT/TPS) into a weighted composite `EvalResult` (L4). Registered as `ExecutorType.BNUP`.
+  - **#21 MATH benchmark + retention baseline**: `compare --tasks` default extended `mmlu,gsm8k` → `mmlu,gsm8k,math`; `seed_default_baselines` adds `Qwen2.5-32B-Instruct` pre-training snapshot (GSM8K 0.858, MATH 0.515) for catastrophic-forgetting Δ detection.
+- **Dependency bump**: `fusion-core` git pin `v0.4.0` → `v0.5.0` (unblocks `fusion_core.dsl_schema.validate_dsl`); added `jsonschema>=4.20.0` to base deps.
+- **Repo hygiene**: `.gitignore` now covers `logs/`, `.fusion-bench.pid`; removed tracked `__pycache__/`/`*.egg-info`/`.coverage` build artifacts from the index.
+- **Tests**: 567 unit tests green (+82 new: DSL eval, DSL format, SxS judge, BNUP executor, Qwen baseline). `ruff check` + `ruff format --check` clean.
+
 ### v0.4.0 (2026-09-03)
 
 - **Tenant auth via fusion-identity (#16)**: fusion-identity (port 11470) is now the sole JWT issuer + tenant registry. Local `api_keys`/`user_roles` tables and the `IdentityMiddleware`/OAuth resolver are retired. Bench mounts `fusion_core.tenant.install_tenant_middleware` with a fail-closed `verify_jwt` callback that calls `POST /api/v1/auth/verify` — missing `X-Tenant-Id`, missing/invalid token, `jwt.tid` ↔ header mismatch, inactive or revoked tenant all return 401 (no default-tenant degradation). Identity roles (`tenant_admin`/`operator`/`member`/`viewer`) map onto bench's `admin`/`operator`/`viewer` permission matrix; `require_permission` now reads `TenantContext.role`. Trace records gained a `tenant_id` column (auto-migrated) and every `TraceStore.query` call is scoped by tenant, so tenant A cannot read tenant B's traces. Benchmark usage is reported best-effort to identity `POST /api/v1/tenants/{tid}/usage`. The `api-key` CLI subcommand now prints retirement guidance pointing at fusion-identity.
