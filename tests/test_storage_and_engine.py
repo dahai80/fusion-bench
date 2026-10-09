@@ -807,12 +807,13 @@ class TestBaselineStoreSeed:
 
         return BaselineStore(db_path=tmp_path / "bl.db")
 
-    def test_seed_creates_two_baselines(self, tmp_path):
+    def test_seed_creates_three_baselines(self, tmp_path):
         store = self._store(tmp_path)
         created = store.seed_default_baselines()
-        assert len(created) == 2
+        assert len(created) == 3
         assert "fusion-router-light" in str(created)
         assert "fusion-coder-expert" in str(created)
+        assert "qwen25-32b-base" in str(created)
 
     def test_seed_is_idempotent(self, tmp_path):
         store = self._store(tmp_path)
@@ -824,7 +825,7 @@ class TestBaselineStoreSeed:
         store = self._store(tmp_path)
         store.seed_default_baselines()
         again = store.seed_default_baselines(overwrite=True)
-        assert len(again) == 2
+        assert len(again) == 3
 
     def test_seeded_router_baseline_retrievable(self, tmp_path):
         store = self._store(tmp_path)
@@ -839,3 +840,11 @@ class TestBaselineStoreSeed:
         bl = store.get_baseline("fusion-coder-expert", "fusion-coder-expert", "code", "L3")
         assert bl is not None
         assert bl["metrics"]["code_pass_rate"] == 0.68
+
+    def test_seeded_qwen_baseline_retrievable(self, tmp_path):
+        store = self._store(tmp_path)
+        store.seed_default_baselines()
+        bl = store.get_baseline("qwen25-32b-base", "Qwen2.5-32B-Instruct", "model", "L1")
+        assert bl is not None
+        assert bl["metrics"]["gsm8k_accuracy"] == 0.858
+        assert bl["metrics"]["math_accuracy"] == 0.515

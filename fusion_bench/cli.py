@@ -109,7 +109,7 @@ def main():
     # compare
     compare_parser = subparsers.add_parser("compare", help="Compare multiple models")
     compare_parser.add_argument("--models", required=True, help="Comma-separated model names")
-    compare_parser.add_argument("--tasks", default="mmlu,gsm8k", help="Comma-separated task names")
+    compare_parser.add_argument("--tasks", default="mmlu,gsm8k,math", help="Comma-separated task names")
     compare_parser.add_argument("--output", default="", help="Output file path (JSON)")
 
     # gates (NEW)

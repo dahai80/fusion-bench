@@ -246,7 +246,8 @@ class BaselineStore:
         return cursor.rowcount
 
     def seed_default_baselines(self, overwrite: bool = False) -> list[str]:
-        """Seed built-in baseline seeds for fusion-router-light and fusion-coder-expert.
+        """Seed built-in baseline seeds: fusion-router-light, fusion-coder-expert, and
+        Qwen2.5-32B-Instruct (pre-training baseline for BNUP retention check).
 
         Idempotent: existing baselines are skipped unless overwrite=True.
         Returns list of baseline_ids that were created or refreshed.
@@ -269,6 +270,15 @@ class BaselineStore:
                 {"code_pass_rate": 0.68, "test_cases_passed": 2, "test_cases_total": 3},
                 "default-seed",
                 "Built-in seed baseline for fusion-coder-expert code generation",
+            ),
+            (
+                "qwen25-32b-base",
+                "Qwen2.5-32B-Instruct",
+                "model",
+                "L1",
+                {"gsm8k_accuracy": 0.858, "math_accuracy": 0.515, "mmlu_accuracy": 0.803},
+                "default-seed",
+                "Pre-training baseline for BNUP catastrophic-forgetting retention check (Qwen2.5-32B-Instruct)",
             ),
         ]
         created: list[str] = []
