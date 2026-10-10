@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from fusion_bench.checkers.dsl_eval_executor import DSLEvalExecutor
+from fusion_bench.checkers.dsl_eval_executor import DSLEvalExecutor, EvalResult
 
 
 @pytest.fixture
@@ -163,3 +163,40 @@ class TestPipelineExecution:
         ]
         result = executor.execute_pipeline(pipeline, params)
         assert result.final_value == pytest.approx(28.26)
+
+
+class TestCompareFinal:
+    def test_match_within_tolerance(self, executor, params):
+        pipeline = [{"step": 1, "eval": "params.base_area * params.height", "result_unit": "cm³"}]
+        result = executor.execute_pipeline(pipeline, params)
+        assert executor.compare_final(result, 60.0) is True
+
+    def test_mismatch_outside_tolerance(self, executor, params):
+        pipeline = [{"step": 1, "eval": "params.base_area * params.height", "result_unit": "cm³"}]
+        result = executor.execute_pipeline(pipeline, params)
+        assert executor.compare_final(result, 999.0) is False
+
+    def test_custom_tolerance(self, executor, params):
+        pipeline = [{"step": 1, "eval": "params.base_area * params.height", "result_unit": "cm³"}]
+        result = executor.execute_pipeline(pipeline, params)
+        assert executor.compare_final(result, 61.0, tolerance=2.0) is True
+        assert executor.compare_final(result, 61.0, tolerance=0.5) is False
+
+    def test_none_ground_truth(self, executor, params):
+        pipeline = [{"step": 1, "eval": "params.base_area * params.height", "result_unit": "cm³"}]
+        result = executor.execute_pipeline(pipeline, params)
+        assert executor.compare_final(result, None) is False
+
+    def test_non_numeric_ground_truth(self, executor, params):
+        pipeline = [{"step": 1, "eval": "params.base_area * params.height", "result_unit": "cm³"}]
+        result = executor.execute_pipeline(pipeline, params)
+        assert executor.compare_final(result, "not a number") is False
+
+    def test_failed_eval_result(self, executor, params):
+        bad_result = EvalResult(success=False, errors=["x"])
+        assert executor.compare_final(bad_result, 60.0) is False
+
+    def test_string_numeric_ground_truth(self, executor, params):
+        pipeline = [{"step": 1, "eval": "params.base_area * params.height", "result_unit": "cm³"}]
+        result = executor.execute_pipeline(pipeline, params)
+        assert executor.compare_final(result, "60.0") is True

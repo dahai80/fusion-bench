@@ -5,7 +5,12 @@ from __future__ import annotations
 import json
 
 from fusion_bench.checkers.dsl_format_checker import DSLFormatChecker, FormatReport
-from fusion_bench.checkers.tag_extractor import extract_dsl, extract_thinking, extract_visual_state
+from fusion_bench.checkers.tag_extractor import (
+    extract_dsl,
+    extract_thinking,
+    extract_visual_state,
+    extract_visual_type,
+)
 
 VALID_PARAMS = {
     "base_area": {"label": "底面积", "value": 12.0, "unit": "cm²"},
@@ -75,6 +80,23 @@ class TestTagExtractor:
 
     def test_non_string(self):
         assert extract_thinking(None) is None  # type: ignore[arg-type]
+
+
+class TestExtractVisualType:
+    def test_from_dsl_dict(self):
+        assert extract_visual_type(VALID_DSL_DICT) == "geometry_2d"
+
+    def test_missing_meta(self):
+        assert extract_visual_type({"parameters": {}}) is None
+
+    def test_missing_visual_type(self):
+        assert extract_visual_type({"meta": {"id": "x"}}) is None
+
+    def test_non_dict(self):
+        assert extract_visual_type("not a dict") is None  # type: ignore[arg-type]
+
+    def test_none(self):
+        assert extract_visual_type(None) is None  # type: ignore[arg-type]
 
 
 class TestTagIsolation:

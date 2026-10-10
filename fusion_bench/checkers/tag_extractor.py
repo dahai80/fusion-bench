@@ -33,3 +33,14 @@ def extract_visual_state(text: str) -> str | None:
         return None
     m = _VISUAL_RE.search(text)
     return m.group(1).strip() if m else None
+
+
+def extract_visual_type(dsl_dict: dict) -> str | None:
+    # Pull meta.visual_type from a parsed DSL dict (v3.0 schema top-level field).
+    if not isinstance(dsl_dict, dict):
+        return None
+    meta = dsl_dict.get("meta")
+    if not isinstance(meta, dict):
+        return None
+    vt = meta.get("visual_type")
+    return str(vt) if vt else None

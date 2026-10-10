@@ -74,7 +74,18 @@ def _make_executor(monkeypatch, output_text: str, sxs_response: dict | None = No
     def fake_stream(self, method, url, **kw):
         return FakeStreamCM(url)
 
+    async def fake_get(self, url, **kw):
+        req = httpx.Request("GET", url)
+        if url.endswith("/stats"):
+            return httpx.Response(
+                200,
+                request=req,
+                json={"model_memory_used_formatted": "12.5 GB", "model_memory_max": "unlimited"},
+            )
+        return httpx.Response(404, request=req)
+
     monkeypatch.setattr(httpx.AsyncClient, "stream", fake_stream)
+    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
 
     if sxs_response is not None:
 
@@ -185,6 +196,34 @@ class TestRunEdge:
         assert case.meta["socratic_scores"] == {}
 
 
+class TestKVCache:
+    async def test_kv_stats_collected(self, monkeypatch):
+        executor = _make_executor(monkeypatch, _valid_output(), sxs_response={"winner": "a"})
+        config = TaskConfig(
+            task_id="kv",
+            model="m",
+            executor_key="bnup",
+            params={"samples": [{"prompt": "x", "ground_truth": 60.0}]},
+        )
+        result = await executor.run(config)
+        assert "kv_cache" in result.meta
+        assert result.meta["kv_cache"]["peak_memory_mb"] == pytest.approx(12.5 * 1024)
+        assert result.meta["kv_cache"]["stable"] is True
+        assert "kv_cache_stability" in result.meta["dimensions"]
+
+    def test_parse_memory_mb_gb(self):
+        assert BNUPEvaluator._parse_memory_mb("12.5 GB") == pytest.approx(12800.0)
+
+    def test_parse_memory_mb_mb(self):
+        assert BNUPEvaluator._parse_memory_mb("800 MB") == pytest.approx(800.0)
+
+    def test_parse_memory_mb_zero(self):
+        assert BNUPEvaluator._parse_memory_mb("0B") == 0.0
+
+    def test_parse_memory_mb_empty(self):
+        assert BNUPEvaluator._parse_memory_mb("") == 0.0
+
+
 class TestComposite:
     def test_composite_perfect(self):
         executor = BNUPEvaluator()
@@ -195,6 +234,7 @@ class TestComposite:
             "milestone": 1.0,
             "socratic": 5.0,
             "tps": 25.0,
+            "kv_cache_stability": 1.0,
         }
         score = executor._composite_score(dims)
         assert score == pytest.approx(1.0)
@@ -208,6 +248,7 @@ class TestComposite:
             "milestone": 0.0,
             "socratic": 0.0,
             "tps": 0.0,
+            "kv_cache_stability": 0.0,
         }
         score = executor._composite_score(dims)
         assert score == 0.0

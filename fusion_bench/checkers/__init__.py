@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from .dsl_eval_executor import DSLEvalExecutor, EvalResult
 from .dsl_format_checker import DSLFormatChecker, FormatReport
-from .tag_extractor import extract_dsl, extract_thinking, extract_visual_state
+from .tag_extractor import extract_dsl, extract_thinking, extract_visual_state, extract_visual_type
 
 __all__ = [
     "DSLEvalExecutor",
@@ -20,4 +20,5 @@ __all__ = [
     "extract_thinking",
     "extract_dsl",
     "extract_visual_state",
+    "extract_visual_type",
 ]

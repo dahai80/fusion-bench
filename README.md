@@ -352,6 +352,16 @@ scripts/release.sh
 ## Changelog
 
 
+### v0.4.2 (2026-10-10)
+
+- **Integration gap closure (#17-#21 acceptance)**: Filled the 5 integration gaps flagged in the BNUP tracking doc (`architecture/bnup-train-automation-issues-1009.md` §P2) so all 5 issues meet full acceptance criteria.
+  - **#17**: Added **KV cache stability** to Dimension 4 — `BNUPEvaluator._collect_kv_stats()` pulls `model_memory_used`/`model_memory_max` from fusion-mlx `/stats`, flags OOM risk; composite score now weights `kv_cache_stability` (0.10). **CLI wired**: `fusion-bench run --executor bnup --testset bnup_eval.json --model <m>` loads a testset JSON and runs all 4 dimensions.
+  - **#18**: Added **SQLite persistence** (`fusion_bench/storage/sxs_store.py` `SxSStore`) — saves per-pair verdicts + aggregate win/loss/tie stats, survives across runs. **CLI wired**: `fusion-bench judge sxs --model-a X --model-b Y --judge-model Z --testset pairs.json` runs double-blind judging and persists results.
+  - **#19**: Added **`extract_visual_type(dsl_dict)`** to `tag_extractor.py` — pulls `meta.visual_type` from parsed DSL dict (was missing, wrong function shipped).
+  - **#20**: Added **`compare_final(eval_result, ground_truth, tolerance=1e-3)`** to `DSLEvalExecutor` — ground-truth answer comparison with configurable tolerance.
+  - **#21**: `fusion-bench compare` now accepts **`--baseline <name>`** + **`--retention-threshold -5`** — prints GSM8K/MATH Δ% vs seeded baseline and flags catastrophic forgetting (GSM8K Δ ≤ -5% → ⚠ warning).
+- **Tests**: 591 unit tests green (+24 new: SxS store persistence, KV cache stats, `compare_final`, `extract_visual_type`). `ruff check` + `ruff format --check` clean.
+
 ### v0.4.1 (2026-10-10)
 
 - **BNUP 4-dimension evaluation suite (#17, #18, #19, #20, #21)**: Added a full BNUP (北师大版 K-12 math) evaluation pipeline implementing the spec's four-dimension metric system.

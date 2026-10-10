@@ -160,3 +160,22 @@ class DSLEvalExecutor:
             step_values=step_values,
             errors=errors,
         )
+
+    def compare_final(
+        self,
+        eval_result: EvalResult,
+        ground_truth: float | int | str | None,
+        tolerance: float = 1e-3,
+    ) -> bool:
+        # Compare the pipeline's final value against a ground-truth answer.
+        # Returns False if eval failed, no final value, or ground truth absent.
+        if not isinstance(eval_result, EvalResult) or not eval_result.success or eval_result.final_value is None:
+            return False
+        if ground_truth is None:
+            return False
+        try:
+            gt = float(ground_truth)
+        except (TypeError, ValueError) as e:
+            logger.warning("compare_final: ground_truth not numeric: %s (%s)", ground_truth, e)
+            return False
+        return abs(eval_result.final_value - gt) <= tolerance

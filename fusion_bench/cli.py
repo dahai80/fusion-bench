@@ -63,11 +63,13 @@ def main():
 
     # run
     run_parser = subparsers.add_parser("run", help="Run a benchmark task")
-    run_parser.add_argument("task", help="Task name (e.g., mmlu, gsm8k)")
+    run_parser.add_argument("task", help="Task name (e.g., mmlu, gsm8k) or 'bnup' for BNUP suite")
     run_parser.add_argument("--max-samples", type=int, default=0, help="Max samples to evaluate")
     run_parser.add_argument("--output", default="", help="Output file path (JSON)")
     run_parser.add_argument("--no-cache", action="store_true", help="Disable result cache")
     run_parser.add_argument("--cache-ttl", type=int, default=0, help="Cache TTL seconds (0=forever)")
+    run_parser.add_argument("--executor", default="", help="Executor key (e.g., bnup). Empty = auto by task")
+    run_parser.add_argument("--testset", default="", help="Path to BNUP testset JSON (for --executor bnup)")
 
     # suite (NEW)
     suite_parser = subparsers.add_parser("suite", help="Run a benchmark suite with quality gates")
@@ -111,6 +113,15 @@ def main():
     compare_parser.add_argument("--models", required=True, help="Comma-separated model names")
     compare_parser.add_argument("--tasks", default="mmlu,gsm8k,math", help="Comma-separated task names")
     compare_parser.add_argument("--output", default="", help="Output file path (JSON)")
+    compare_parser.add_argument(
+        "--baseline", default="", help="Baseline name for retention diff (e.g., qwen25-32b-base)"
+    )
+    compare_parser.add_argument(
+        "--retention-threshold",
+        type=float,
+        default=-5.0,
+        help="GSM8K Δ %% threshold for catastrophic-forgetting flag (default -5)",
+    )
 
     # gates (NEW)
     gates_parser = subparsers.add_parser("gates", help="Show quality gate thresholds")
@@ -221,6 +232,14 @@ def main():
 
     j_delete = judge_sub.add_parser("delete", help="Delete a judge config")
     j_delete.add_argument("--name", required=True)
+
+    j_sxs = judge_sub.add_parser("sxs", help="Run SxS double-blind pairwise judge (#18)")
+    j_sxs.add_argument("--model-a", required=True, help="Model A name")
+    j_sxs.add_argument("--model-b", required=True, help="Model B name")
+    j_sxs.add_argument("--judge-model", default="qwen2.5-32b-instruct", help="Judge model")
+    j_sxs.add_argument("--testset", required=True, help="Path to testset JSON (list of {prompt, output_a, output_b})")
+    j_sxs.add_argument("--session", default="", help="Session ID for persistence (default: auto)")
+    j_sxs.add_argument("--output", default="", help="Output file path (JSON)")
 
     args = parser.parse_args()
 
@@ -370,6 +389,9 @@ async def cmd_suite(args):
 
 async def cmd_run(args):
     """Run a single benchmark task."""
+    if args.executor == "bnup" or args.task == "bnup":
+        await _cmd_run_bnup(args)
+        return
     print(f"Running task '{args.task}' with model '{args.model}'...")
     runner = LMEvalTaskRunner(
         model=args.model,
@@ -380,6 +402,38 @@ async def cmd_run(args):
     print(json.dumps(result, indent=2, ensure_ascii=False))
     if args.output:
         Path(args.output).write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"\nResults saved to {args.output}")
+
+
+async def _cmd_run_bnup(args):
+    # BNUP 4-dimension eval (#17): load testset JSON, run BNUPEvaluator.
+    from .core.plugin_base import TaskConfig
+    from .executors.bnup_executor import BNUPEvaluator
+
+    if not args.testset:
+        print("Error: --testset <path.json> required for BNUP executor")
+        sys.exit(1)
+    testset_path = Path(args.testset)
+    if not testset_path.exists():
+        print(f"Error: testset not found: {testset_path}")
+        sys.exit(1)
+    samples = json.loads(testset_path.read_text(encoding="utf-8"))
+    if not isinstance(samples, list):
+        print("Error: testset JSON must be a list of sample objects")
+        sys.exit(1)
+    print(f"Running BNUP 4-dimension eval on {len(samples)} samples (model={args.model})...")
+    evaluator = BNUPEvaluator(mlx_base_url=args.mlx_url)
+    config = TaskConfig(
+        task_id=f"bnup-{testset_path.stem}",
+        model=args.model,
+        executor_key="bnup",
+        params={"samples": samples},
+    )
+    result = await evaluator.run(config)
+    out = result.to_dict()
+    print(json.dumps(out, indent=2, ensure_ascii=False, default=str))
+    if args.output:
+        Path(args.output).write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
         print(f"\nResults saved to {args.output}")
 
 
@@ -439,6 +493,45 @@ async def cmd_compare(args):
     if args.output:
         Path(args.output).write_text(json.dumps(all_results, indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"\nResults saved to {args.output}")
+
+    if args.baseline:
+        _print_retention_diff(all_results, args.baseline, args.retention_threshold, models)
+
+
+def _print_retention_diff(all_results, baseline_name, threshold, models):
+    # Compare each model's GSM8K + MATH accuracy vs seeded baseline (#21).
+    from .storage.baseline_store import BaselineStore
+
+    store = BaselineStore()
+    try:
+        for entry in all_results:
+            model = entry["model"]
+            current = {}
+            for r in entry["results"]:
+                task = r.get("task", "")
+                acc = r.get("metrics", {}).get("accuracy", 0)
+                if task == "gsm8k":
+                    current["gsm8k_accuracy"] = acc
+                elif task == "math":
+                    current["math_accuracy"] = acc
+            if not current:
+                continue
+            print(f"\nRetention diff: {model} vs baseline '{baseline_name}'")
+            for executor_key, level in [("model", "L1")]:
+                diff = store.diff(baseline_name, model, executor_key, level, current)
+                if not diff.get("baseline_found"):
+                    print(f"  baseline '{baseline_name}' not found — seed it first (baseline set)")
+                    continue
+                gsm8k_delta_pct = diff["diffs"].get("gsm8k_accuracy", {}).get("delta_pct")
+                math_delta_pct = diff["diffs"].get("math_accuracy", {}).get("delta_pct")
+                print(f"  GSM8K: Δ={gsm8k_delta_pct}%" if gsm8k_delta_pct is not None else "  GSM8K: n/a")
+                print(f"  MATH:  Δ={math_delta_pct}%" if math_delta_pct is not None else "  MATH:  n/a")
+                if gsm8k_delta_pct is not None and gsm8k_delta_pct <= threshold:
+                    print(f"  ⚠ CATASTROPHIC FORGETTING: GSM8K Δ {gsm8k_delta_pct}% ≤ {threshold}%")
+                else:
+                    print(f"  ✓ retention OK (threshold {threshold}%)")
+    finally:
+        store.close()
 
 
 async def cmd_speed(args):
@@ -834,12 +927,17 @@ def cmd_cache(args):
 
 
 def cmd_judge(args):
+    import asyncio
     import logging
 
     from .judge.config import JudgeConfig
     from .storage.judge_store import JudgeStore
 
     log = logging.getLogger(__name__)
+
+    if args.judge_action == "sxs":
+        return asyncio.run(_cmd_judge_sxs(args))
+
     store = JudgeStore()
     try:
         action = args.judge_action
@@ -882,6 +980,49 @@ def cmd_judge(args):
             print(f"Deleted judge config: {args.name}" if deleted else f"Judge config '{args.name}' not found.")
             log.info("Deleted judge config: %s (existed=%s)", args.name, deleted)
         return 0
+    finally:
+        store.close()
+
+
+async def _cmd_judge_sxs(args):
+    # SxS double-blind pairwise judge run (#18): load testset, judge pairs, persist.
+    import uuid
+
+    from .judge.sxs_config import SxSConfig
+    from .judge.sxs_judge import SxSJudge
+    from .storage.sxs_store import SxSStore
+
+    testset_path = Path(args.testset)
+    if not testset_path.exists():
+        print(f"Error: testset not found: {testset_path}")
+        sys.exit(1)
+    pairs = json.loads(testset_path.read_text(encoding="utf-8"))
+    if not isinstance(pairs, list):
+        print("Error: testset JSON must be a list of {prompt, output_a, output_b}")
+        sys.exit(1)
+    session_id = args.session or f"sxs-{uuid.uuid4().hex[:8]}"
+    judge = SxSJudge(SxSConfig(judge_model=args.judge_model), base_url=args.mlx_url)
+    store = SxSStore()
+    print(f"SxS session {session_id}: {len(pairs)} pairs (judge={args.judge_model})")
+    try:
+        for i, pair in enumerate(pairs):
+            verdict = await judge.judge_pair(
+                pair.get("output_a", ""),
+                pair.get("output_b", ""),
+                pair.get("prompt", ""),
+            )
+            vid = store.save_verdict(session_id, args.model_a, args.model_b, pair.get("prompt", ""), verdict)
+            print(
+                f"  pair {i + 1}: winner={verdict.winner} avg_a={verdict.avg_a:.1f} avg_b={verdict.avg_b:.1f} ({vid})"
+            )
+        agg = store.get_aggregate(session_id, model_a=args.model_a, model_b=args.model_b)
+        print(f"\nAggregate (session {session_id}):")
+        print(f"  win_rate={agg['win_rate']:.1%} loss_rate={agg['loss_rate']:.1%} tie_rate={agg['tie_rate']:.1%}")
+        print(f"  avg_score_a={agg.get('avg_score_a', 0):.2f} avg_score_b={agg.get('avg_score_b', 0):.2f}")
+        if args.output:
+            out = {"session_id": session_id, "aggregate": agg, "verdicts": store.list_verdicts(session_id)}
+            Path(args.output).write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
+            print(f"\nResults saved to {args.output}")
     finally:
         store.close()
 
