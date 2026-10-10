@@ -7,6 +7,7 @@ from .code_executor import CodeExecutor
 from .evalscope_executor import EvalScopeExecutor
 from .garak_executor import GarakExecutor
 from .helm_adapter import HelmAdapter
+from .laya_executor import LayaBenchmarkExecutor
 from .lm_harness_executor import LMHarnessExecutor
 from .opencompass_executor import OpenCompassExecutor
 from .quant_executor import QuantExecutor
@@ -28,6 +29,7 @@ __all__ = [
     "HelmAdapter",
     "GarakExecutor",
     "BNUPEvaluator",
+    "LayaBenchmarkExecutor",
 ]
 
 
@@ -48,6 +50,7 @@ def register_all() -> None:
         HelmAdapter,
         GarakExecutor,
         BNUPEvaluator,
+        LayaBenchmarkExecutor,
     ]
     for cls in _all_executors:
         try:

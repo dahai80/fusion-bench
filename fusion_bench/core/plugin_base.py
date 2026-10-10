@@ -24,6 +24,7 @@ class ExecutorType(StrEnum):
     SPEED = "speed"
     QUANT = "quant"
     BNUP = "bnup"
+    LAYA = "laya"
 
 
 @dataclass
