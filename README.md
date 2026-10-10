@@ -352,6 +352,22 @@ scripts/release.sh
 ## Changelog
 
 
+### v0.4.3 (2026-10-11)
+
+- **Laya-MLX integration benchmark (#22)**: New `LayaBenchmarkExecutor` benchmarks the laya-mlx decision endpoint (`/v1/laya/decide`) across 6 dimensions per spec §五.
+  - **Dim 1 Decision latency**: P50/P95/P99 for short/medium/long prompts × 3 presets (router/guard/moderation).
+  - **Dim 2 Intent accuracy**: 200-prompt test set, per-class precision/recall/F1.
+  - **Dim 3 Guardrail**: 100-prompt safety test set, precision/recall/F1 per dimension (jailbreak/injection/sensitive/benign).
+  - **Dim 4 Tool selection**: 100-request test set, accuracy + fallback rate.
+  - **Dim 5 VRAM isolation**: `/stats` check for laya model residency + memory footprint.
+  - **Dim 6 E2E latency**: Full chat completion path (gateway → mlx → response), overhead <20ms check.
+  - **Auto-skip**: When `/v1/laya/decide` returns 404 (upstream gateway #191 not landed), dims 1-4 auto-skip; dims 5-6 still execute.
+  - **Test sets**: 3 JSON files committed to `benchmarks/testsets/` (200 intent + 100 guardrail + 100 tools) for reproducibility.
+  - **Report**: Markdown + JSON report written to `benchmarks/results/laya-integration/` with spec target comparison table.
+  - **CLI**: `fusion-bench run laya --executor laya --model <m>`.
+  - **CI fix**: Upgraded GitHub Actions to `actions/checkout@v7` + `actions/setup-python@v7` (Node.js 24) + pip cache — resolves Node.js 20 deprecation warning.
+- **Tests**: 616 unit tests green (+25 new: laya executor 6-dimension, auto-skip, PRF1, percentiles, report generation). `ruff check` + `ruff format --check` clean.
+
 ### v0.4.2 (2026-10-10)
 
 - **Integration gap closure (#17-#21 acceptance)**: Filled the 5 integration gaps flagged in the BNUP tracking doc (`architecture/bnup-train-automation-issues-1009.md` §P2) so all 5 issues meet full acceptance criteria.
