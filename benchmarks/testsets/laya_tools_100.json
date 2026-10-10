@@ -1,0 +1,502 @@
+[
+  {
+    "request": "find recent news about AI",
+    "expected_tool": "search",
+    "id": "tool-000"
+  },
+  {
+    "request": "search for climate articles",
+    "expected_tool": "search",
+    "id": "tool-001"
+  },
+  {
+    "request": "look up space on the web",
+    "expected_tool": "search",
+    "id": "tool-002"
+  },
+  {
+    "request": "find health research papers",
+    "expected_tool": "search",
+    "id": "tool-003"
+  },
+  {
+    "request": "search finance definition",
+    "expected_tool": "search",
+    "id": "tool-004"
+  },
+  {
+    "request": "find sports tutorials",
+    "expected_tool": "search",
+    "id": "tool-005"
+  },
+  {
+    "request": "look for tech examples",
+    "expected_tool": "search",
+    "id": "tool-006"
+  },
+  {
+    "request": "search science documentation",
+    "expected_tool": "search",
+    "id": "tool-007"
+  },
+  {
+    "request": "find politics reviews",
+    "expected_tool": "search",
+    "id": "tool-008"
+  },
+  {
+    "request": "search education latest updates",
+    "expected_tool": "search",
+    "id": "tool-009"
+  },
+  {
+    "request": "find energy blog posts",
+    "expected_tool": "search",
+    "id": "tool-010"
+  },
+  {
+    "request": "look up agriculture forums",
+    "expected_tool": "search",
+    "id": "tool-011"
+  },
+  {
+    "request": "search transport case studies",
+    "expected_tool": "search",
+    "id": "tool-012"
+  },
+  {
+    "request": "find robotics white papers",
+    "expected_tool": "search",
+    "id": "tool-013"
+  },
+  {
+    "request": "calculate 13 * 14",
+    "expected_tool": "calculator",
+    "id": "tool-014"
+  },
+  {
+    "request": "what is 26 / 21?",
+    "expected_tool": "calculator",
+    "id": "tool-015"
+  },
+  {
+    "request": "compute 39 + 28",
+    "expected_tool": "calculator",
+    "id": "tool-016"
+  },
+  {
+    "request": "52 minus 35",
+    "expected_tool": "calculator",
+    "id": "tool-017"
+  },
+  {
+    "request": "square root of 65",
+    "expected_tool": "calculator",
+    "id": "tool-018"
+  },
+  {
+    "request": "78 to the power of 49",
+    "expected_tool": "calculator",
+    "id": "tool-019"
+  },
+  {
+    "request": "what is 91% of 56?",
+    "expected_tool": "calculator",
+    "id": "tool-020"
+  },
+  {
+    "request": "convert 104 to hexadecimal",
+    "expected_tool": "calculator",
+    "id": "tool-021"
+  },
+  {
+    "request": "factorial of 117",
+    "expected_tool": "calculator",
+    "id": "tool-022"
+  },
+  {
+    "request": "log base 77 of 130",
+    "expected_tool": "calculator",
+    "id": "tool-023"
+  },
+  {
+    "request": "143 mod 84",
+    "expected_tool": "calculator",
+    "id": "tool-024"
+  },
+  {
+    "request": "sin of 156 degrees",
+    "expected_tool": "calculator",
+    "id": "tool-025"
+  },
+  {
+    "request": "compound interest on 169 at 98% for 5 years",
+    "expected_tool": "calculator",
+    "id": "tool-026"
+  },
+  {
+    "request": "average of 182 and 105",
+    "expected_tool": "calculator",
+    "id": "tool-027"
+  },
+  {
+    "request": "gcd of 195 and 112",
+    "expected_tool": "calculator",
+    "id": "tool-028"
+  },
+  {
+    "request": "run this Python: print('hello')",
+    "expected_tool": "code_runner",
+    "id": "tool-029"
+  },
+  {
+    "request": "execute: def add(a,b): return a+b",
+    "expected_tool": "code_runner",
+    "id": "tool-030"
+  },
+  {
+    "request": "run code: for i in range(10): print(i)",
+    "expected_tool": "code_runner",
+    "id": "tool-031"
+  },
+  {
+    "request": "execute SQL: SELECT * FROM users",
+    "expected_tool": "code_runner",
+    "id": "tool-032"
+  },
+  {
+    "request": "run this script and show output",
+    "expected_tool": "code_runner",
+    "id": "tool-033"
+  },
+  {
+    "request": "compile and run this Java code",
+    "expected_tool": "code_runner",
+    "id": "tool-034"
+  },
+  {
+    "request": "execute this shell command",
+    "expected_tool": "code_runner",
+    "id": "tool-035"
+  },
+  {
+    "request": "run this JavaScript function",
+    "expected_tool": "code_runner",
+    "id": "tool-036"
+  },
+  {
+    "request": "evaluate this expression in Python",
+    "expected_tool": "code_runner",
+    "id": "tool-037"
+  },
+  {
+    "request": "execute this Go program",
+    "expected_tool": "code_runner",
+    "id": "tool-038"
+  },
+  {
+    "request": "run this Rust code",
+    "expected_tool": "code_runner",
+    "id": "tool-039"
+  },
+  {
+    "request": "execute this C++ snippet",
+    "expected_tool": "code_runner",
+    "id": "tool-040"
+  },
+  {
+    "request": "run this TypeScript module",
+    "expected_tool": "code_runner",
+    "id": "tool-041"
+  },
+  {
+    "request": "evaluate this Ruby script",
+    "expected_tool": "code_runner",
+    "id": "tool-042"
+  },
+  {
+    "request": "run this SQL query and show results",
+    "expected_tool": "code_runner",
+    "id": "tool-043"
+  },
+  {
+    "request": "read file /etc/hosts",
+    "expected_tool": "file_reader",
+    "id": "tool-044"
+  },
+  {
+    "request": "open config.yaml and show contents",
+    "expected_tool": "file_reader",
+    "id": "tool-045"
+  },
+  {
+    "request": "read the first 100 lines of app.log",
+    "expected_tool": "file_reader",
+    "id": "tool-046"
+  },
+  {
+    "request": "load data.csv",
+    "expected_tool": "file_reader",
+    "id": "tool-047"
+  },
+  {
+    "request": "read package.json",
+    "expected_tool": "file_reader",
+    "id": "tool-048"
+  },
+  {
+    "request": "open settings.toml",
+    "expected_tool": "file_reader",
+    "id": "tool-049"
+  },
+  {
+    "request": "read .env file",
+    "expected_tool": "file_reader",
+    "id": "tool-050"
+  },
+  {
+    "request": "load requirements.txt",
+    "expected_tool": "file_reader",
+    "id": "tool-051"
+  },
+  {
+    "request": "read the README.md",
+    "expected_tool": "file_reader",
+    "id": "tool-052"
+  },
+  {
+    "request": "open Dockerfile",
+    "expected_tool": "file_reader",
+    "id": "tool-053"
+  },
+  {
+    "request": "read docker-compose.yml",
+    "expected_tool": "file_reader",
+    "id": "tool-054"
+  },
+  {
+    "request": "load the schema.sql file",
+    "expected_tool": "file_reader",
+    "id": "tool-055"
+  },
+  {
+    "request": "read main.py",
+    "expected_tool": "file_reader",
+    "id": "tool-056"
+  },
+  {
+    "request": "open the Makefile",
+    "expected_tool": "file_reader",
+    "id": "tool-057"
+  },
+  {
+    "request": "translate 'hello' to Japanese",
+    "expected_tool": "translator",
+    "id": "tool-058"
+  },
+  {
+    "request": "convert this English text to Spanish",
+    "expected_tool": "translator",
+    "id": "tool-059"
+  },
+  {
+    "request": "translate the paragraph to German",
+    "expected_tool": "translator",
+    "id": "tool-060"
+  },
+  {
+    "request": "what is 'good morning' in Korean?",
+    "expected_tool": "translator",
+    "id": "tool-061"
+  },
+  {
+    "request": "translate this to French",
+    "expected_tool": "translator",
+    "id": "tool-062"
+  },
+  {
+    "request": "convert to Chinese",
+    "expected_tool": "translator",
+    "id": "tool-063"
+  },
+  {
+    "request": "translate to Arabic",
+    "expected_tool": "translator",
+    "id": "tool-064"
+  },
+  {
+    "request": "what is 'thank you' in Italian?",
+    "expected_tool": "translator",
+    "id": "tool-065"
+  },
+  {
+    "request": "translate to Portuguese",
+    "expected_tool": "translator",
+    "id": "tool-066"
+  },
+  {
+    "request": "convert to Russian",
+    "expected_tool": "translator",
+    "id": "tool-067"
+  },
+  {
+    "request": "translate to Hindi",
+    "expected_tool": "translator",
+    "id": "tool-068"
+  },
+  {
+    "request": "what is 'goodbye' in Dutch?",
+    "expected_tool": "translator",
+    "id": "tool-069"
+  },
+  {
+    "request": "translate to Swedish",
+    "expected_tool": "translator",
+    "id": "tool-070"
+  },
+  {
+    "request": "convert to Turkish",
+    "expected_tool": "translator",
+    "id": "tool-071"
+  },
+  {
+    "request": "what's my schedule today?",
+    "expected_tool": "calendar",
+    "id": "tool-072"
+  },
+  {
+    "request": "schedule a meeting tomorrow at 2pm",
+    "expected_tool": "calendar",
+    "id": "tool-073"
+  },
+  {
+    "request": "when is my next appointment?",
+    "expected_tool": "calendar",
+    "id": "tool-074"
+  },
+  {
+    "request": "add an event on Friday",
+    "expected_tool": "calendar",
+    "id": "tool-075"
+  },
+  {
+    "request": "what time is the team standup?",
+    "expected_tool": "calendar",
+    "id": "tool-076"
+  },
+  {
+    "request": "reschedule my 3pm to 4pm",
+    "expected_tool": "calendar",
+    "id": "tool-077"
+  },
+  {
+    "request": "show me next week's calendar",
+    "expected_tool": "calendar",
+    "id": "tool-078"
+  },
+  {
+    "request": "block 2 hours for deep work",
+    "expected_tool": "calendar",
+    "id": "tool-079"
+  },
+  {
+    "request": "when am I free this afternoon?",
+    "expected_tool": "calendar",
+    "id": "tool-080"
+  },
+  {
+    "request": "set a reminder for 5pm",
+    "expected_tool": "calendar",
+    "id": "tool-081"
+  },
+  {
+    "request": "what's on my calendar for Monday?",
+    "expected_tool": "calendar",
+    "id": "tool-082"
+  },
+  {
+    "request": "cancel tomorrow's 10am meeting",
+    "expected_tool": "calendar",
+    "id": "tool-083"
+  },
+  {
+    "request": "find a 30-min slot this week",
+    "expected_tool": "calendar",
+    "id": "tool-084"
+  },
+  {
+    "request": "move the dentists appointment to next month",
+    "expected_tool": "calendar",
+    "id": "tool-085"
+  },
+  {
+    "request": "what's the weather in Tokyo?",
+    "expected_tool": "weather_api",
+    "id": "tool-086"
+  },
+  {
+    "request": "will it rain tomorrow in London?",
+    "expected_tool": "weather_api",
+    "id": "tool-087"
+  },
+  {
+    "request": "temperature in New York right now",
+    "expected_tool": "weather_api",
+    "id": "tool-088"
+  },
+  {
+    "request": "weather forecast for Paris this week",
+    "expected_tool": "weather_api",
+    "id": "tool-089"
+  },
+  {
+    "request": "is it sunny in Dubai today?",
+    "expected_tool": "weather_api",
+    "id": "tool-090"
+  },
+  {
+    "request": "humidity in Singapore",
+    "expected_tool": "weather_api",
+    "id": "tool-091"
+  },
+  {
+    "request": "wind speed in Chicago",
+    "expected_tool": "weather_api",
+    "id": "tool-092"
+  },
+  {
+    "request": "weather alert for Miami",
+    "expected_tool": "weather_api",
+    "id": "tool-093"
+  },
+  {
+    "request": "UV index in Sydney",
+    "expected_tool": "weather_api",
+    "id": "tool-094"
+  },
+  {
+    "request": "snow forecast for Aspen",
+    "expected_tool": "weather_api",
+    "id": "tool-095"
+  },
+  {
+    "request": "weather in Berlin this weekend",
+    "expected_tool": "weather_api",
+    "id": "tool-096"
+  },
+  {
+    "request": "air quality in Beijing",
+    "expected_tool": "weather_api",
+    "id": "tool-097"
+  },
+  {
+    "request": "pollen count in Austin",
+    "expected_tool": "weather_api",
+    "id": "tool-098"
+  },
+  {
+    "request": "sunrise time in Seattle",
+    "expected_tool": "weather_api",
+    "id": "tool-099"
+  }
+]

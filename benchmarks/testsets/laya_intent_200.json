@@ -1,0 +1,1002 @@
+[
+  {
+    "prompt": "def fibonacci(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-000"
+  },
+  {
+    "prompt": "class quicksort:",
+    "expected_intent": "code_completion",
+    "id": "intent-001"
+  },
+  {
+    "prompt": "implement binary_search function",
+    "expected_intent": "code_completion",
+    "id": "intent-002"
+  },
+  {
+    "prompt": "fix bug in merge_sort",
+    "expected_intent": "code_completion",
+    "id": "intent-003"
+  },
+  {
+    "prompt": "refactor hashmap method",
+    "expected_intent": "code_completion",
+    "id": "intent-004"
+  },
+  {
+    "prompt": "write unit test for lru_cache",
+    "expected_intent": "code_completion",
+    "id": "intent-005"
+  },
+  {
+    "prompt": "async def trie(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-006"
+  },
+  {
+    "prompt": "type hint for bfs",
+    "expected_intent": "code_completion",
+    "id": "intent-007"
+  },
+  {
+    "prompt": "optimize dfs loop",
+    "expected_intent": "code_completion",
+    "id": "intent-008"
+  },
+  {
+    "prompt": "debug dijkstra error",
+    "expected_intent": "code_completion",
+    "id": "intent-009"
+  },
+  {
+    "prompt": "def floyd(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-010"
+  },
+  {
+    "prompt": "class memoize:",
+    "expected_intent": "code_completion",
+    "id": "intent-011"
+  },
+  {
+    "prompt": "implement decorator function",
+    "expected_intent": "code_completion",
+    "id": "intent-012"
+  },
+  {
+    "prompt": "fix bug in singleton",
+    "expected_intent": "code_completion",
+    "id": "intent-013"
+  },
+  {
+    "prompt": "refactor observer method",
+    "expected_intent": "code_completion",
+    "id": "intent-014"
+  },
+  {
+    "prompt": "write unit test for factory",
+    "expected_intent": "code_completion",
+    "id": "intent-015"
+  },
+  {
+    "prompt": "async def iterator(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-016"
+  },
+  {
+    "prompt": "type hint for generator",
+    "expected_intent": "code_completion",
+    "id": "intent-017"
+  },
+  {
+    "prompt": "optimize coroutine loop",
+    "expected_intent": "code_completion",
+    "id": "intent-018"
+  },
+  {
+    "prompt": "debug middleware error",
+    "expected_intent": "code_completion",
+    "id": "intent-019"
+  },
+  {
+    "prompt": "def fibonacci(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-020"
+  },
+  {
+    "prompt": "class quicksort:",
+    "expected_intent": "code_completion",
+    "id": "intent-021"
+  },
+  {
+    "prompt": "implement binary_search function",
+    "expected_intent": "code_completion",
+    "id": "intent-022"
+  },
+  {
+    "prompt": "fix bug in merge_sort",
+    "expected_intent": "code_completion",
+    "id": "intent-023"
+  },
+  {
+    "prompt": "refactor hashmap method",
+    "expected_intent": "code_completion",
+    "id": "intent-024"
+  },
+  {
+    "prompt": "write unit test for lru_cache",
+    "expected_intent": "code_completion",
+    "id": "intent-025"
+  },
+  {
+    "prompt": "async def trie(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-026"
+  },
+  {
+    "prompt": "type hint for bfs",
+    "expected_intent": "code_completion",
+    "id": "intent-027"
+  },
+  {
+    "prompt": "optimize dfs loop",
+    "expected_intent": "code_completion",
+    "id": "intent-028"
+  },
+  {
+    "prompt": "debug dijkstra error",
+    "expected_intent": "code_completion",
+    "id": "intent-029"
+  },
+  {
+    "prompt": "def floyd(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-030"
+  },
+  {
+    "prompt": "class memoize:",
+    "expected_intent": "code_completion",
+    "id": "intent-031"
+  },
+  {
+    "prompt": "implement decorator function",
+    "expected_intent": "code_completion",
+    "id": "intent-032"
+  },
+  {
+    "prompt": "fix bug in singleton",
+    "expected_intent": "code_completion",
+    "id": "intent-033"
+  },
+  {
+    "prompt": "refactor observer method",
+    "expected_intent": "code_completion",
+    "id": "intent-034"
+  },
+  {
+    "prompt": "write unit test for factory",
+    "expected_intent": "code_completion",
+    "id": "intent-035"
+  },
+  {
+    "prompt": "async def iterator(n, k=None):",
+    "expected_intent": "code_completion",
+    "id": "intent-036"
+  },
+  {
+    "prompt": "type hint for generator",
+    "expected_intent": "code_completion",
+    "id": "intent-037"
+  },
+  {
+    "prompt": "optimize coroutine loop",
+    "expected_intent": "code_completion",
+    "id": "intent-038"
+  },
+  {
+    "prompt": "debug middleware error",
+    "expected_intent": "code_completion",
+    "id": "intent-039"
+  },
+  {
+    "prompt": "create a React component",
+    "expected_intent": "artifact_gen",
+    "id": "intent-040"
+  },
+  {
+    "prompt": "build a Vue dashboard",
+    "expected_intent": "artifact_gen",
+    "id": "intent-041"
+  },
+  {
+    "prompt": "generate dashboard HTML page",
+    "expected_intent": "artifact_gen",
+    "id": "intent-042"
+  },
+  {
+    "prompt": "make a timeline chart",
+    "expected_intent": "artifact_gen",
+    "id": "intent-043"
+  },
+  {
+    "prompt": "design a calendar layout",
+    "expected_intent": "artifact_gen",
+    "id": "intent-044"
+  },
+  {
+    "prompt": "render a kanban diagram",
+    "expected_intent": "artifact_gen",
+    "id": "intent-045"
+  },
+  {
+    "prompt": "produce a gantt report",
+    "expected_intent": "artifact_gen",
+    "id": "intent-046"
+  },
+  {
+    "prompt": "draft a pie chart template",
+    "expected_intent": "artifact_gen",
+    "id": "intent-047"
+  },
+  {
+    "prompt": "assemble bar graph widget",
+    "expected_intent": "artifact_gen",
+    "id": "intent-048"
+  },
+  {
+    "prompt": "construct heatmap UI",
+    "expected_intent": "artifact_gen",
+    "id": "intent-049"
+  },
+  {
+    "prompt": "create a data table component",
+    "expected_intent": "artifact_gen",
+    "id": "intent-050"
+  },
+  {
+    "prompt": "build a login form dashboard",
+    "expected_intent": "artifact_gen",
+    "id": "intent-051"
+  },
+  {
+    "prompt": "generate sidebar HTML page",
+    "expected_intent": "artifact_gen",
+    "id": "intent-052"
+  },
+  {
+    "prompt": "make a navbar chart",
+    "expected_intent": "artifact_gen",
+    "id": "intent-053"
+  },
+  {
+    "prompt": "design a carousel layout",
+    "expected_intent": "artifact_gen",
+    "id": "intent-054"
+  },
+  {
+    "prompt": "render a modal diagram",
+    "expected_intent": "artifact_gen",
+    "id": "intent-055"
+  },
+  {
+    "prompt": "produce a accordion report",
+    "expected_intent": "artifact_gen",
+    "id": "intent-056"
+  },
+  {
+    "prompt": "draft a tab template",
+    "expected_intent": "artifact_gen",
+    "id": "intent-057"
+  },
+  {
+    "prompt": "assemble breadcrumb widget",
+    "expected_intent": "artifact_gen",
+    "id": "intent-058"
+  },
+  {
+    "prompt": "construct progress bar UI",
+    "expected_intent": "artifact_gen",
+    "id": "intent-059"
+  },
+  {
+    "prompt": "create a React component",
+    "expected_intent": "artifact_gen",
+    "id": "intent-060"
+  },
+  {
+    "prompt": "build a Vue dashboard",
+    "expected_intent": "artifact_gen",
+    "id": "intent-061"
+  },
+  {
+    "prompt": "generate dashboard HTML page",
+    "expected_intent": "artifact_gen",
+    "id": "intent-062"
+  },
+  {
+    "prompt": "make a timeline chart",
+    "expected_intent": "artifact_gen",
+    "id": "intent-063"
+  },
+  {
+    "prompt": "design a calendar layout",
+    "expected_intent": "artifact_gen",
+    "id": "intent-064"
+  },
+  {
+    "prompt": "render a kanban diagram",
+    "expected_intent": "artifact_gen",
+    "id": "intent-065"
+  },
+  {
+    "prompt": "produce a gantt report",
+    "expected_intent": "artifact_gen",
+    "id": "intent-066"
+  },
+  {
+    "prompt": "draft a pie chart template",
+    "expected_intent": "artifact_gen",
+    "id": "intent-067"
+  },
+  {
+    "prompt": "assemble bar graph widget",
+    "expected_intent": "artifact_gen",
+    "id": "intent-068"
+  },
+  {
+    "prompt": "construct heatmap UI",
+    "expected_intent": "artifact_gen",
+    "id": "intent-069"
+  },
+  {
+    "prompt": "create a data table component",
+    "expected_intent": "artifact_gen",
+    "id": "intent-070"
+  },
+  {
+    "prompt": "build a login form dashboard",
+    "expected_intent": "artifact_gen",
+    "id": "intent-071"
+  },
+  {
+    "prompt": "generate sidebar HTML page",
+    "expected_intent": "artifact_gen",
+    "id": "intent-072"
+  },
+  {
+    "prompt": "make a navbar chart",
+    "expected_intent": "artifact_gen",
+    "id": "intent-073"
+  },
+  {
+    "prompt": "design a carousel layout",
+    "expected_intent": "artifact_gen",
+    "id": "intent-074"
+  },
+  {
+    "prompt": "render a modal diagram",
+    "expected_intent": "artifact_gen",
+    "id": "intent-075"
+  },
+  {
+    "prompt": "produce a accordion report",
+    "expected_intent": "artifact_gen",
+    "id": "intent-076"
+  },
+  {
+    "prompt": "draft a tab template",
+    "expected_intent": "artifact_gen",
+    "id": "intent-077"
+  },
+  {
+    "prompt": "assemble breadcrumb widget",
+    "expected_intent": "artifact_gen",
+    "id": "intent-078"
+  },
+  {
+    "prompt": "construct progress bar UI",
+    "expected_intent": "artifact_gen",
+    "id": "intent-079"
+  },
+  {
+    "prompt": "hello, how are you?",
+    "expected_intent": "general_chat",
+    "id": "intent-080"
+  },
+  {
+    "prompt": "tell me about climate change",
+    "expected_intent": "general_chat",
+    "id": "intent-081"
+  },
+  {
+    "prompt": "what do you think of quantum computing?",
+    "expected_intent": "general_chat",
+    "id": "intent-082"
+  },
+  {
+    "prompt": "can you explain space exploration?",
+    "expected_intent": "general_chat",
+    "id": "intent-083"
+  },
+  {
+    "prompt": "let's talk about philosophy",
+    "expected_intent": "general_chat",
+    "id": "intent-084"
+  },
+  {
+    "prompt": "hi there!",
+    "expected_intent": "general_chat",
+    "id": "intent-085"
+  },
+  {
+    "prompt": "good morning, got a minute?",
+    "expected_intent": "general_chat",
+    "id": "intent-086"
+  },
+  {
+    "prompt": "what's economics?",
+    "expected_intent": "general_chat",
+    "id": "intent-087"
+  },
+  {
+    "prompt": "summarize psychology for me",
+    "expected_intent": "general_chat",
+    "id": "intent-088"
+  },
+  {
+    "prompt": "your thoughts on neuroscience?",
+    "expected_intent": "general_chat",
+    "id": "intent-089"
+  },
+  {
+    "prompt": "hello, how are you?",
+    "expected_intent": "general_chat",
+    "id": "intent-090"
+  },
+  {
+    "prompt": "tell me about astronomy",
+    "expected_intent": "general_chat",
+    "id": "intent-091"
+  },
+  {
+    "prompt": "what do you think of linguistics?",
+    "expected_intent": "general_chat",
+    "id": "intent-092"
+  },
+  {
+    "prompt": "can you explain sociology?",
+    "expected_intent": "general_chat",
+    "id": "intent-093"
+  },
+  {
+    "prompt": "let's talk about literature",
+    "expected_intent": "general_chat",
+    "id": "intent-094"
+  },
+  {
+    "prompt": "hi there!",
+    "expected_intent": "general_chat",
+    "id": "intent-095"
+  },
+  {
+    "prompt": "good morning, got a minute?",
+    "expected_intent": "general_chat",
+    "id": "intent-096"
+  },
+  {
+    "prompt": "what's travel?",
+    "expected_intent": "general_chat",
+    "id": "intent-097"
+  },
+  {
+    "prompt": "summarize fitness for me",
+    "expected_intent": "general_chat",
+    "id": "intent-098"
+  },
+  {
+    "prompt": "your thoughts on meditation?",
+    "expected_intent": "general_chat",
+    "id": "intent-099"
+  },
+  {
+    "prompt": "hello, how are you?",
+    "expected_intent": "general_chat",
+    "id": "intent-100"
+  },
+  {
+    "prompt": "tell me about climate change",
+    "expected_intent": "general_chat",
+    "id": "intent-101"
+  },
+  {
+    "prompt": "what do you think of quantum computing?",
+    "expected_intent": "general_chat",
+    "id": "intent-102"
+  },
+  {
+    "prompt": "can you explain space exploration?",
+    "expected_intent": "general_chat",
+    "id": "intent-103"
+  },
+  {
+    "prompt": "let's talk about philosophy",
+    "expected_intent": "general_chat",
+    "id": "intent-104"
+  },
+  {
+    "prompt": "hi there!",
+    "expected_intent": "general_chat",
+    "id": "intent-105"
+  },
+  {
+    "prompt": "good morning, got a minute?",
+    "expected_intent": "general_chat",
+    "id": "intent-106"
+  },
+  {
+    "prompt": "what's economics?",
+    "expected_intent": "general_chat",
+    "id": "intent-107"
+  },
+  {
+    "prompt": "summarize psychology for me",
+    "expected_intent": "general_chat",
+    "id": "intent-108"
+  },
+  {
+    "prompt": "your thoughts on neuroscience?",
+    "expected_intent": "general_chat",
+    "id": "intent-109"
+  },
+  {
+    "prompt": "hello, how are you?",
+    "expected_intent": "general_chat",
+    "id": "intent-110"
+  },
+  {
+    "prompt": "tell me about astronomy",
+    "expected_intent": "general_chat",
+    "id": "intent-111"
+  },
+  {
+    "prompt": "what do you think of linguistics?",
+    "expected_intent": "general_chat",
+    "id": "intent-112"
+  },
+  {
+    "prompt": "can you explain sociology?",
+    "expected_intent": "general_chat",
+    "id": "intent-113"
+  },
+  {
+    "prompt": "let's talk about literature",
+    "expected_intent": "general_chat",
+    "id": "intent-114"
+  },
+  {
+    "prompt": "hi there!",
+    "expected_intent": "general_chat",
+    "id": "intent-115"
+  },
+  {
+    "prompt": "good morning, got a minute?",
+    "expected_intent": "general_chat",
+    "id": "intent-116"
+  },
+  {
+    "prompt": "what's travel?",
+    "expected_intent": "general_chat",
+    "id": "intent-117"
+  },
+  {
+    "prompt": "summarize fitness for me",
+    "expected_intent": "general_chat",
+    "id": "intent-118"
+  },
+  {
+    "prompt": "your thoughts on meditation?",
+    "expected_intent": "general_chat",
+    "id": "intent-119"
+  },
+  {
+    "prompt": "solve x^2 + 5x + 6 = 0",
+    "expected_intent": "math",
+    "id": "intent-120"
+  },
+  {
+    "prompt": "calculate 14% of 44",
+    "expected_intent": "math",
+    "id": "intent-121"
+  },
+  {
+    "prompt": "find derivative of sin(x) + cos(x)",
+    "expected_intent": "math",
+    "id": "intent-122"
+  },
+  {
+    "prompt": "integrate x^3 - 8 dx",
+    "expected_intent": "math",
+    "id": "intent-123"
+  },
+  {
+    "prompt": "what is 35 × 77?",
+    "expected_intent": "math",
+    "id": "intent-124"
+  },
+  {
+    "prompt": "simplify e^x - 1",
+    "expected_intent": "math",
+    "id": "intent-125"
+  },
+  {
+    "prompt": "factor x^2 - 4x + 4",
+    "expected_intent": "math",
+    "id": "intent-126"
+  },
+  {
+    "prompt": "prove 3x + 2y theorem",
+    "expected_intent": "math",
+    "id": "intent-127"
+  },
+  {
+    "prompt": "evaluate x/y + y/x at x=63",
+    "expected_intent": "math",
+    "id": "intent-128"
+  },
+  {
+    "prompt": "convert 70 to binary",
+    "expected_intent": "math",
+    "id": "intent-129"
+  },
+  {
+    "prompt": "solve x^2 + 5x + 6 = 0",
+    "expected_intent": "math",
+    "id": "intent-130"
+  },
+  {
+    "prompt": "calculate 84% of 154",
+    "expected_intent": "math",
+    "id": "intent-131"
+  },
+  {
+    "prompt": "find derivative of sin(x) + cos(x)",
+    "expected_intent": "math",
+    "id": "intent-132"
+  },
+  {
+    "prompt": "integrate x^3 - 8 dx",
+    "expected_intent": "math",
+    "id": "intent-133"
+  },
+  {
+    "prompt": "what is 105 × 187?",
+    "expected_intent": "math",
+    "id": "intent-134"
+  },
+  {
+    "prompt": "simplify e^x - 1",
+    "expected_intent": "math",
+    "id": "intent-135"
+  },
+  {
+    "prompt": "factor x^2 - 4x + 4",
+    "expected_intent": "math",
+    "id": "intent-136"
+  },
+  {
+    "prompt": "prove 3x + 2y theorem",
+    "expected_intent": "math",
+    "id": "intent-137"
+  },
+  {
+    "prompt": "evaluate x/y + y/x at x=133",
+    "expected_intent": "math",
+    "id": "intent-138"
+  },
+  {
+    "prompt": "convert 140 to binary",
+    "expected_intent": "math",
+    "id": "intent-139"
+  },
+  {
+    "prompt": "solve x^2 + 5x + 6 = 0",
+    "expected_intent": "math",
+    "id": "intent-140"
+  },
+  {
+    "prompt": "calculate 154% of 264",
+    "expected_intent": "math",
+    "id": "intent-141"
+  },
+  {
+    "prompt": "find derivative of sin(x) + cos(x)",
+    "expected_intent": "math",
+    "id": "intent-142"
+  },
+  {
+    "prompt": "integrate x^3 - 8 dx",
+    "expected_intent": "math",
+    "id": "intent-143"
+  },
+  {
+    "prompt": "what is 175 × 297?",
+    "expected_intent": "math",
+    "id": "intent-144"
+  },
+  {
+    "prompt": "simplify e^x - 1",
+    "expected_intent": "math",
+    "id": "intent-145"
+  },
+  {
+    "prompt": "factor x^2 - 4x + 4",
+    "expected_intent": "math",
+    "id": "intent-146"
+  },
+  {
+    "prompt": "prove 3x + 2y theorem",
+    "expected_intent": "math",
+    "id": "intent-147"
+  },
+  {
+    "prompt": "evaluate x/y + y/x at x=203",
+    "expected_intent": "math",
+    "id": "intent-148"
+  },
+  {
+    "prompt": "convert 210 to binary",
+    "expected_intent": "math",
+    "id": "intent-149"
+  },
+  {
+    "prompt": "solve x^2 + 5x + 6 = 0",
+    "expected_intent": "math",
+    "id": "intent-150"
+  },
+  {
+    "prompt": "calculate 224% of 374",
+    "expected_intent": "math",
+    "id": "intent-151"
+  },
+  {
+    "prompt": "find derivative of sin(x) + cos(x)",
+    "expected_intent": "math",
+    "id": "intent-152"
+  },
+  {
+    "prompt": "integrate x^3 - 8 dx",
+    "expected_intent": "math",
+    "id": "intent-153"
+  },
+  {
+    "prompt": "what is 245 × 407?",
+    "expected_intent": "math",
+    "id": "intent-154"
+  },
+  {
+    "prompt": "simplify e^x - 1",
+    "expected_intent": "math",
+    "id": "intent-155"
+  },
+  {
+    "prompt": "factor x^2 - 4x + 4",
+    "expected_intent": "math",
+    "id": "intent-156"
+  },
+  {
+    "prompt": "prove 3x + 2y theorem",
+    "expected_intent": "math",
+    "id": "intent-157"
+  },
+  {
+    "prompt": "evaluate x/y + y/x at x=273",
+    "expected_intent": "math",
+    "id": "intent-158"
+  },
+  {
+    "prompt": "convert 280 to binary",
+    "expected_intent": "math",
+    "id": "intent-159"
+  },
+  {
+    "prompt": "search documents about machine learning",
+    "expected_intent": "rag_query",
+    "id": "intent-160"
+  },
+  {
+    "prompt": "find info on distributed systems",
+    "expected_intent": "rag_query",
+    "id": "intent-161"
+  },
+  {
+    "prompt": "lookup kubernetes in knowledge base",
+    "expected_intent": "rag_query",
+    "id": "intent-162"
+  },
+  {
+    "prompt": "retrieve blockchain articles",
+    "expected_intent": "rag_query",
+    "id": "intent-163"
+  },
+  {
+    "prompt": "query cybersecurity records",
+    "expected_intent": "rag_query",
+    "id": "intent-164"
+  },
+  {
+    "prompt": "search for data privacy papers",
+    "expected_intent": "rag_query",
+    "id": "intent-165"
+  },
+  {
+    "prompt": "find cloud native documentation",
+    "expected_intent": "rag_query",
+    "id": "intent-166"
+  },
+  {
+    "prompt": "lookup microservices definition",
+    "expected_intent": "rag_query",
+    "id": "intent-167"
+  },
+  {
+    "prompt": "retrieve CI/CD context",
+    "expected_intent": "rag_query",
+    "id": "intent-168"
+  },
+  {
+    "prompt": "search observability in wiki",
+    "expected_intent": "rag_query",
+    "id": "intent-169"
+  },
+  {
+    "prompt": "search documents about graph databases",
+    "expected_intent": "rag_query",
+    "id": "intent-170"
+  },
+  {
+    "prompt": "find info on event sourcing",
+    "expected_intent": "rag_query",
+    "id": "intent-171"
+  },
+  {
+    "prompt": "lookup CQRS in knowledge base",
+    "expected_intent": "rag_query",
+    "id": "intent-172"
+  },
+  {
+    "prompt": "retrieve DDD articles",
+    "expected_intent": "rag_query",
+    "id": "intent-173"
+  },
+  {
+    "prompt": "query REST API records",
+    "expected_intent": "rag_query",
+    "id": "intent-174"
+  },
+  {
+    "prompt": "search for gRPC papers",
+    "expected_intent": "rag_query",
+    "id": "intent-175"
+  },
+  {
+    "prompt": "find WebRTC documentation",
+    "expected_intent": "rag_query",
+    "id": "intent-176"
+  },
+  {
+    "prompt": "lookup OAuth2 definition",
+    "expected_intent": "rag_query",
+    "id": "intent-177"
+  },
+  {
+    "prompt": "retrieve zero trust context",
+    "expected_intent": "rag_query",
+    "id": "intent-178"
+  },
+  {
+    "prompt": "search SRE in wiki",
+    "expected_intent": "rag_query",
+    "id": "intent-179"
+  },
+  {
+    "prompt": "search documents about machine learning",
+    "expected_intent": "rag_query",
+    "id": "intent-180"
+  },
+  {
+    "prompt": "find info on distributed systems",
+    "expected_intent": "rag_query",
+    "id": "intent-181"
+  },
+  {
+    "prompt": "lookup kubernetes in knowledge base",
+    "expected_intent": "rag_query",
+    "id": "intent-182"
+  },
+  {
+    "prompt": "retrieve blockchain articles",
+    "expected_intent": "rag_query",
+    "id": "intent-183"
+  },
+  {
+    "prompt": "query cybersecurity records",
+    "expected_intent": "rag_query",
+    "id": "intent-184"
+  },
+  {
+    "prompt": "search for data privacy papers",
+    "expected_intent": "rag_query",
+    "id": "intent-185"
+  },
+  {
+    "prompt": "find cloud native documentation",
+    "expected_intent": "rag_query",
+    "id": "intent-186"
+  },
+  {
+    "prompt": "lookup microservices definition",
+    "expected_intent": "rag_query",
+    "id": "intent-187"
+  },
+  {
+    "prompt": "retrieve CI/CD context",
+    "expected_intent": "rag_query",
+    "id": "intent-188"
+  },
+  {
+    "prompt": "search observability in wiki",
+    "expected_intent": "rag_query",
+    "id": "intent-189"
+  },
+  {
+    "prompt": "search documents about graph databases",
+    "expected_intent": "rag_query",
+    "id": "intent-190"
+  },
+  {
+    "prompt": "find info on event sourcing",
+    "expected_intent": "rag_query",
+    "id": "intent-191"
+  },
+  {
+    "prompt": "lookup CQRS in knowledge base",
+    "expected_intent": "rag_query",
+    "id": "intent-192"
+  },
+  {
+    "prompt": "retrieve DDD articles",
+    "expected_intent": "rag_query",
+    "id": "intent-193"
+  },
+  {
+    "prompt": "query REST API records",
+    "expected_intent": "rag_query",
+    "id": "intent-194"
+  },
+  {
+    "prompt": "search for gRPC papers",
+    "expected_intent": "rag_query",
+    "id": "intent-195"
+  },
+  {
+    "prompt": "find WebRTC documentation",
+    "expected_intent": "rag_query",
+    "id": "intent-196"
+  },
+  {
+    "prompt": "lookup OAuth2 definition",
+    "expected_intent": "rag_query",
+    "id": "intent-197"
+  },
+  {
+    "prompt": "retrieve zero trust context",
+    "expected_intent": "rag_query",
+    "id": "intent-198"
+  },
+  {
+    "prompt": "search SRE in wiki",
+    "expected_intent": "rag_query",
+    "id": "intent-199"
+  }
+]
