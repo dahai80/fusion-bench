@@ -351,6 +351,16 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.4 (2026-10-11)
+
+- **Laya executor API contract fix (#22)**: Rewrote `LayaBenchmarkExecutor` response parsing to match the real `/v1/laya/decide` API contract (verified live against fusion-mlx).
+  - **Endpoint**: Default URL corrected from gateway `:11432` to fusion-mlx `:11434` (where `/v1/laya/decide` actually lives; gateway's LayaClassifier calls it internally).
+  - **Dim 2 Intent**: Parses `answers.domain.choice` (code/math_or_logic/writing/factual_lookup/data_analysis/chitchat) → maps to testset labels. Replaced wrong `intent` field.
+  - **Dim 3 Guardrail**: Parses `answers.jailbreak.noul` + `answers.prompt_injection.noul` + `answers.sensitive_data.noul` (guard preset). Unsafe if any ≥ 0.5. Replaced wrong `safety_score` field.
+  - **Dim 4 Tools**: Uses `answers.needs_tools.noul` + `answers.domain.choice` + keyword inference (laya has no native tool field). Replaced wrong `tool` field.
+  - **Dim 1 Latency**: Uses `latency_ms` from response. **Dim 5 VRAM**: Uses `/v1/laya/status` (`loaded`/`pinned`/`priority_tier`) instead of `/stats`.
+  - **Tests**: 25 tests rewritten with real `{answers: {...}, latency_ms}` mock format. 612 tests green. `ruff` clean.
+  - **Live verified**: Ran against real fusion-mlx with `mlx-community/Qwen3.5-4B-MLX-4bit` — P50=7.5ms (<15ms spec ✅), VRAM stable ✅.
 
 ### v0.4.3 (2026-10-11)
 

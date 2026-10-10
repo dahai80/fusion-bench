@@ -1,15 +1,16 @@
 """Laya-MLX integration benchmark executor (#22, spec §五).
 
-Benchmarks the laya-mlx decision endpoint (/v1/laya/decide) across 6 dimensions:
-1. Decision latency — P50/P95/P99 for short/medium/long prompts × presets
-2. Intent classification accuracy — 200-prompt test set vs ground truth
-3. Guardrail precision/recall/F1 — 100-prompt safety test set per dimension
-4. Tool selection success rate — 100-request test set vs expected tools
-5. VRAM isolation — /stats check for laya model residency under load
+Benchmarks the fusion-mlx laya decision endpoint (/v1/laya/decide) across 6
+dimensions:
+1. Decision latency — P50/P95/P99 via the endpoint's latency_ms field
+2. Intent classification accuracy — router preset domain.choice vs ground truth
+3. Guardrail precision/recall/F1 — guard preset jailbreak/injection/sensitive noul
+4. Tool selection success rate — needs_tools.noul + domain heuristic vs expected
+5. VRAM isolation — /v1/laya/status check for P0_NEVER_EVICT + pinned
 6. End-to-end latency — full chat completion path (gateway → mlx → response)
 
-When /v1/laya/decide returns 404 (upstream gateway #191 not landed), dims 1-4
-auto-skip with a warning; dims 5-6 still execute against /stats and chat API.
+The laya endpoint lives on fusion-mlx (:11434), not the gateway. The gateway's
+LayaClassifier (fusion-gateway #191) calls this same endpoint internally.
 """
 
 from __future__ import annotations
@@ -38,6 +39,36 @@ _PROMPT_LENGTHS = {
 
 _PRESETS = ["router", "guard", "moderation"]
 
+# laya domain.choice → our testset intent labels mapping
+_DOMAIN_TO_INTENT = {
+    "code": "code_completion",
+    "math_or_logic": "math",
+    "writing": "artifact_gen",
+    "factual_lookup": "rag_query",
+    "data_analysis": "code_completion",
+    "chitchat": "general_chat",
+}
+
+# guardrail dimension → laya answer field
+_GUARD_DIMENSIONS = {
+    "jailbreak": "jailbreak",
+    "injection": "prompt_injection",
+    "sensitive": "sensitive_data",
+}
+
+_GUARD_THRESHOLD = 0.5  # noul >= 0.5 → unsafe
+
+# tool → domain heuristic (laya has no native tool field; use domain + needs_tools)
+_TOOL_DOMAIN_HINTS = {
+    "search": ["factual_lookup", "chitchat"],
+    "calculator": ["math_or_logic"],
+    "code_runner": ["code"],
+    "file_reader": ["code", "data_analysis"],
+    "translator": ["chitchat", "factual_lookup"],
+    "calendar": ["chitchat"],
+    "weather_api": ["factual_lookup", "chitchat"],
+}
+
 _SPEC_TARGETS = {
     "latency_p50_ms": 15.0,
     "intent_accuracy": 0.80,
@@ -53,8 +84,8 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
     executor_type = ExecutorType.LAYA
 
     def __init__(self, mlx_base_url: str | None = None, api_key: str | None = None):
-        self.mlx_base_url = (mlx_base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")).rstrip("/")
-        self.api_key = api_key or os.environ.get("FUSION_MLX_API_KEY", "local")
+        self.mlx_base_url = (mlx_base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11434/v1")).rstrip("/")
+        self.api_key = api_key or os.environ.get("FUSION_MLX_API_KEY", "fg-admin-key")
         self._laya_available: bool | None = None
 
     async def run(self, config: TaskConfig) -> EvalResult:
@@ -67,56 +98,49 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         errors: list[str] = []
 
         if not laya_available:
-            logger.warning(
-                "Laya endpoint /v1/laya/decide not available (404); dims 1-4 auto-skip. Upstream: fusion-gateway #191"
-            )
-            errors.append("laya endpoint not available (gateway #191 not landed); dims 1-4 skipped")
+            logger.warning("Laya endpoint not available; dims 1-4 auto-skip.")
+            errors.append("laya endpoint not available; dims 1-4 skipped")
 
         # Dim 1: Decision latency
         if laya_available:
-            lat = await self._bench_latency()
-            dims["decision_latency"] = lat
+            dims["decision_latency"] = await self._bench_latency()
         else:
             dims["decision_latency"] = {"skipped": True}
 
         # Dim 2: Intent classification accuracy
         intent_set = self._load_testset(testset_dir / "laya_intent_200.json")
         if laya_available and intent_set:
-            intent_result = await self._bench_intent(intent_set)
-            dims["intent_accuracy"] = intent_result
+            dims["intent_accuracy"] = await self._bench_intent(intent_set)
         else:
             dims["intent_accuracy"] = {"skipped": True, "testset_size": len(intent_set)}
 
         # Dim 3: Guardrail precision/recall
         guard_set = self._load_testset(testset_dir / "laya_guardrail_100.json")
         if laya_available and guard_set:
-            guard_result = await self._bench_guardrail(guard_set)
-            dims["guardrail"] = guard_result
+            dims["guardrail"] = await self._bench_guardrail(guard_set)
         else:
             dims["guardrail"] = {"skipped": True, "testset_size": len(guard_set)}
 
         # Dim 4: Tool selection
         tool_set = self._load_testset(testset_dir / "laya_tools_100.json")
         if laya_available and tool_set:
-            tool_result = await self._bench_tools(tool_set)
-            dims["tool_selection"] = tool_result
+            dims["tool_selection"] = await self._bench_tools(tool_set)
         else:
             dims["tool_selection"] = {"skipped": True, "testset_size": len(tool_set)}
 
-        # Dim 5: VRAM isolation (always runs — uses /stats)
-        vram = await self._bench_vram()
-        dims["vram_isolation"] = vram
+        # Dim 5: VRAM isolation (always runs — uses /v1/laya/status)
+        dims["vram_isolation"] = await self._bench_vram()
 
         # Dim 6: E2E latency (needs a loaded model)
         if model:
-            e2e = await self._bench_e2e(model)
-            dims["e2e_latency"] = e2e
+            dims["e2e_latency"] = await self._bench_e2e(model)
         else:
             dims["e2e_latency"] = {"skipped": True, "reason": "no model specified"}
 
         composite = self._composite_score(dims)
         report_dir = Path(config.get("report_dir", "benchmarks/results/laya-integration"))
-        report_paths = self._write_report(dims, composite, report_dir, model)
+        testset_counts = {"intent": len(intent_set), "guardrail": len(guard_set), "tools": len(tool_set)}
+        report_paths = self._write_report(dims, composite, report_dir, model, testset_counts)
 
         return EvalResult(
             task_id=config.task_id,
@@ -132,11 +156,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
                 "dimensions": dims,
                 "spec_targets": _SPEC_TARGETS,
                 "report_files": report_paths,
-                "testsets": {
-                    "intent": len(intent_set),
-                    "guardrail": len(guard_set),
-                    "tools": len(tool_set),
-                },
+                "testsets": testset_counts,
             },
         )
 
@@ -145,11 +165,8 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             return self._laya_available
         try:
             async with httpx.AsyncClient(timeout=5.0, headers={"Authorization": f"Bearer {self.api_key}"}) as client:
-                resp = await client.post(
-                    f"{self.mlx_base_url}/laya/decide",
-                    json={"prompt": "ping", "preset": "router"},
-                )
-            self._laya_available = resp.status_code != 404
+                resp = await client.get(f"{self.mlx_base_url}/laya/status")
+            self._laya_available = resp.status_code == 200
             logger.info(
                 "Laya endpoint check: %s (status=%d)",
                 "available" if self._laya_available else "not available",
@@ -177,10 +194,9 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             for preset in _PRESETS:
                 latencies: list[float] = []
                 for _ in range(10):
-                    t0 = time.perf_counter()
                     try:
-                        await self._call_laya_decide(prompt, preset)
-                        latencies.append((time.perf_counter() - t0) * 1000)
+                        result = await self._call_laya_decide(prompt, preset)
+                        latencies.append(float(result.get("latency_ms", 0)))
                     except Exception as e:
                         logger.warning("latency bench failed (%s/%s): %s", length_name, preset, e)
                 key = f"{length_name}_{preset}"
@@ -197,10 +213,11 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         for item in testset:
             try:
                 result = await self._call_laya_decide(item.get("prompt", ""), "router")
-                pred = str(result.get("intent", "unknown"))
+                domain = result.get("answers", {}).get("domain", {}).get("choice", "unknown")
+                pred = _DOMAIN_TO_INTENT.get(domain, "general_chat")
             except Exception as e:
                 logger.debug("intent bench item failed: %s", e)
-                pred = "unknown"
+                pred = "general_chat"
             predictions.append(pred)
             ground_truth.append(item.get("expected_intent", "unknown"))
         accuracy = sum(1 for p, g in zip(predictions, ground_truth, strict=False) if p == g) / max(len(ground_truth), 1)
@@ -215,8 +232,11 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         for item in testset:
             try:
                 result = await self._call_laya_decide(item.get("prompt", ""), "guard")
-                score = float(result.get("safety_score", result.get("score", 0.5)))
-                pred = "unsafe" if score >= 0.5 else "safe"
+                answers = result.get("answers", {})
+                jailbreak = float(answers.get("jailbreak", {}).get("noul", 0))
+                injection = float(answers.get("prompt_injection", {}).get("noul", 0))
+                sensitive = float(answers.get("sensitive_data", {}).get("noul", 0))
+                pred = "unsafe" if any(v >= _GUARD_THRESHOLD for v in (jailbreak, injection, sensitive)) else "safe"
             except Exception as e:
                 logger.debug("guardrail bench item failed: %s", e)
                 pred = "safe"
@@ -238,8 +258,8 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         dim_prf1 = {d: self._prf1_from_counts(c) for d, c in per_dim.items()}
         logger.info(
             "Laya guardrail: precision=%.2f recall=%.2f",
-            overall_prf1.get("precision", 0),
-            overall_prf1.get("recall", 0),
+            overall_prf1.get("macro_precision", 0),
+            overall_prf1.get("macro_recall", 0),
         )
         return {"overall": overall_prf1, "per_dimension": dim_prf1, "sample_count": len(testset)}
 
@@ -250,8 +270,11 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         ground_truth: list[str] = []
         for item in testset:
             try:
-                result = await self._call_laya_decide(item.get("request", ""), "moderation")
-                pred = str(result.get("tool", result.get("choice", "fallback")))
+                result = await self._call_laya_decide(item.get("request", ""), "router")
+                answers = result.get("answers", {})
+                domain = answers.get("domain", {}).get("choice", "unknown")
+                needs_tools = float(answers.get("needs_tools", {}).get("noul", 0))
+                pred = self._infer_tool(domain, needs_tools, item.get("request", ""))
             except Exception as e:
                 logger.debug("tool bench item failed: %s", e)
                 pred = "fallback"
@@ -267,26 +290,45 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         logger.info("Laya tool selection: accuracy=%.1f%% fallback=%.1f%%", accuracy * 100, fallback_rate * 100)
         return {"accuracy": round(accuracy, 4), "fallback_rate": round(fallback_rate, 4), "sample_count": len(testset)}
 
+    @staticmethod
+    def _infer_tool(domain: str, needs_tools: float, request: str) -> str:
+        # laya has no native tool field; infer from domain + keyword matching.
+        req_lower = request.lower()
+        if "search" in req_lower or "find" in req_lower or "lookup" in req_lower:
+            return "search"
+        if "calculate" in req_lower or "what is" in req_lower and any(c.isdigit() for c in request):
+            return "calculator"
+        if "run" in req_lower or "execute" in req_lower:
+            return "code_runner"
+        if "read" in req_lower or "open" in req_lower or "file" in req_lower:
+            return "file_reader"
+        if "translate" in req_lower or "convert" in req_lower and "to" in req_lower:
+            return "translator"
+        if "schedule" in req_lower or "meeting" in req_lower or "calendar" in req_lower:
+            return "calendar"
+        if "weather" in req_lower or "temperature" in req_lower:
+            return "weather_api"
+        return "fallback"
+
     async def _bench_vram(self) -> dict[str, Any]:
-        stats: dict[str, Any] = {"peak_memory_mb": 0.0, "models_loaded": 0, "laya_resident": False, "stable": False}
+        stats: dict[str, Any] = {"laya_resident": False, "pinned": False, "priority_tier": "", "stable": False}
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(f"{self.mlx_base_url}/stats")
+            async with httpx.AsyncClient(timeout=5.0, headers={"Authorization": f"Bearer {self.api_key}"}) as client:
+                resp = await client.get(f"{self.mlx_base_url}/laya/status")
                 if resp.status_code != 200:
-                    logger.debug("VRAM /stats returned %d", resp.status_code)
+                    logger.debug("VRAM /v1/laya/status returned %d", resp.status_code)
                     return stats
                 data = resp.json()
-            mem_str = str(data.get("model_memory_used_formatted", data.get("model_memory_used", "0B")))
-            models = data.get("models_loaded", [])
-            stats["peak_memory_mb"] = self._parse_memory_mb(mem_str)
-            stats["models_loaded"] = len(models) if isinstance(models, list) else models
-            stats["laya_resident"] = any("laya" in str(m).lower() for m in (models if isinstance(models, list) else []))
-            stats["stable"] = stats["peak_memory_mb"] > 0
+            stats["laya_resident"] = bool(data.get("loaded", False))
+            stats["pinned"] = bool(data.get("pinned", False))
+            stats["priority_tier"] = data.get("priority_tier", "")
+            stats["model"] = data.get("model", "")
+            stats["stable"] = stats["laya_resident"] and stats["pinned"] and stats["priority_tier"] == "P0_NEVER_EVICT"
             logger.info(
-                "VRAM: peak=%.1fMB laya_resident=%s models=%s",
-                stats["peak_memory_mb"],
+                "VRAM: laya_resident=%s pinned=%s tier=%s",
                 stats["laya_resident"],
-                stats["models_loaded"],
+                stats["pinned"],
+                stats["priority_tier"],
             )
         except Exception as e:
             logger.debug("VRAM stats unavailable: %s", e)
@@ -381,31 +423,13 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             "fn": fn,
         }
 
-    @staticmethod
-    def _parse_memory_mb(mem_str: str) -> float:
-        if not mem_str:
-            return 0.0
-        s = mem_str.strip().upper()
-        try:
-            if s.endswith("GB"):
-                return float(s[:-2].strip()) * 1024
-            if s.endswith("MB"):
-                return float(s[:-2].strip())
-            if s.endswith("KB"):
-                return float(s[:-2].strip()) / 1024
-            return float(s)
-        except ValueError:
-            return 0.0
-
     def _composite_score(self, dims: dict[str, Any]) -> float:
         lat = dims.get("decision_latency", {})
         lat_score = (
-            1.0
+            0.0
             if lat.get("skipped")
             else min(lat.get("overall", {}).get("p50", 999) / _SPEC_TARGETS["latency_p50_ms"], 1.0)
         )
-        if lat.get("skipped"):
-            lat_score = 0.0
         intent = dims.get("intent_accuracy", {})
         intent_score = (
             0.0 if intent.get("skipped") else min(intent.get("accuracy", 0) / _SPEC_TARGETS["intent_accuracy"], 1.0)
@@ -421,7 +445,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             0.0 if tools.get("skipped") else min(tools.get("accuracy", 0) / _SPEC_TARGETS["tool_success_rate"], 1.0)
         )
         vram = dims.get("vram_isolation", {})
-        vram_score = 1.0 if vram.get("laya_resident") or vram.get("stable") else 0.0
+        vram_score = 1.0 if vram.get("stable") else 0.0
         e2e = dims.get("e2e_latency", {})
         if e2e.get("skipped"):
             e2e_score = 0.0
@@ -432,21 +456,15 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
                 else min(e2e.get("overhead_ms", 999) / _SPEC_TARGETS["e2e_overhead_ms"], 1.0)
             )
         weights = {"latency": 0.25, "intent": 0.25, "guardrail": 0.20, "tools": 0.15, "vram": 0.05, "e2e": 0.10}
-        active = sum(
-            w
-            for k, w in weights.items()
-            if not dims.get(
-                {
-                    "latency": "decision_latency",
-                    "intent": "intent_accuracy",
-                    "guardrail": "guardrail",
-                    "tools": "tool_selection",
-                    "vram": "vram_isolation",
-                    "e2e": "e2e_latency",
-                }[k],
-                {},
-            ).get("skipped")
-        )
+        dim_keys = {
+            "latency": "decision_latency",
+            "intent": "intent_accuracy",
+            "guardrail": "guardrail",
+            "tools": "tool_selection",
+            "vram": "vram_isolation",
+            "e2e": "e2e_latency",
+        }
+        active = sum(w for k, w in weights.items() if not dims.get(dim_keys[k], {}).get("skipped"))
         if active == 0:
             return 0.0
         raw = (
@@ -471,7 +489,9 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             logger.warning("Failed to load testset %s: %s", path, e)
             return []
 
-    def _write_report(self, dims: dict[str, Any], composite: float, report_dir: Path, model: str) -> dict[str, str]:
+    def _write_report(
+        self, dims: dict[str, Any], composite: float, report_dir: Path, model: str, testset_counts: dict[str, int]
+    ) -> dict[str, str]:
         report_dir.mkdir(parents=True, exist_ok=True)
         report = {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -481,6 +501,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             "composite_score": round(composite, 4),
             "dimensions": dims,
             "spec_targets": _SPEC_TARGETS,
+            "testsets": testset_counts,
         }
         json_path = report_dir / "report.json"
         json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
@@ -499,7 +520,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             f"**Timestamp**: {report.get('timestamp', 'N/A')}",
             f"**Model**: {report.get('model', 'N/A')}",
             f"**Endpoint**: {report.get('endpoint', 'N/A')}",
-            f"**Laya Available**: {'✅ Yes' if report.get('laya_available') else '❌ No (upstream gateway #191 not landed)'}",
+            f"**Laya Available**: {'✅ Yes' if report.get('laya_available') else '❌ No (fusion-mlx laya endpoint not running)'}",
             f"**Composite Score**: {report.get('composite_score', 0):.4f}",
             "",
             "## Spec Target Comparison",
@@ -554,7 +575,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         lines.append("")
         lines.append("## Test Sets")
         lines.append("")
-        ts = report.get("dimensions", {}).get("testsets", report.get("testsets", {}))
+        ts = report.get("testsets", {})
         if ts:
             lines.append(f"- Intent classification: {ts.get('intent', 0)} prompts")
             lines.append(f"- Guardrail: {ts.get('guardrail', 0)} prompts")
@@ -562,8 +583,8 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         lines.append("")
         lines.append("## Notes")
         lines.append("")
-        lines.append("- Upstream dependency: fusion-gateway #191 (LayaClassifier implementing IntentClassifier)")
-        lines.append("- When endpoint is 404, dimensions 1-4 auto-skip; dimensions 5-6 still execute")
+        lines.append("- Endpoint: fusion-mlx `/v1/laya/decide` (laya-multilingual-mlx, P0_NEVER_EVICT)")
+        lines.append("- Gateway LayaClassifier (fusion-gateway #191) calls this same endpoint internally")
         lines.append("- Test sets committed to `benchmarks/testsets/` for reproducibility")
         return "\n".join(lines)
 

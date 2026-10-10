@@ -12,31 +12,68 @@ from fusion_bench.executors.laya_executor import LayaBenchmarkExecutor
 
 
 def _mock_laya_response(prompt: str, preset: str) -> dict:
+    base = {
+        "model": "aac6fef/laya-multilingual-mlx",
+        "latency_ms": 7.2,
+        "usage": {"input_tokens": 12, "output_tokens": 4},
+    }
     if preset == "guard":
-        if "ignore" in prompt.lower() or "rm -rf" in prompt.lower() or "password" in prompt.lower():
-            return {"safety_score": 0.95, "decision": "block"}
-        return {"safety_score": 0.1, "decision": "allow"}
+        jailbreak = 0.95 if ("ignore" in prompt.lower() or "rm -rf" in prompt.lower()) else 0.05
+        injection = 0.9 if "ignore" in prompt.lower() else 0.05
+        sensitive = 0.85 if "password" in prompt.lower() else 0.05
+        return {
+            **base,
+            "answers": {
+                "jailbreak": {"type": "noul", "noul": jailbreak, "confidence": 0.9},
+                "prompt_injection": {"type": "noul", "noul": injection, "confidence": 0.9},
+                "sensitive_data": {"type": "noul", "noul": sensitive, "confidence": 0.85},
+                "harm_severity": {"type": "score", "score": 2.0, "confidence": 0.8},
+                "topic": {"type": "choice", "choice": "general", "confidence": 0.7},
+            },
+        }
     if preset == "moderation":
-        if "search" in prompt.lower():
-            return {"tool": "search", "choice": "search"}
-        if "calculate" in prompt.lower() or "what is" in prompt.lower():
-            return {"tool": "calculator", "choice": "calculator"}
-        if "run" in prompt.lower() or "execute" in prompt.lower():
-            return {"tool": "code_runner", "choice": "code_runner"}
-        return {"tool": "fallback", "choice": "fallback"}
+        return {
+            **base,
+            "answers": {
+                "toxic": {"type": "noul", "noul": 0.1, "confidence": 0.9},
+                "harassment": {"type": "noul", "noul": 0.1, "confidence": 0.9},
+                "threat": {"type": "noul", "noul": 0.05, "confidence": 0.9},
+                "spam": {"type": "noul", "noul": 0.05, "confidence": 0.9},
+                "severity": {"type": "score", "score": 0.5, "confidence": 0.8},
+            },
+        }
+    # router preset
     if "def " in prompt or "class " in prompt or "implement" in prompt.lower():
-        return {"intent": "code_completion"}
-    if "create" in prompt.lower() or "build" in prompt.lower():
-        return {"intent": "artifact_gen"}
-    if "solve" in prompt.lower() or "calculate" in prompt.lower():
-        return {"intent": "math"}
-    if "search" in prompt.lower() or "find" in prompt.lower():
-        return {"intent": "rag_query"}
-    return {"intent": "general_chat"}
+        domain = "code"
+    elif "solve" in prompt.lower() or "calculate" in prompt.lower():
+        domain = "math_or_logic"
+    elif "create" in prompt.lower() or "build" in prompt.lower():
+        domain = "writing"
+    elif "search" in prompt.lower() or "find" in prompt.lower():
+        domain = "factual_lookup"
+    elif "analyze" in prompt.lower():
+        domain = "data_analysis"
+    else:
+        domain = "chitchat"
+    needs_tools = (
+        0.8
+        if any(k in prompt.lower() for k in ("search", "calculate", "run", "read", "translate", "calendar", "weather"))
+        else 0.1
+    )
+    return {
+        **base,
+        "answers": {
+            "domain": {"type": "choice", "choice": domain, "confidence": 0.85},
+            "difficulty": {"type": "score", "score": 2.0, "confidence": 0.8},
+            "needs_tools": {"type": "noul", "noul": needs_tools, "confidence": 0.8},
+            "is_sensitive": {"type": "noul", "noul": 0.1, "confidence": 0.9},
+        },
+    }
 
 
 def _make_executor(monkeypatch, laya_available: bool = True, model_stream: bool = True):
-    executor = LayaBenchmarkExecutor(mlx_base_url="http://localhost:11432/v1")
+    executor = LayaBenchmarkExecutor(mlx_base_url="http://localhost:11434/v1", api_key="test-key")
+    executor._laya_available = None
 
     async def fake_post(self, url, json=None, **kw):
         if "/laya/decide" in url:
@@ -51,11 +88,19 @@ def _make_executor(monkeypatch, laya_available: bool = True, model_stream: bool 
         return httpx.Response(200, request=req, json={"choices": [{"message": {"content": "hi"}}]})
 
     async def fake_get(self, url, **kw):
-        if url.endswith("/stats"):
+        if "/laya/status" in url:
+            if not laya_available:
+                return httpx.Response(404, request=httpx.Request("GET", url))
             return httpx.Response(
                 200,
                 request=httpx.Request("GET", url),
-                json={"model_memory_used_formatted": "2.0 GB", "models_loaded": ["laya-decision-400m", "qwen3.5-4b"]},
+                json={
+                    "loaded": True,
+                    "model": "aac6fef/laya-multilingual-mlx",
+                    "priority_tier": "P0_NEVER_EVICT",
+                    "pinned": True,
+                    "stats": {},
+                },
             )
         return httpx.Response(404, request=httpx.Request("GET", url))
 
@@ -139,20 +184,6 @@ class TestPRF1:
         assert result["f1"] == 0.8
 
 
-class TestParseMemory:
-    def test_gb(self):
-        assert LayaBenchmarkExecutor._parse_memory_mb("2.0 GB") == pytest.approx(2048.0)
-
-    def test_mb(self):
-        assert LayaBenchmarkExecutor._parse_memory_mb("512 MB") == 512.0
-
-    def test_zero(self):
-        assert LayaBenchmarkExecutor._parse_memory_mb("0B") == 0.0
-
-    def test_empty(self):
-        assert LayaBenchmarkExecutor._parse_memory_mb("") == 0.0
-
-
 class TestRunWithLaya:
     async def test_run_all_dims(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
@@ -166,7 +197,7 @@ class TestRunWithLaya:
         assert not dims["intent_accuracy"].get("skipped")
         assert not dims["guardrail"].get("skipped")
         assert not dims["tool_selection"].get("skipped")
-        assert dims["vram_isolation"]["peak_memory_mb"] == pytest.approx(2048.0)
+        assert dims["vram_isolation"]["stable"] is True
         assert not dims["e2e_latency"].get("skipped")
         assert result.metric_value > 0
 
@@ -203,8 +234,10 @@ class TestRunWithLaya:
     async def test_vram(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
         result = await executor._bench_vram()
-        assert result["peak_memory_mb"] == pytest.approx(2048.0)
         assert result["laya_resident"] is True
+        assert result["pinned"] is True
+        assert result["priority_tier"] == "P0_NEVER_EVICT"
+        assert result["stable"] is True
 
     async def test_e2e(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
@@ -224,10 +257,9 @@ class TestAutoSkip:
         assert dims["intent_accuracy"].get("skipped") is True
         assert dims["guardrail"].get("skipped") is True
         assert dims["tool_selection"].get("skipped") is True
-        assert not dims["vram_isolation"].get("skipped")
         assert not dims["e2e_latency"].get("skipped")
         assert result.errors
-        assert "gateway #191" in result.errors[0]
+        assert "laya endpoint" in result.errors[0]
 
     async def test_no_model_skips_e2e(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=False, model_stream=False)

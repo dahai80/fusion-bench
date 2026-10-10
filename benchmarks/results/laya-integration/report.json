@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-10-10T23:43:16Z",
+  "model": "",
+  "endpoint": "http://localhost:11434/v1/laya/decide",
+  "laya_available": false,
+  "composite_score": 0.0,
+  "dimensions": {
+    "laya_endpoint_available": false,
+    "decision_latency": {
+      "skipped": true
+    },
+    "intent_accuracy": {
+      "skipped": true,
+      "testset_size": 200
+    },
+    "guardrail": {
+      "skipped": true,
+      "testset_size": 100
+    },
+    "tool_selection": {
+      "skipped": true,
+      "testset_size": 100
+    },
+    "vram_isolation": {
+      "laya_resident": false,
+      "pinned": false,
+      "priority_tier": "",
+      "stable": false
+    },
+    "e2e_latency": {
+      "skipped": true,
+      "reason": "no model specified"
+    }
+  },
+  "spec_targets": {
+    "latency_p50_ms": 15.0,
+    "intent_accuracy": 0.8,
+    "guardrail_precision": 0.9,
+    "guardrail_recall": 0.85,
+    "tool_success_rate": 0.999,
+    "e2e_overhead_ms": 20.0
+  },
+  "testsets": {
+    "intent": 200,
+    "guardrail": 100,
+    "tools": 100
+  }
+}
