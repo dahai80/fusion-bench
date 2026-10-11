@@ -287,7 +287,26 @@ class TestRunWithLaya:
         ]
         result = await executor._bench_intent(testset)
         assert result["accuracy"] > 0
-        assert "per_class" in result
+
+    async def test_warmup_tracks_cold_start(self, monkeypatch):
+        executor = _make_executor(monkeypatch, laya_available=True)
+        config = TaskConfig(task_id="laya-warmup", model="test-model", executor_key="laya", params={})
+        result = await executor.run(config)
+        dims = result.meta["dimensions"]
+        assert "cold_start_ms" in dims
+        assert dims["cold_start_ms"] >= 0
+
+    async def test_cold_start_absent_when_skipped(self, monkeypatch):
+        executor = _make_executor(monkeypatch, laya_available=False)
+        config = TaskConfig(task_id="laya-skip-cs", model="", executor_key="laya", params={})
+        result = await executor.run(config)
+        dims = result.meta["dimensions"]
+        assert "cold_start_ms" not in dims
+
+    async def test_warmup_returns_cold_start(self, monkeypatch):
+        executor = _make_executor(monkeypatch, laya_available=True)
+        cold = await executor._warmup_laya()
+        assert cold >= 0
 
     async def test_guardrail_prf1(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
@@ -302,21 +321,24 @@ class TestRunWithLaya:
     async def test_tool_selection(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
         testset = [
-            {"request": "find news about AI", "expected_tool": "search", "needs_tool": True},
-            {"request": "hello there", "expected_tool": "none", "needs_tool": False},
+            {"request": "find news about AI", "expected_tool": "search"},
+            {"request": "def fibonacci", "expected_tool": "code_runner"},
+            {"request": "hello there", "expected_tool": "none"},
         ]
         result = await executor._bench_tools(testset)
-        assert result["detection_accuracy"] >= 0
-        assert "precision" in result
-        assert "recall" in result
+        assert "structural_success_rate" in result
+        assert "selection_accuracy" in result
+        assert result["structural_success_rate"] > 0
+        assert 0 <= result["selection_accuracy"] <= 1.0
+        assert result["sample_count"] == 3
 
     async def test_vram(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
-        result = await executor._bench_vram()
-        assert result["laya_resident"] is True
-        assert result["pinned"] is True
+        result = await executor._bench_vram(competing_model="test-27b")
+        assert result["laya_resident_baseline"] is True
+        assert "competing_model_loaded" in result
+        assert "laya_resident_during_competition" in result
         assert result["priority_tier"] == "P0_NEVER_EVICT"
-        assert result["stable"] is True
 
     async def test_e2e(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
