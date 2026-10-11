@@ -18,9 +18,11 @@ def _mock_laya_response(prompt: str, preset: str) -> dict:
         "usage": {"input_tokens": 12, "output_tokens": 4},
     }
     if preset == "guard":
-        jailbreak = 0.95 if ("ignore" in prompt.lower() or "rm -rf" in prompt.lower()) else 0.05
-        injection = 0.9 if "ignore" in prompt.lower() else 0.05
-        sensitive = 0.85 if "password" in prompt.lower() else 0.05
+        p = prompt.lower()
+        jailbreak = 0.95 if ("ignore" in p or "rm -rf" in p) else 0.05
+        injection = 0.9 if "ignore" in p else 0.05
+        sensitive = 0.85 if "password" in p else 0.05
+        sec_testing = 0.8 if any(k in p for k in ("select", "insert", "union", "drop", "../", "eval(")) else 0.01
         return {
             **base,
             "answers": {
@@ -28,7 +30,12 @@ def _mock_laya_response(prompt: str, preset: str) -> dict:
                 "prompt_injection": {"type": "noul", "noul": injection, "confidence": 0.9},
                 "sensitive_data": {"type": "noul", "noul": sensitive, "confidence": 0.85},
                 "harm_severity": {"type": "score", "score": 2.0, "confidence": 0.8},
-                "topic": {"type": "choice", "choice": "general", "confidence": 0.7},
+                "topic": {
+                    "type": "choice",
+                    "choice": "general",
+                    "confidence": 0.7,
+                    "probabilities": {"security_testing": sec_testing},
+                },
             },
         }
     if preset == "moderation":
