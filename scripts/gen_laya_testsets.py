@@ -17,43 +17,43 @@ OUT = Path(__file__).resolve().parent.parent / "benchmarks" / "testsets"
 # --- Intent classification: 200 prompts, 5 labels, 40 each ---
 
 _INTENT_TEMPLATES = {
-    "code_completion": [
-        "def {name}({args}):",
-        "class {name}:",
-        "implement {name} function",
-        "fix bug in {name}",
-        "refactor {name} method",
-        "write unit test for {name}",
-        "async def {name}({args}):",
-        "type hint for {name}",
-        "optimize {name} loop",
-        "debug {name} error",
+    "code": [
+        "refactor the {name} function to improve readability",
+        "add type hints to the {name} method",
+        "fix the memory leak in {name}",
+        "write unit tests for the {name} class",
+        "debug the {name} error handler",
+        "implement the {name} interface",
+        "optimize the {name} loop for performance",
+        "add error handling to {name}",
+        "write a docstring for the {name} function",
+        "review the {name} pull request",
     ],
-    "artifact_gen": [
-        "create a {name} component",
-        "build a {name} dashboard",
-        "generate {name} HTML page",
-        "make a {name} chart",
-        "design a {name} layout",
-        "render a {name} diagram",
-        "produce a {name} report",
-        "draft a {name} template",
-        "assemble {name} widget",
-        "construct {name} UI",
+    "writing": [
+        "write a blog post about {topic}",
+        "write a poem about {topic}",
+        "write a short story about {topic}",
+        "write an essay on {topic}",
+        "write a review of {topic}",
+        "write a song about {topic}",
+        "write a speech about {topic}",
+        "write a summary of {topic}",
+        "write a headline for {topic}",
+        "write a caption for {topic}",
     ],
-    "general_chat": [
+    "chitchat": [
         "hello, how are you?",
-        "tell me about {name}",
-        "what do you think of {name}?",
-        "can you explain {name}?",
-        "let's talk about {name}",
         "hi there!",
         "good morning, got a minute?",
-        "what's {name}?",
-        "summarize {name} for me",
-        "your thoughts on {name}?",
+        "what do you think of {topic}?",
+        "let's talk about {topic}",
+        "your thoughts on {topic}?",
+        "how's your day going?",
+        "nice weather today, right?",
+        "can we chat for a bit?",
+        "what's new with you?",
     ],
-    "math": [
+    "math_or_logic": [
         "solve {name} = 0",
         "calculate {val1}% of {val2}",
         "find derivative of {name}",
@@ -65,63 +65,75 @@ _INTENT_TEMPLATES = {
         "evaluate {name} at x={val1}",
         "convert {val1} to binary",
     ],
-    "rag_query": [
-        "search documents about {name}",
-        "find info on {name}",
-        "lookup {name} in knowledge base",
-        "retrieve {name} articles",
-        "query {name} records",
-        "search for {name} papers",
-        "find {name} documentation",
-        "lookup {name} definition",
-        "retrieve {name} context",
-        "search {name} in wiki",
+    "factual_lookup": [
+        "lookup the definition of {topic}",
+        "retrieve articles about {topic}",
+        "query the knowledge base for {topic}",
+        "find information about {topic}",
+        "search for {topic} in the documentation",
+        "lookup {topic} in the encyclopedia",
+        "retrieve context about {topic}",
+        "find background on {topic}",
+        "search the database for {topic}",
+        "lookup facts about {topic}",
+    ],
+    "data_analysis": [
+        "analyze the {name} dataset",
+        "summarize {name} statistics",
+        "compare {name} trends",
+        "visualize {name} distribution",
+        "aggregate {name} metrics",
+        "correlate {name} variables",
+        "filter {name} by category",
+        "pivot {name} table",
+        "regression on {name} data",
+        "histogram of {name} values",
     ],
 }
 
 _CODE_NAMES = [
-    "fibonacci",
-    "quicksort",
-    "binary_search",
-    "merge_sort",
-    "hashmap",
-    "lru_cache",
-    "trie",
-    "bfs",
-    "dfs",
-    "dijkstra",
-    "floyd",
-    "memoize",
-    "decorator",
-    "singleton",
-    "observer",
-    "factory",
-    "iterator",
-    "generator",
-    "coroutine",
-    "middleware",
+    "authenticate",
+    "parse_config",
+    "cache_manager",
+    "validate_input",
+    "handle_request",
+    "serialize_data",
+    "retry_handler",
+    "rate_limiter",
+    "session_store",
+    "token_refresh",
+    "log_aggregator",
+    "health_check",
+    "graceful_shutdown",
+    "connection_pool",
+    "error_boundary",
+    "middleware_chain",
+    "event_listener",
+    "state_reducer",
+    "schema_validator",
+    "fixture_loader",
 ]
-_ARTIFACT_NAMES = [
-    "React",
-    "Vue",
-    "dashboard",
-    "timeline",
-    "calendar",
-    "kanban",
-    "gantt",
-    "pie chart",
-    "bar graph",
-    "heatmap",
-    "data table",
-    "login form",
-    "sidebar",
-    "navbar",
-    "carousel",
-    "modal",
-    "accordion",
-    "tab",
-    "breadcrumb",
-    "progress bar",
+_WRITING_TOPICS = [
+    "AI trends",
+    "climate change",
+    "space exploration",
+    "quantum computing",
+    "machine learning",
+    "renewable energy",
+    "digital privacy",
+    "remote work",
+    "startup culture",
+    "open source",
+    "neuroscience",
+    "philosophy of mind",
+    "music theory",
+    "art history",
+    "behavioral economics",
+    "biotechnology",
+    "cybersecurity",
+    "education reform",
+    "urban planning",
+    "sustainable agriculture",
 ]
 _CHAT_TOPICS = [
     "AI",
@@ -157,7 +169,7 @@ _MATH_EXPRS = [
     "x/y + y/x",
     "sqrt(x) + 1",
 ]
-_RAG_TOPICS = [
+_LOOKUP_TOPICS = [
     "machine learning",
     "distributed systems",
     "kubernetes",
@@ -181,24 +193,41 @@ _RAG_TOPICS = [
 ]
 
 
+_DATA_NAMES = [
+    "sales",
+    "revenue",
+    "customer",
+    "traffic",
+    "conversion",
+    "engagement",
+    "inventory",
+    "temperature",
+    "population",
+    "budget",
+]
+
+
 def _fill(template, idx, label):
-    if label == "code_completion":
+    if label == "code":
         return template.format(name=_CODE_NAMES[idx % len(_CODE_NAMES)], args="n, k=None")
-    if label == "artifact_gen":
-        return template.format(name=_ARTIFACT_NAMES[idx % len(_ARTIFACT_NAMES)])
-    if label == "general_chat":
-        return template.format(name=_CHAT_TOPICS[idx % len(_CHAT_TOPICS)])
-    if label == "math":
+    if label == "writing":
+        return template.format(topic=_WRITING_TOPICS[idx % len(_WRITING_TOPICS)])
+    if label == "chitchat":
+        return template.format(topic=_CHAT_TOPICS[idx % len(_CHAT_TOPICS)])
+    if label == "math_or_logic":
         return template.format(name=_MATH_EXPRS[idx % len(_MATH_EXPRS)], val1=(idx + 1) * 7, val2=(idx + 3) * 11)
-    return template.format(name=_RAG_TOPICS[idx % len(_RAG_TOPICS)])
+    if label == "factual_lookup":
+        return template.format(topic=_LOOKUP_TOPICS[idx % len(_LOOKUP_TOPICS)])
+    return template.format(name=_DATA_NAMES[idx % len(_DATA_NAMES)])
 
 
 def _gen_intent():
     items = []
+    per_label = 200 // len(_INTENT_TEMPLATES)
     for label, templates in _INTENT_TEMPLATES.items():
-        for i in range(40):
+        for i in range(per_label):
             tmpl = templates[i % len(templates)]
-            items.append({"prompt": _fill(tmpl, i, label), "expected_intent": label, "id": f"intent-{len(items):03d}"})
+            items.append({"prompt": _fill(tmpl, i, label), "expected_domain": label, "id": f"intent-{len(items):03d}"})
     return items
 
 
@@ -437,13 +466,37 @@ _TOOL_TOPICS = [
 ]
 
 
+_NO_TOOL_REQUESTS = [
+    "hello, how are you today?",
+    "what is the meaning of life?",
+    "tell me a joke",
+    "explain photosynthesis",
+    "what do you think about AI?",
+    "good morning, got a minute?",
+    "let's talk about philosophy",
+    "what's your favorite color?",
+    "can you explain quantum physics?",
+    "hi there!",
+    "what causes rainbows?",
+    "how do birds fly?",
+    "what is DNA?",
+    "describe the solar system",
+    "what is gravity?",
+    "how does encryption work?",
+]
+
+
 def _gen_tools():
     items = []
+    per_tool = 12
     for tool, templates in _TOOL_TEMPLATES.items():
-        for i, tmpl in enumerate(templates):
+        for i in range(per_tool):
+            tmpl = templates[i % len(templates)]
             prompt = tmpl.format(topic=_TOOL_TOPICS[i % len(_TOOL_TOPICS)], a=(i + 1) * 13, b=(i + 2) * 7)
-            items.append({"request": prompt, "expected_tool": tool, "id": f"tool-{len(items):03d}"})
-    return items
+            items.append({"request": prompt, "expected_tool": tool, "needs_tool": True, "id": f"tool-{len(items):03d}"})
+    for prompt in _NO_TOOL_REQUESTS:
+        items.append({"request": prompt, "expected_tool": "none", "needs_tool": False, "id": f"tool-{len(items):03d}"})
+    return items[:100]
 
 
 def main():

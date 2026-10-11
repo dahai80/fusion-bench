@@ -42,23 +42,100 @@ def _mock_laya_response(prompt: str, preset: str) -> dict:
                 "severity": {"type": "score", "score": 0.5, "confidence": 0.8},
             },
         }
-    # router preset
-    if "def " in prompt or "class " in prompt or "implement" in prompt.lower():
+    # router preset — keyword logic aligned to gen_laya_testsets.py templates
+    p = prompt.lower()
+    if any(
+        k in p
+        for k in (
+            "def ",
+            "class ",
+            "refactor",
+            "type hint",
+            "fix the",
+            "debug",
+            "implement",
+            "optimize",
+            "error handling",
+            "docstring",
+            "review the",
+            "unit test",
+        )
+    ):
         domain = "code"
-    elif "solve" in prompt.lower() or "calculate" in prompt.lower():
-        domain = "math_or_logic"
-    elif "create" in prompt.lower() or "build" in prompt.lower():
+    elif any(
+        k in p
+        for k in (
+            "write a blog",
+            "write a poem",
+            "write a short",
+            "write an essay",
+            "write a review",
+            "write a song",
+            "write a speech",
+            "write a summary",
+            "write a headline",
+            "write a caption",
+        )
+    ):
         domain = "writing"
-    elif "search" in prompt.lower() or "find" in prompt.lower():
+    elif any(
+        k in p
+        for k in (
+            "solve ",
+            "calculate",
+            "derivative",
+            "integrate",
+            "simplify",
+            "factor ",
+            "prove ",
+            "evaluate",
+            "convert ",
+            "×",
+        )
+    ):
+        domain = "math_or_logic"
+    elif any(
+        k in p
+        for k in (
+            "lookup",
+            "retrieve",
+            "query the",
+            "find info",
+            "search for",
+            "find background",
+            "search the database",
+            "find facts",
+        )
+    ):
         domain = "factual_lookup"
-    elif "analyze" in prompt.lower():
+    elif (
+        any(
+            k in p
+            for k in (
+                "analyze the",
+                "compare ",
+                "visualize",
+                "aggregate",
+                "correlate",
+                "filter ",
+                "pivot",
+                "regression on",
+                "histogram",
+            )
+        )
+        or "summarize" in p
+        and "write a" not in p
+    ):
         domain = "data_analysis"
     else:
         domain = "chitchat"
     needs_tools = (
         0.8
-        if any(k in prompt.lower() for k in ("search", "calculate", "run", "read", "translate", "calendar", "weather"))
-        else 0.1
+        if any(
+            k in prompt.lower()
+            for k in ("search", "calculate", "run", "read", "translate", "calendar", "weather", "find news")
+        )
+        else 0.05
     )
     return {
         **base,
@@ -204,8 +281,8 @@ class TestRunWithLaya:
     async def test_intent_accuracy(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
         testset = [
-            {"prompt": "def fibonacci", "expected_intent": "code_completion"},
-            {"prompt": "hello", "expected_intent": "general_chat"},
+            {"prompt": "def fibonacci", "expected_domain": "code"},
+            {"prompt": "hello", "expected_domain": "chitchat"},
         ]
         result = await executor._bench_intent(testset)
         assert result["accuracy"] > 0
@@ -224,12 +301,13 @@ class TestRunWithLaya:
     async def test_tool_selection(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)
         testset = [
-            {"request": "find news about AI", "expected_tool": "search"},
-            {"request": "run code", "expected_tool": "code_runner"},
+            {"request": "find news about AI", "expected_tool": "search", "needs_tool": True},
+            {"request": "hello there", "expected_tool": "none", "needs_tool": False},
         ]
         result = await executor._bench_tools(testset)
-        assert result["accuracy"] >= 0
-        assert "fallback_rate" in result
+        assert result["detection_accuracy"] >= 0
+        assert "precision" in result
+        assert "recall" in result
 
     async def test_vram(self, monkeypatch):
         executor = _make_executor(monkeypatch, laya_available=True)

@@ -2,501 +2,601 @@
   {
     "request": "find recent news about AI",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-000"
   },
   {
     "request": "search for climate articles",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-001"
   },
   {
     "request": "look up space on the web",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-002"
   },
   {
     "request": "find health research papers",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-003"
   },
   {
     "request": "search finance definition",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-004"
   },
   {
     "request": "find sports tutorials",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-005"
   },
   {
     "request": "look for tech examples",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-006"
   },
   {
     "request": "search science documentation",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-007"
   },
   {
     "request": "find politics reviews",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-008"
   },
   {
     "request": "search education latest updates",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-009"
   },
   {
     "request": "find energy blog posts",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-010"
   },
   {
     "request": "look up agriculture forums",
     "expected_tool": "search",
+    "needs_tool": true,
     "id": "tool-011"
-  },
-  {
-    "request": "search transport case studies",
-    "expected_tool": "search",
-    "id": "tool-012"
-  },
-  {
-    "request": "find robotics white papers",
-    "expected_tool": "search",
-    "id": "tool-013"
   },
   {
     "request": "calculate 13 * 14",
     "expected_tool": "calculator",
-    "id": "tool-014"
+    "needs_tool": true,
+    "id": "tool-012"
   },
   {
     "request": "what is 26 / 21?",
     "expected_tool": "calculator",
-    "id": "tool-015"
+    "needs_tool": true,
+    "id": "tool-013"
   },
   {
     "request": "compute 39 + 28",
     "expected_tool": "calculator",
-    "id": "tool-016"
+    "needs_tool": true,
+    "id": "tool-014"
   },
   {
     "request": "52 minus 35",
     "expected_tool": "calculator",
-    "id": "tool-017"
+    "needs_tool": true,
+    "id": "tool-015"
   },
   {
     "request": "square root of 65",
     "expected_tool": "calculator",
-    "id": "tool-018"
+    "needs_tool": true,
+    "id": "tool-016"
   },
   {
     "request": "78 to the power of 49",
     "expected_tool": "calculator",
-    "id": "tool-019"
+    "needs_tool": true,
+    "id": "tool-017"
   },
   {
     "request": "what is 91% of 56?",
     "expected_tool": "calculator",
-    "id": "tool-020"
+    "needs_tool": true,
+    "id": "tool-018"
   },
   {
     "request": "convert 104 to hexadecimal",
     "expected_tool": "calculator",
-    "id": "tool-021"
+    "needs_tool": true,
+    "id": "tool-019"
   },
   {
     "request": "factorial of 117",
     "expected_tool": "calculator",
-    "id": "tool-022"
+    "needs_tool": true,
+    "id": "tool-020"
   },
   {
     "request": "log base 77 of 130",
     "expected_tool": "calculator",
-    "id": "tool-023"
+    "needs_tool": true,
+    "id": "tool-021"
   },
   {
     "request": "143 mod 84",
     "expected_tool": "calculator",
-    "id": "tool-024"
+    "needs_tool": true,
+    "id": "tool-022"
   },
   {
     "request": "sin of 156 degrees",
     "expected_tool": "calculator",
-    "id": "tool-025"
-  },
-  {
-    "request": "compound interest on 169 at 98% for 5 years",
-    "expected_tool": "calculator",
-    "id": "tool-026"
-  },
-  {
-    "request": "average of 182 and 105",
-    "expected_tool": "calculator",
-    "id": "tool-027"
-  },
-  {
-    "request": "gcd of 195 and 112",
-    "expected_tool": "calculator",
-    "id": "tool-028"
+    "needs_tool": true,
+    "id": "tool-023"
   },
   {
     "request": "run this Python: print('hello')",
     "expected_tool": "code_runner",
-    "id": "tool-029"
+    "needs_tool": true,
+    "id": "tool-024"
   },
   {
     "request": "execute: def add(a,b): return a+b",
     "expected_tool": "code_runner",
-    "id": "tool-030"
+    "needs_tool": true,
+    "id": "tool-025"
   },
   {
     "request": "run code: for i in range(10): print(i)",
     "expected_tool": "code_runner",
-    "id": "tool-031"
+    "needs_tool": true,
+    "id": "tool-026"
   },
   {
     "request": "execute SQL: SELECT * FROM users",
     "expected_tool": "code_runner",
-    "id": "tool-032"
+    "needs_tool": true,
+    "id": "tool-027"
   },
   {
     "request": "run this script and show output",
     "expected_tool": "code_runner",
-    "id": "tool-033"
+    "needs_tool": true,
+    "id": "tool-028"
   },
   {
     "request": "compile and run this Java code",
     "expected_tool": "code_runner",
-    "id": "tool-034"
+    "needs_tool": true,
+    "id": "tool-029"
   },
   {
     "request": "execute this shell command",
     "expected_tool": "code_runner",
-    "id": "tool-035"
+    "needs_tool": true,
+    "id": "tool-030"
   },
   {
     "request": "run this JavaScript function",
     "expected_tool": "code_runner",
-    "id": "tool-036"
+    "needs_tool": true,
+    "id": "tool-031"
   },
   {
     "request": "evaluate this expression in Python",
     "expected_tool": "code_runner",
-    "id": "tool-037"
+    "needs_tool": true,
+    "id": "tool-032"
   },
   {
     "request": "execute this Go program",
     "expected_tool": "code_runner",
-    "id": "tool-038"
+    "needs_tool": true,
+    "id": "tool-033"
   },
   {
     "request": "run this Rust code",
     "expected_tool": "code_runner",
-    "id": "tool-039"
+    "needs_tool": true,
+    "id": "tool-034"
   },
   {
     "request": "execute this C++ snippet",
     "expected_tool": "code_runner",
-    "id": "tool-040"
-  },
-  {
-    "request": "run this TypeScript module",
-    "expected_tool": "code_runner",
-    "id": "tool-041"
-  },
-  {
-    "request": "evaluate this Ruby script",
-    "expected_tool": "code_runner",
-    "id": "tool-042"
-  },
-  {
-    "request": "run this SQL query and show results",
-    "expected_tool": "code_runner",
-    "id": "tool-043"
+    "needs_tool": true,
+    "id": "tool-035"
   },
   {
     "request": "read file /etc/hosts",
     "expected_tool": "file_reader",
-    "id": "tool-044"
+    "needs_tool": true,
+    "id": "tool-036"
   },
   {
     "request": "open config.yaml and show contents",
     "expected_tool": "file_reader",
-    "id": "tool-045"
+    "needs_tool": true,
+    "id": "tool-037"
   },
   {
     "request": "read the first 100 lines of app.log",
     "expected_tool": "file_reader",
-    "id": "tool-046"
+    "needs_tool": true,
+    "id": "tool-038"
   },
   {
     "request": "load data.csv",
     "expected_tool": "file_reader",
-    "id": "tool-047"
+    "needs_tool": true,
+    "id": "tool-039"
   },
   {
     "request": "read package.json",
     "expected_tool": "file_reader",
-    "id": "tool-048"
+    "needs_tool": true,
+    "id": "tool-040"
   },
   {
     "request": "open settings.toml",
     "expected_tool": "file_reader",
-    "id": "tool-049"
+    "needs_tool": true,
+    "id": "tool-041"
   },
   {
     "request": "read .env file",
     "expected_tool": "file_reader",
-    "id": "tool-050"
+    "needs_tool": true,
+    "id": "tool-042"
   },
   {
     "request": "load requirements.txt",
     "expected_tool": "file_reader",
-    "id": "tool-051"
+    "needs_tool": true,
+    "id": "tool-043"
   },
   {
     "request": "read the README.md",
     "expected_tool": "file_reader",
-    "id": "tool-052"
+    "needs_tool": true,
+    "id": "tool-044"
   },
   {
     "request": "open Dockerfile",
     "expected_tool": "file_reader",
-    "id": "tool-053"
+    "needs_tool": true,
+    "id": "tool-045"
   },
   {
     "request": "read docker-compose.yml",
     "expected_tool": "file_reader",
-    "id": "tool-054"
+    "needs_tool": true,
+    "id": "tool-046"
   },
   {
     "request": "load the schema.sql file",
     "expected_tool": "file_reader",
-    "id": "tool-055"
-  },
-  {
-    "request": "read main.py",
-    "expected_tool": "file_reader",
-    "id": "tool-056"
-  },
-  {
-    "request": "open the Makefile",
-    "expected_tool": "file_reader",
-    "id": "tool-057"
+    "needs_tool": true,
+    "id": "tool-047"
   },
   {
     "request": "translate 'hello' to Japanese",
     "expected_tool": "translator",
-    "id": "tool-058"
+    "needs_tool": true,
+    "id": "tool-048"
   },
   {
     "request": "convert this English text to Spanish",
     "expected_tool": "translator",
-    "id": "tool-059"
+    "needs_tool": true,
+    "id": "tool-049"
   },
   {
     "request": "translate the paragraph to German",
     "expected_tool": "translator",
-    "id": "tool-060"
+    "needs_tool": true,
+    "id": "tool-050"
   },
   {
     "request": "what is 'good morning' in Korean?",
     "expected_tool": "translator",
-    "id": "tool-061"
+    "needs_tool": true,
+    "id": "tool-051"
   },
   {
     "request": "translate this to French",
     "expected_tool": "translator",
-    "id": "tool-062"
+    "needs_tool": true,
+    "id": "tool-052"
   },
   {
     "request": "convert to Chinese",
     "expected_tool": "translator",
-    "id": "tool-063"
+    "needs_tool": true,
+    "id": "tool-053"
   },
   {
     "request": "translate to Arabic",
     "expected_tool": "translator",
-    "id": "tool-064"
+    "needs_tool": true,
+    "id": "tool-054"
   },
   {
     "request": "what is 'thank you' in Italian?",
     "expected_tool": "translator",
-    "id": "tool-065"
+    "needs_tool": true,
+    "id": "tool-055"
   },
   {
     "request": "translate to Portuguese",
     "expected_tool": "translator",
-    "id": "tool-066"
+    "needs_tool": true,
+    "id": "tool-056"
   },
   {
     "request": "convert to Russian",
     "expected_tool": "translator",
-    "id": "tool-067"
+    "needs_tool": true,
+    "id": "tool-057"
   },
   {
     "request": "translate to Hindi",
     "expected_tool": "translator",
-    "id": "tool-068"
+    "needs_tool": true,
+    "id": "tool-058"
   },
   {
     "request": "what is 'goodbye' in Dutch?",
     "expected_tool": "translator",
-    "id": "tool-069"
-  },
-  {
-    "request": "translate to Swedish",
-    "expected_tool": "translator",
-    "id": "tool-070"
-  },
-  {
-    "request": "convert to Turkish",
-    "expected_tool": "translator",
-    "id": "tool-071"
+    "needs_tool": true,
+    "id": "tool-059"
   },
   {
     "request": "what's my schedule today?",
     "expected_tool": "calendar",
-    "id": "tool-072"
+    "needs_tool": true,
+    "id": "tool-060"
   },
   {
     "request": "schedule a meeting tomorrow at 2pm",
     "expected_tool": "calendar",
-    "id": "tool-073"
+    "needs_tool": true,
+    "id": "tool-061"
   },
   {
     "request": "when is my next appointment?",
     "expected_tool": "calendar",
-    "id": "tool-074"
+    "needs_tool": true,
+    "id": "tool-062"
   },
   {
     "request": "add an event on Friday",
     "expected_tool": "calendar",
-    "id": "tool-075"
+    "needs_tool": true,
+    "id": "tool-063"
   },
   {
     "request": "what time is the team standup?",
     "expected_tool": "calendar",
-    "id": "tool-076"
+    "needs_tool": true,
+    "id": "tool-064"
   },
   {
     "request": "reschedule my 3pm to 4pm",
     "expected_tool": "calendar",
-    "id": "tool-077"
+    "needs_tool": true,
+    "id": "tool-065"
   },
   {
     "request": "show me next week's calendar",
     "expected_tool": "calendar",
-    "id": "tool-078"
+    "needs_tool": true,
+    "id": "tool-066"
   },
   {
     "request": "block 2 hours for deep work",
     "expected_tool": "calendar",
-    "id": "tool-079"
+    "needs_tool": true,
+    "id": "tool-067"
   },
   {
     "request": "when am I free this afternoon?",
     "expected_tool": "calendar",
-    "id": "tool-080"
+    "needs_tool": true,
+    "id": "tool-068"
   },
   {
     "request": "set a reminder for 5pm",
     "expected_tool": "calendar",
-    "id": "tool-081"
+    "needs_tool": true,
+    "id": "tool-069"
   },
   {
     "request": "what's on my calendar for Monday?",
     "expected_tool": "calendar",
-    "id": "tool-082"
+    "needs_tool": true,
+    "id": "tool-070"
   },
   {
     "request": "cancel tomorrow's 10am meeting",
     "expected_tool": "calendar",
-    "id": "tool-083"
-  },
-  {
-    "request": "find a 30-min slot this week",
-    "expected_tool": "calendar",
-    "id": "tool-084"
-  },
-  {
-    "request": "move the dentists appointment to next month",
-    "expected_tool": "calendar",
-    "id": "tool-085"
+    "needs_tool": true,
+    "id": "tool-071"
   },
   {
     "request": "what's the weather in Tokyo?",
     "expected_tool": "weather_api",
-    "id": "tool-086"
+    "needs_tool": true,
+    "id": "tool-072"
   },
   {
     "request": "will it rain tomorrow in London?",
     "expected_tool": "weather_api",
-    "id": "tool-087"
+    "needs_tool": true,
+    "id": "tool-073"
   },
   {
     "request": "temperature in New York right now",
     "expected_tool": "weather_api",
-    "id": "tool-088"
+    "needs_tool": true,
+    "id": "tool-074"
   },
   {
     "request": "weather forecast for Paris this week",
     "expected_tool": "weather_api",
-    "id": "tool-089"
+    "needs_tool": true,
+    "id": "tool-075"
   },
   {
     "request": "is it sunny in Dubai today?",
     "expected_tool": "weather_api",
-    "id": "tool-090"
+    "needs_tool": true,
+    "id": "tool-076"
   },
   {
     "request": "humidity in Singapore",
     "expected_tool": "weather_api",
-    "id": "tool-091"
+    "needs_tool": true,
+    "id": "tool-077"
   },
   {
     "request": "wind speed in Chicago",
     "expected_tool": "weather_api",
-    "id": "tool-092"
+    "needs_tool": true,
+    "id": "tool-078"
   },
   {
     "request": "weather alert for Miami",
     "expected_tool": "weather_api",
-    "id": "tool-093"
+    "needs_tool": true,
+    "id": "tool-079"
   },
   {
     "request": "UV index in Sydney",
     "expected_tool": "weather_api",
-    "id": "tool-094"
+    "needs_tool": true,
+    "id": "tool-080"
   },
   {
     "request": "snow forecast for Aspen",
     "expected_tool": "weather_api",
-    "id": "tool-095"
+    "needs_tool": true,
+    "id": "tool-081"
   },
   {
     "request": "weather in Berlin this weekend",
     "expected_tool": "weather_api",
-    "id": "tool-096"
+    "needs_tool": true,
+    "id": "tool-082"
   },
   {
     "request": "air quality in Beijing",
     "expected_tool": "weather_api",
+    "needs_tool": true,
+    "id": "tool-083"
+  },
+  {
+    "request": "hello, how are you today?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-084"
+  },
+  {
+    "request": "what is the meaning of life?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-085"
+  },
+  {
+    "request": "tell me a joke",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-086"
+  },
+  {
+    "request": "explain photosynthesis",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-087"
+  },
+  {
+    "request": "what do you think about AI?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-088"
+  },
+  {
+    "request": "good morning, got a minute?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-089"
+  },
+  {
+    "request": "let's talk about philosophy",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-090"
+  },
+  {
+    "request": "what's your favorite color?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-091"
+  },
+  {
+    "request": "can you explain quantum physics?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-092"
+  },
+  {
+    "request": "hi there!",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-093"
+  },
+  {
+    "request": "what causes rainbows?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-094"
+  },
+  {
+    "request": "how do birds fly?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-095"
+  },
+  {
+    "request": "what is DNA?",
+    "expected_tool": "none",
+    "needs_tool": false,
+    "id": "tool-096"
+  },
+  {
+    "request": "describe the solar system",
+    "expected_tool": "none",
+    "needs_tool": false,
     "id": "tool-097"
   },
   {
-    "request": "pollen count in Austin",
-    "expected_tool": "weather_api",
+    "request": "what is gravity?",
+    "expected_tool": "none",
+    "needs_tool": false,
     "id": "tool-098"
   },
   {
-    "request": "sunrise time in Seattle",
-    "expected_tool": "weather_api",
+    "request": "how does encryption work?",
+    "expected_tool": "none",
+    "needs_tool": false,
     "id": "tool-099"
   }
 ]
