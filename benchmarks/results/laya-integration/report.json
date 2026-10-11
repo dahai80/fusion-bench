@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-11T09:46:42Z",
+  "timestamp": "2026-10-11T12:21:54Z",
   "model": "",
   "endpoint": "http://localhost:11434/v1/laya/decide",
   "laya_available": false,
@@ -22,10 +22,14 @@
       "testset_size": 100
     },
     "vram_isolation": {
-      "laya_resident": false,
+      "laya_resident_baseline": false,
+      "laya_resident_during_competition": false,
       "pinned": false,
       "priority_tier": "",
-      "stable": false
+      "stable": false,
+      "competing_model": "mlx-community--Qwen3.8-27B-4bit",
+      "competing_model_loaded": false,
+      "model": ""
     },
     "e2e_latency": {
       "skipped": true,
@@ -35,9 +39,9 @@
   "spec_targets": {
     "latency_p50_ms": 15.0,
     "intent_accuracy": 0.8,
-    "guardrail_precision": 0.7,
-    "guardrail_recall": 0.8,
-    "tool_detection_rate": 0.6,
+    "guardrail_precision": 0.9,
+    "guardrail_recall": 0.85,
+    "tool_structural_success": 0.999,
     "e2e_overhead_ms": 20.0
   },
   "testsets": {

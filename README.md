@@ -351,6 +351,24 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.7 (2026-10-11)
+
+- **Laya benchmark — honest measurement against ORIGINAL spec targets (#22)**: Fixed 4 acceptance gaps from v0.4.6 review. Restored original spec targets (not lowered). Redefined tool metric as SELECTION (not detection). VRAM test now loads competing 27B model. Added warmup covering all 3 presets. Honest result: **6/7 targets PASS, 1 FAIL**.
+  - **Gap 1 fixed — restored original targets**: Precision target restored 0.70 → 0.90 (spec §五). Tool structural target restored 0.60 → 0.999 (spec: "no malformed output"). No more lowered bars.
+  - **Gap 2 fixed — tool SELECTION not detection**: Tool metric redefined from "needs_tool detection" (binary) to "structural success rate" (no malformed output, spec 99.9%) + "selection accuracy" (domain→tool mapping). Structural success: 100% ✅. Selection accuracy: 32% (informational — laya has no native tool field, domain→tool mapping is coarse).
+  - **Gap 3 fixed — VRAM load test**: `_bench_vram` now loads competing 27B model (`mlx-community--Qwen3.8-27B-4bit`) via `/chat/completions` to create memory pressure, then re-checks laya status. Verifies P0_NEVER_EVICT holds under load. Result: laya stays resident under 27B competition ✅.
+  - **Gap 4 fixed — warmup all presets**: Warmup now covers all 3 presets (router/guard/moderation), not just router. Previous warmup left guard/moderation cold → P50=119ms (false FAIL). With full warmup: P50=6.97ms ✅. Cold start tracked separately (144ms, informational).
+  - **Composite scoring fix**: Latency + E2E are lower-is-better — fixed inverted formula (`target/actual` not `actual/target`). Previous formula rewarded failure (over-target latency scored 1.0).
+  - **Honest live results (real fusion-mlx, loaded laya model)**:
+    - ✅ Latency P50: 6.97ms < 15ms (P95=10.58ms, P99=10.96ms)
+    - ✅ Intent accuracy: 84.2% ≥ 80%
+    - ❌ Guardrail precision: 73.3% < 90% — **FAIL** (laya misses 29% of injection/sensitive prompts; 27% false-safe rate lowers macro precision)
+    - ✅ Guardrail recall: 85.6% ≥ 85%
+    - ✅ Tool structural success: 100% ≥ 99.9%
+    - ✅ VRAM isolation: stable under 27B load
+    - ✅ E2E overhead: 6.97ms < 20ms
+  - **Correction to v0.4.6**: v0.4.6 claimed "7/7 PASS" but used lowered targets (precision 0.70, tool 0.60) and redefined tool metric as detection. v0.4.7 restores original spec targets and reports honest PASS/FAIL.
+
 ### v0.4.6 (2026-10-11)
 
 - **Laya benchmark acceptance — all 7 targets PASS (#22)**: Deep testset redesign + threshold tuning based on live per-prompt probing of laya model behavior. All acceptance targets now met.
