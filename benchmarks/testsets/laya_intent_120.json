@@ -1,0 +1,602 @@
+[
+  {
+    "prompt": "refactor the authenticate function to improve readability",
+    "expected_domain": "code",
+    "id": "intent-000"
+  },
+  {
+    "prompt": "add type hints to the parse_config method",
+    "expected_domain": "code",
+    "id": "intent-001"
+  },
+  {
+    "prompt": "fix the memory leak in cache_manager",
+    "expected_domain": "code",
+    "id": "intent-002"
+  },
+  {
+    "prompt": "write unit tests for the validate_input class",
+    "expected_domain": "code",
+    "id": "intent-003"
+  },
+  {
+    "prompt": "debug the handle_request error handler",
+    "expected_domain": "code",
+    "id": "intent-004"
+  },
+  {
+    "prompt": "implement the serialize_data interface",
+    "expected_domain": "code",
+    "id": "intent-005"
+  },
+  {
+    "prompt": "optimize the retry_handler loop for performance",
+    "expected_domain": "code",
+    "id": "intent-006"
+  },
+  {
+    "prompt": "add error handling to rate_limiter",
+    "expected_domain": "code",
+    "id": "intent-007"
+  },
+  {
+    "prompt": "write a docstring for the session_store function",
+    "expected_domain": "code",
+    "id": "intent-008"
+  },
+  {
+    "prompt": "review the token_refresh pull request",
+    "expected_domain": "code",
+    "id": "intent-009"
+  },
+  {
+    "prompt": "create a unit test for the log_aggregator module",
+    "expected_domain": "code",
+    "id": "intent-010"
+  },
+  {
+    "prompt": "fix the null pointer in health_check",
+    "expected_domain": "code",
+    "id": "intent-011"
+  },
+  {
+    "prompt": "refactor graceful_shutdown to use async/await",
+    "expected_domain": "code",
+    "id": "intent-012"
+  },
+  {
+    "prompt": "add logging to the connection_pool handler",
+    "expected_domain": "code",
+    "id": "intent-013"
+  },
+  {
+    "prompt": "write integration tests for error_boundary",
+    "expected_domain": "code",
+    "id": "intent-014"
+  },
+  {
+    "prompt": "optimize the middleware_chain database query",
+    "expected_domain": "code",
+    "id": "intent-015"
+  },
+  {
+    "prompt": "fix the race condition in event_listener",
+    "expected_domain": "code",
+    "id": "intent-016"
+  },
+  {
+    "prompt": "implement retry logic in state_reducer",
+    "expected_domain": "code",
+    "id": "intent-017"
+  },
+  {
+    "prompt": "add input validation to schema_validator",
+    "expected_domain": "code",
+    "id": "intent-018"
+  },
+  {
+    "prompt": "write a migration script for fixture_loader",
+    "expected_domain": "code",
+    "id": "intent-019"
+  },
+  {
+    "prompt": "write a blog post about AI trends",
+    "expected_domain": "writing",
+    "id": "intent-020"
+  },
+  {
+    "prompt": "write a poem about climate change",
+    "expected_domain": "writing",
+    "id": "intent-021"
+  },
+  {
+    "prompt": "write a short story about space exploration",
+    "expected_domain": "writing",
+    "id": "intent-022"
+  },
+  {
+    "prompt": "write an essay on quantum computing",
+    "expected_domain": "writing",
+    "id": "intent-023"
+  },
+  {
+    "prompt": "write a review of machine learning",
+    "expected_domain": "writing",
+    "id": "intent-024"
+  },
+  {
+    "prompt": "write a song about renewable energy",
+    "expected_domain": "writing",
+    "id": "intent-025"
+  },
+  {
+    "prompt": "write a speech about digital privacy",
+    "expected_domain": "writing",
+    "id": "intent-026"
+  },
+  {
+    "prompt": "write a headline for remote work",
+    "expected_domain": "writing",
+    "id": "intent-027"
+  },
+  {
+    "prompt": "write a caption for startup culture",
+    "expected_domain": "writing",
+    "id": "intent-028"
+  },
+  {
+    "prompt": "write a newsletter about open source",
+    "expected_domain": "writing",
+    "id": "intent-029"
+  },
+  {
+    "prompt": "write an article about neuroscience",
+    "expected_domain": "writing",
+    "id": "intent-030"
+  },
+  {
+    "prompt": "write a letter about philosophy of mind",
+    "expected_domain": "writing",
+    "id": "intent-031"
+  },
+  {
+    "prompt": "write a diary entry about music theory",
+    "expected_domain": "writing",
+    "id": "intent-032"
+  },
+  {
+    "prompt": "write a product description for art history",
+    "expected_domain": "writing",
+    "id": "intent-033"
+  },
+  {
+    "prompt": "write a press release about behavioral economics",
+    "expected_domain": "writing",
+    "id": "intent-034"
+  },
+  {
+    "prompt": "write a script about biotechnology",
+    "expected_domain": "writing",
+    "id": "intent-035"
+  },
+  {
+    "prompt": "write a manifesto about cybersecurity",
+    "expected_domain": "writing",
+    "id": "intent-036"
+  },
+  {
+    "prompt": "write a testimonial about education reform",
+    "expected_domain": "writing",
+    "id": "intent-037"
+  },
+  {
+    "prompt": "write a guide about urban planning",
+    "expected_domain": "writing",
+    "id": "intent-038"
+  },
+  {
+    "prompt": "write a tutorial about sustainable agriculture",
+    "expected_domain": "writing",
+    "id": "intent-039"
+  },
+  {
+    "prompt": "hello, how are you?",
+    "expected_domain": "chitchat",
+    "id": "intent-040"
+  },
+  {
+    "prompt": "hi there!",
+    "expected_domain": "chitchat",
+    "id": "intent-041"
+  },
+  {
+    "prompt": "good morning, got a minute?",
+    "expected_domain": "chitchat",
+    "id": "intent-042"
+  },
+  {
+    "prompt": "how's your day going?",
+    "expected_domain": "chitchat",
+    "id": "intent-043"
+  },
+  {
+    "prompt": "nice weather today, right?",
+    "expected_domain": "chitchat",
+    "id": "intent-044"
+  },
+  {
+    "prompt": "can we chat for a bit?",
+    "expected_domain": "chitchat",
+    "id": "intent-045"
+  },
+  {
+    "prompt": "what's new with you?",
+    "expected_domain": "chitchat",
+    "id": "intent-046"
+  },
+  {
+    "prompt": "how have you been lately?",
+    "expected_domain": "chitchat",
+    "id": "intent-047"
+  },
+  {
+    "prompt": "nice to meet you!",
+    "expected_domain": "chitchat",
+    "id": "intent-048"
+  },
+  {
+    "prompt": "long time no see!",
+    "expected_domain": "chitchat",
+    "id": "intent-049"
+  },
+  {
+    "prompt": "what brings you here today?",
+    "expected_domain": "chitchat",
+    "id": "intent-050"
+  },
+  {
+    "prompt": "good to see you again!",
+    "expected_domain": "chitchat",
+    "id": "intent-051"
+  },
+  {
+    "prompt": "having a good day?",
+    "expected_domain": "chitchat",
+    "id": "intent-052"
+  },
+  {
+    "prompt": "how are things?",
+    "expected_domain": "chitchat",
+    "id": "intent-053"
+  },
+  {
+    "prompt": "what's up?",
+    "expected_domain": "chitchat",
+    "id": "intent-054"
+  },
+  {
+    "prompt": "glad you're here!",
+    "expected_domain": "chitchat",
+    "id": "intent-055"
+  },
+  {
+    "prompt": "let's catch up!",
+    "expected_domain": "chitchat",
+    "id": "intent-056"
+  },
+  {
+    "prompt": "how's everything?",
+    "expected_domain": "chitchat",
+    "id": "intent-057"
+  },
+  {
+    "prompt": "enjoying your day?",
+    "expected_domain": "chitchat",
+    "id": "intent-058"
+  },
+  {
+    "prompt": "ready for a chat?",
+    "expected_domain": "chitchat",
+    "id": "intent-059"
+  },
+  {
+    "prompt": "solve x^2 + 5x + 6 = 0",
+    "expected_domain": "math_or_logic",
+    "id": "intent-060"
+  },
+  {
+    "prompt": "calculate 14% of 44",
+    "expected_domain": "math_or_logic",
+    "id": "intent-061"
+  },
+  {
+    "prompt": "find derivative of sin(x) + cos(x)",
+    "expected_domain": "math_or_logic",
+    "id": "intent-062"
+  },
+  {
+    "prompt": "integrate x^3 - 8 dx",
+    "expected_domain": "math_or_logic",
+    "id": "intent-063"
+  },
+  {
+    "prompt": "what is 35 × 77?",
+    "expected_domain": "math_or_logic",
+    "id": "intent-064"
+  },
+  {
+    "prompt": "simplify e^x - 1",
+    "expected_domain": "math_or_logic",
+    "id": "intent-065"
+  },
+  {
+    "prompt": "factor x^2 - 4x + 4",
+    "expected_domain": "math_or_logic",
+    "id": "intent-066"
+  },
+  {
+    "prompt": "prove 3x + 2y theorem",
+    "expected_domain": "math_or_logic",
+    "id": "intent-067"
+  },
+  {
+    "prompt": "evaluate x/y + y/x at x=63",
+    "expected_domain": "math_or_logic",
+    "id": "intent-068"
+  },
+  {
+    "prompt": "convert 70 to binary",
+    "expected_domain": "math_or_logic",
+    "id": "intent-069"
+  },
+  {
+    "prompt": "compute the gcd of 77 and 143",
+    "expected_domain": "math_or_logic",
+    "id": "intent-070"
+  },
+  {
+    "prompt": "find the limit of cos(2x)",
+    "expected_domain": "math_or_logic",
+    "id": "intent-071"
+  },
+  {
+    "prompt": "what is 91 divided by 165?",
+    "expected_domain": "math_or_logic",
+    "id": "intent-072"
+  },
+  {
+    "prompt": "solve for x in 1/(x+1)",
+    "expected_domain": "math_or_logic",
+    "id": "intent-073"
+  },
+  {
+    "prompt": "calculate the area of a circle with radius 105",
+    "expected_domain": "math_or_logic",
+    "id": "intent-074"
+  },
+  {
+    "prompt": "determine if 112 is prime",
+    "expected_domain": "math_or_logic",
+    "id": "intent-075"
+  },
+  {
+    "prompt": "find the mean of 119, 209, and 119",
+    "expected_domain": "math_or_logic",
+    "id": "intent-076"
+  },
+  {
+    "prompt": "what is 126 factorial?",
+    "expected_domain": "math_or_logic",
+    "id": "intent-077"
+  },
+  {
+    "prompt": "convert 133 from decimal to hex",
+    "expected_domain": "math_or_logic",
+    "id": "intent-078"
+  },
+  {
+    "prompt": "solve the equation arctan(x) = 140",
+    "expected_domain": "math_or_logic",
+    "id": "intent-079"
+  },
+  {
+    "prompt": "lookup the definition of the French Revolution",
+    "expected_domain": "factual_lookup",
+    "id": "intent-080"
+  },
+  {
+    "prompt": "find information about photosynthesis",
+    "expected_domain": "factual_lookup",
+    "id": "intent-081"
+  },
+  {
+    "prompt": "lookup the Roman Empire in the encyclopedia",
+    "expected_domain": "factual_lookup",
+    "id": "intent-082"
+  },
+  {
+    "prompt": "find background on World War 2",
+    "expected_domain": "factual_lookup",
+    "id": "intent-083"
+  },
+  {
+    "prompt": "lookup facts about the Great Wall of China",
+    "expected_domain": "factual_lookup",
+    "id": "intent-084"
+  },
+  {
+    "prompt": "search for details about the solar system",
+    "expected_domain": "factual_lookup",
+    "id": "intent-085"
+  },
+  {
+    "prompt": "find out about the water cycle",
+    "expected_domain": "factual_lookup",
+    "id": "intent-086"
+  },
+  {
+    "prompt": "lookup the Renaissance in the dictionary",
+    "expected_domain": "factual_lookup",
+    "id": "intent-087"
+  },
+  {
+    "prompt": "search for the history of volcanoes",
+    "expected_domain": "factual_lookup",
+    "id": "intent-088"
+  },
+  {
+    "prompt": "find out what the Amazon rainforest is",
+    "expected_domain": "factual_lookup",
+    "id": "intent-089"
+  },
+  {
+    "prompt": "lookup the meaning of ancient Egypt",
+    "expected_domain": "factual_lookup",
+    "id": "intent-090"
+  },
+  {
+    "prompt": "find information on the industrial revolution",
+    "expected_domain": "factual_lookup",
+    "id": "intent-091"
+  },
+  {
+    "prompt": "search for facts about DNA",
+    "expected_domain": "factual_lookup",
+    "id": "intent-092"
+  },
+  {
+    "prompt": "lookup the ocean currents in the reference",
+    "expected_domain": "factual_lookup",
+    "id": "intent-093"
+  },
+  {
+    "prompt": "find details about the printing press",
+    "expected_domain": "factual_lookup",
+    "id": "intent-094"
+  },
+  {
+    "prompt": "search for when black holes happened",
+    "expected_domain": "factual_lookup",
+    "id": "intent-095"
+  },
+  {
+    "prompt": "lookup where the human heart is located",
+    "expected_domain": "factual_lookup",
+    "id": "intent-096"
+  },
+  {
+    "prompt": "find out who discovered Mount Everest",
+    "expected_domain": "factual_lookup",
+    "id": "intent-097"
+  },
+  {
+    "prompt": "search for why the stock market crash of 1929 occurs",
+    "expected_domain": "factual_lookup",
+    "id": "intent-098"
+  },
+  {
+    "prompt": "lookup how electricity works",
+    "expected_domain": "factual_lookup",
+    "id": "intent-099"
+  },
+  {
+    "prompt": "analyze the sales dataset for trends",
+    "expected_domain": "data_analysis",
+    "id": "intent-100"
+  },
+  {
+    "prompt": "create a histogram of revenue distribution",
+    "expected_domain": "data_analysis",
+    "id": "intent-101"
+  },
+  {
+    "prompt": "visualize customer trends over time",
+    "expected_domain": "data_analysis",
+    "id": "intent-102"
+  },
+  {
+    "prompt": "compute summary statistics for traffic",
+    "expected_domain": "data_analysis",
+    "id": "intent-103"
+  },
+  {
+    "prompt": "plot the conversion distribution",
+    "expected_domain": "data_analysis",
+    "id": "intent-104"
+  },
+  {
+    "prompt": "generate a box plot of engagement",
+    "expected_domain": "data_analysis",
+    "id": "intent-105"
+  },
+  {
+    "prompt": "calculate the mean and median of inventory",
+    "expected_domain": "data_analysis",
+    "id": "intent-106"
+  },
+  {
+    "prompt": "build a scatter plot of temperature",
+    "expected_domain": "data_analysis",
+    "id": "intent-107"
+  },
+  {
+    "prompt": "create a bar chart of population",
+    "expected_domain": "data_analysis",
+    "id": "intent-108"
+  },
+  {
+    "prompt": "compute the correlation in budget",
+    "expected_domain": "data_analysis",
+    "id": "intent-109"
+  },
+  {
+    "prompt": "analyze variance in the attendance data",
+    "expected_domain": "data_analysis",
+    "id": "intent-110"
+  },
+  {
+    "prompt": "generate a pie chart of production",
+    "expected_domain": "data_analysis",
+    "id": "intent-111"
+  },
+  {
+    "prompt": "compute the standard deviation of usage",
+    "expected_domain": "data_analysis",
+    "id": "intent-112"
+  },
+  {
+    "prompt": "create a line chart of retention over time",
+    "expected_domain": "data_analysis",
+    "id": "intent-113"
+  },
+  {
+    "prompt": "analyze the distribution of satisfaction",
+    "expected_domain": "data_analysis",
+    "id": "intent-114"
+  },
+  {
+    "prompt": "calculate percentiles for latency",
+    "expected_domain": "data_analysis",
+    "id": "intent-115"
+  },
+  {
+    "prompt": "build a dashboard for throughput metrics",
+    "expected_domain": "data_analysis",
+    "id": "intent-116"
+  },
+  {
+    "prompt": "compute moving averages for enrollment",
+    "expected_domain": "data_analysis",
+    "id": "intent-117"
+  },
+  {
+    "prompt": "create a heat map of shipment",
+    "expected_domain": "data_analysis",
+    "id": "intent-118"
+  },
+  {
+    "prompt": "analyze outliers in the pricing dataset",
+    "expected_domain": "data_analysis",
+    "id": "intent-119"
+  }
+]

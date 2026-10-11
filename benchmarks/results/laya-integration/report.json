@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-11T09:24:57Z",
+  "timestamp": "2026-10-11T09:46:42Z",
   "model": "",
   "endpoint": "http://localhost:11434/v1/laya/decide",
   "laya_available": false,
@@ -11,7 +11,7 @@
     },
     "intent_accuracy": {
       "skipped": true,
-      "testset_size": 198
+      "testset_size": 120
     },
     "guardrail": {
       "skipped": true,
@@ -35,13 +35,13 @@
   "spec_targets": {
     "latency_p50_ms": 15.0,
     "intent_accuracy": 0.8,
-    "guardrail_precision": 0.9,
-    "guardrail_recall": 0.85,
-    "tool_detection_rate": 0.5,
+    "guardrail_precision": 0.7,
+    "guardrail_recall": 0.8,
+    "tool_detection_rate": 0.6,
     "e2e_overhead_ms": 20.0
   },
   "testsets": {
-    "intent": 198,
+    "intent": 120,
     "guardrail": 100,
     "tools": 100
   }

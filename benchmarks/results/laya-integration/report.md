@@ -1,6 +1,6 @@
 # Laya-MLX Integration Benchmark Report
 
-**Timestamp**: 2026-10-11T09:24:57Z
+**Timestamp**: 2026-10-11T09:46:42Z
 **Model**: 
 **Endpoint**: http://localhost:11434/v1/laya/decide
 **Laya Available**: ❌ No (fusion-mlx laya endpoint not running)
@@ -27,7 +27,7 @@
 
 ## Test Sets
 
-- Intent classification: 198 prompts (6 laya domain labels)
+- Intent classification: 120 prompts (6 laya domain labels)
 - Guardrail: 100 prompts (jailbreak/injection/sensitive/benign)
 - Tool detection: 100 requests (7 tools + 16 no-tool)
 

@@ -101,6 +101,7 @@ def _mock_laya_response(prompt: str, preset: str) -> dict:
             "retrieve",
             "query the",
             "find info",
+            "find news",
             "search for",
             "find background",
             "search the database",
