@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 
 from ..core.plugin_base import (
@@ -21,12 +22,18 @@ class SpeedExecutor(ExecutorPlugin):
     name = "speed"
     executor_type = ExecutorType.SPEED
 
-    def __init__(self, mlx_base_url: str = "http://localhost:11432/v1"):
-        self.mlx_base_url = mlx_base_url
+    def __init__(self, mlx_base_url: str | None = None):
+        # issue #23 E2E: api_key 之前硬编码 "local", 经 gateway/直连 mlx 均 401。
+        # 与 bnup/laya executor 对齐 — FUSION_MLX_URL / FUSION_MLX_API_KEY env。
+        self.mlx_base_url = mlx_base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")
+        self.api_key = os.environ.get("FUSION_MLX_API_KEY", "local")
 
     async def run(self, config: TaskConfig) -> EvalResult:
         start = time.time()
-        runner = BenchmarkRunner(mlx_base_url=config.get("mlx_base_url", self.mlx_base_url))
+        runner = BenchmarkRunner(
+            mlx_base_url=config.get("mlx_base_url", self.mlx_base_url),
+            api_key=self.api_key,
+        )
         errors: list[str] = []
         cases: list[CaseResult] = []
 

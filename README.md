@@ -146,6 +146,18 @@ asyncio.run(main())
 
 ---
 
+## Web Console (issue #23)
+
+`web/` ships a shell-module web UI over the REST API (React 18 + Vite + Tailwind + `@fusion/web-ui`, dev port 11474, gateway path `/shell/fusion-bench/`):
+
+- **Tasks** — submit form (model/executor/level/suite), task table, live run progress, cancel/retry with danger confirm
+- **Results** — metric trend chart + latest/average/model tiles
+- **Compare** — pick 2+ completed tasks, metric comparison table
+
+The UI carries no auth logic: the API is fail-closed behind fusion-identity JWTs (`X-Tenant-Id` + `Authorization: Bearer`), injected by the shell session in embedded mode; standalone dev wires `VITE_BENCH_TENANT` / `VITE_BENCH_TOKEN`. See `web/README.md`.
+
+---
+
 ## Architecture
 
 ```
