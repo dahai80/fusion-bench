@@ -1,0 +1,37 @@
+{
+    "id": "fusion-bench",
+    "title": "模型基准测试",
+    "title_en": "Model Benchmark",
+    "description": "基准任务提交/列表/进度、指标趋势图、历史结果对比。",
+    "description_en": "Benchmark task submit/list/progress, metric trend charts, historical result comparison.",
+    "version": "0.1.0",
+    "path": "/bench",
+    "icon": "Gauge",
+    "entry": "/shell/fusion-bench/",
+    "health": "http://127.0.0.1:11467/api/v1/system/health",
+    "backend": "http://127.0.0.1:11467/",
+    "devices": [
+        "desktop",
+        "mobile-readonly"
+    ],
+    "category": "platform",
+    "upstream": "http://127.0.0.1:11474",
+    "api_key_env": "FUSION_BENCH_TOKEN",
+    "pages": [
+        {
+            "route": "/tasks",
+            "title": "任务",
+            "title_en": "Tasks"
+        },
+        {
+            "route": "/results",
+            "title": "结果",
+            "title_en": "Results"
+        },
+        {
+            "route": "/compare",
+            "title": "对比",
+            "title_en": "Compare"
+        }
+    ]
+}

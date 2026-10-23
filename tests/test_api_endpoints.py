@@ -344,6 +344,15 @@ class TestResults:
         resp = client.get("/api/v1/results/nope")
         assert resp.status_code == 404
 
+    # issue #23: trend 路由曾被 /results/{task_id} 遮蔽 (字面量 "trend" 被当作
+    # task_id → 404 Result for 'trend' not found)。回归: 必须命中 trend 处理器。
+    def test_get_trend_not_shadowed_by_task_id_route(self, client, seeded_trace):
+        resp = client.get("/api/v1/results/trend?limit=10")
+        assert resp.status_code == 200, f"trend route shadowed by /results/{{task_id}}: {resp.text}"
+        body = resp.json()
+        assert isinstance(body, list)
+        assert any(p["metric_value"] == 42.5 for p in body)
+
     def test_export_result_json(self, client, seeded_trace):
         resp = client.post("/api/v1/results/task-seed-1/export?format=json")
         assert resp.status_code == 200

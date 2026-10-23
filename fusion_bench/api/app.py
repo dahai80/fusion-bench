@@ -605,6 +605,28 @@ async def list_suite_cases(suite_id: str, page: int = Query(1, ge=1), page_size:
 # ── Results & Analysis ──────────────────────────────────────────────
 
 
+# issue #23: trend 必须注册在 /results/{task_id} 之前 — FastAPI 按注册顺序
+# 匹配, 否则字面量 "trend" 被当作 task_id 吞掉 (404 Result for 'trend' not found)。
+@app.get("/api/v1/results/trend", response_model=list[TrendPoint])
+async def get_trend(
+    model: str | None = None,
+    executor_key: str | None = None,
+    level: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+):
+    store = _get_store()
+    records = store.query(model=model, executor_key=executor_key, level=level, limit=limit, tenant_id=_tenant_id())
+    return [
+        TrendPoint(
+            timestamp=r.timestamp[:19],
+            metric_value=(r.eval_result or {}).get("metric_value", 0.0),
+            model=r.model,
+            executor_key=r.executor_key,
+        )
+        for r in records
+    ]
+
+
 @app.get("/api/v1/results/{task_id}", response_model=ResultResponse)
 async def get_result(task_id: str):
     store = _get_store()
@@ -665,26 +687,6 @@ async def export_result(task_id: str, format: str = Query("json", pattern="^(jso
                 return {"format": "html", "content": html}
             return {"format": "json", "content": r.eval_result}
     raise HTTPException(status_code=404, detail=f"Result for '{task_id}' not found")
-
-
-@app.get("/api/v1/results/trend", response_model=list[TrendPoint])
-async def get_trend(
-    model: str | None = None,
-    executor_key: str | None = None,
-    level: str | None = None,
-    limit: int = Query(50, ge=1, le=200),
-):
-    store = _get_store()
-    records = store.query(model=model, executor_key=executor_key, level=level, limit=limit, tenant_id=_tenant_id())
-    return [
-        TrendPoint(
-            timestamp=r.timestamp[:19],
-            metric_value=(r.eval_result or {}).get("metric_value", 0.0),
-            model=r.model,
-            executor_key=r.executor_key,
-        )
-        for r in records
-    ]
 
 
 @app.get("/api/v1/results/{task_id}/cases")
