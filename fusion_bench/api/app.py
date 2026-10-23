@@ -110,6 +110,8 @@ class TaskCreateRequest(BaseModel):
         "quick": "speed",
         "standard": "speed",
         "full": "speed",
+        # issue #24: long-session suite runs the agent-studio SLO baselines
+        "long-session": "session_slo",
     }
 
     @model_validator(mode="after")
@@ -118,6 +120,8 @@ class TaskCreateRequest(BaseModel):
             mapped = self._SUITE_MAP.get(self.suite)
             if mapped:
                 self.executor_key = mapped
+            if self.suite == "long-session":
+                self.level = "L3"
         return self
 
 

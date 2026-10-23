@@ -25,6 +25,7 @@ class ExecutorType(StrEnum):
     QUANT = "quant"
     BNUP = "bnup"
     LAYA = "laya"
+    SESSION_SLO = "session_slo"
 
 
 @dataclass
