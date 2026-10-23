@@ -158,6 +158,23 @@ The UI carries no auth logic: the API is fail-closed behind fusion-identity JWTs
 
 ---
 
+## Long-Session SLO Baselines (issue #24)
+
+The `session_slo` executor (suite alias `long-session`, level L3) pulls agent-studio long-session SLO telemetry and records it as benchmark baselines (sync of [fusion-agent-studio#350](https://github.com/dahai80/fusion-agent-studio/issues/350), PRD opti-1016 §6.3 N11):
+
+- `POST /v1/rpc {"method": "telemetry.session_slo"}` → `sessions_completed`, `compactions_total`, `approvals_total`, `avg/p99_approval_latency_ms`, `avg/p99_session_duration_ms`
+- Each metric lands as a baseline case; the headline `metric_value` is `p99_approval_latency_ms` and the full summary rides in `meta.slo_summary`
+- Endpoint config: `FUSION_AGENT_STUDIO_URL` (default `http://127.0.0.1:11442`) and optional `FUSION_AGENT_STUDIO_API_KEY`, both overridable per task via `params`
+
+```bash
+# via REST (suite alias maps executor_key=session_slo, level=L3)
+curl -X POST http://127.0.0.1:11467/api/v1/tasks \
+  -H 'X-Tenant-Id: <tid>' -H 'Authorization: Bearer <jwt>' \
+  -d '{"model": "agent-studio", "suite": "long-session"}'
+```
+
+---
+
 ## Architecture
 
 ```

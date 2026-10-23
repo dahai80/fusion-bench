@@ -12,6 +12,7 @@ from .lm_harness_executor import LMHarnessExecutor
 from .opencompass_executor import OpenCompassExecutor
 from .quant_executor import QuantExecutor
 from .security_executor import SecurityExecutor
+from .session_slo_executor import SessionSloExecutor
 from .speed_executor import SpeedExecutor
 from .tune_executor import TuneExecutor
 
@@ -30,6 +31,7 @@ __all__ = [
     "GarakExecutor",
     "BNUPEvaluator",
     "LayaBenchmarkExecutor",
+    "SessionSloExecutor",
 ]
 
 
@@ -51,6 +53,7 @@ def register_all() -> None:
         GarakExecutor,
         BNUPEvaluator,
         LayaBenchmarkExecutor,
+        SessionSloExecutor,
     ]
     for cls in _all_executors:
         try:

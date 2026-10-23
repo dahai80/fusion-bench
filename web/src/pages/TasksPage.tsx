@@ -219,6 +219,7 @@ export function TasksPage() {
                     >
                         <option value="speed">speed</option>
                         <option value="accuracy">accuracy</option>
+                        <option value="session_slo">session_slo</option>
                     </select>
                     <select
                         value={level}
@@ -239,6 +240,7 @@ export function TasksPage() {
                         <option value="quick">quick</option>
                         <option value="standard">standard</option>
                         <option value="full">full</option>
+                        <option value="long-session">long-session</option>
                     </select>
                 </div>
                 <button

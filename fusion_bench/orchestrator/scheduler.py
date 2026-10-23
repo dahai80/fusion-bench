@@ -101,6 +101,22 @@ class Scheduler:
             ],
         )
 
+        # L3 — Long-session SLO baselines (issue #24, agent-studio#350 N11):
+        # session duration / compaction frequency / approval latency percentiles
+        # pulled from agent-studio telemetry.session_slo.
+        self.register_suite(
+            "long-session",
+            [
+                BenchmarkTask(
+                    "l3-session-slo",
+                    "Long-session SLO baselines",
+                    EvalLevel.L3_APP,
+                    "session_slo",
+                    params={},
+                ),
+            ],
+        )
+
         # L3 — Application security
         self.register_suite(
             "l3-security",

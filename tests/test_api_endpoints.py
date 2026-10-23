@@ -108,6 +108,17 @@ class TestTaskLifecycle:
         )
         assert resp.status_code == 201
 
+    # issue #24: long-session suite alias maps to session_slo executor at L3.
+    def test_create_task_long_session_suite_maps_to_session_slo(self, client):
+        resp = client.post(
+            "/api/v1/tasks",
+            json={"model": "agent-studio", "suite": "long-session"},
+        )
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["executor_key"] == "session_slo"
+        assert body["level"] == "L3"
+
     def test_get_task_detail_from_background(self, client):
         from fusion_bench.api import app as app_module
 
