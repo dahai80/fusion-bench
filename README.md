@@ -380,6 +380,11 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.9 (2026-10-25)
+
+- **Fix #27 — start.sh invoked removed module `fusion_bench.api.server`**: `./start.sh start` died instantly with `No module named fusion_bench.api.server` because the FastAPI app moved to `fusion_bench/api/app.py`. start.sh now invokes `python3 -m fusion_bench.cli serve` (uvicorn, default 127.0.0.1:11467) with `FUSION_MLX_URL` env pass-through. start.sh is tracked in the repo again (was local-only since v0.4.1) so fusion-supervisor and fresh clones get the fixed entry point.
+- **Repo hygiene**: deleted leftover remote branch `feat/issue-24-session-slo-baselines` (content identical to main after squash merge of #26).
+
 ### v0.4.8 (2026-10-11)
 
 - **Laya benchmark — guardrail precision 73% → 90% PASS (#22)**: Fixed the 1 remaining FAIL from v0.4.7. Added 4th detection signal (`topic.security_testing` probability) + retuned noul thresholds via live sweep. All 7 spec targets now PASS.
