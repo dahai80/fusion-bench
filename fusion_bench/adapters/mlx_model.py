@@ -37,6 +37,7 @@ class MLXModel:
         batch_size: int = 1,
         max_length: int = 4096,
         temperature: float = 0.0,
+        adapter_path: str = "",
         **kwargs,
     ):
         self.model_name = model
@@ -45,6 +46,8 @@ class MLXModel:
         self.batch_size = batch_size
         self.max_length = max_length
         self.temperature = temperature
+        # issue #29: LoRA adapter forwarded to fusion-mlx `adapters` field
+        self.adapter_path = adapter_path
         self._client: httpx.AsyncClient | None = None
         self._client_lock = asyncio.Lock()
         # Track token usage
@@ -197,6 +200,8 @@ class MLXModel:
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if self.adapter_path:
+            payload["adapters"] = self.adapter_path
         if stop:
             payload["stop"] = stop
 
@@ -232,6 +237,8 @@ class MLXModel:
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if self.adapter_path:
+            payload["adapters"] = self.adapter_path
         if logprobs:
             payload["logprobs"] = 1
 

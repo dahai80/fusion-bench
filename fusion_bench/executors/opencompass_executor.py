@@ -76,7 +76,13 @@ class OpenCompassExecutor(ExecutorPlugin):
             )
 
         try:
-            result = await self._run_task(config.model, task_name, task_def, max_samples)
+            result = await self._run_task(
+                config.model,
+                task_name,
+                task_def,
+                max_samples,
+                adapter_path=getattr(config, "adapter_path", "") or config.get("adapter_path", ""),
+            )
             errors_list: list[str] = []
             if "error" in result:
                 errors_list.append(result["error"])
@@ -133,6 +139,7 @@ class OpenCompassExecutor(ExecutorPlugin):
         task_name: str,
         task_def: dict[str, Any],
         max_samples: int,
+        adapter_path: str = "",
     ) -> dict[str, Any]:
         dataset_path = task_def["dataset_path"]
         dataset_name = task_def.get("dataset_name", "")
@@ -151,7 +158,11 @@ class OpenCompassExecutor(ExecutorPlugin):
             logger.warning("Failed to load dataset %s: %s", dataset_path, e)
             return {"error": str(e), "results": {}}
 
-        model = MLXModel(model=model_name, base_url=self.mlx_base_url)
+        model = MLXModel(
+            model=model_name,
+            base_url=self.mlx_base_url,
+            adapter_path=adapter_path,
+        )
 
         try:
             samples = list(ds)

@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Fusion-Bench API",
-    version="0.4.10",
+    version="0.4.11",
     description="Fusion-Bench — MLX model benchmarking REST API",
     lifespan=lifespan,
 )
@@ -99,6 +99,10 @@ class TaskCreateRequest(BaseModel):
     suite_id: str | None = None
     suite: str | None = Field(default=None, description="Suite alias: standard/full/quick — maps to executor_key")
     executor_key: str = Field(default="speed")
+    adapter_path: str = Field(
+        default="",
+        description="LoRA adapter path forwarded to fusion-mlx `adapters` (issue #29); empty = base model",
+    )
     callback_url: str | None = Field(default=None, description="POST result to this URL on completion")
     params: dict[str, Any] = Field(default_factory=dict)
     dataset: str | None = None
@@ -250,6 +254,7 @@ async def create_task(
         "model": req.model,
         "executor_key": req.executor_key,
         "level": req.level,
+        "adapter_path": req.adapter_path or req.params.get("adapter_path", ""),
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "request": req.model_dump(),
         "tenant_id": tenant_id,
@@ -289,6 +294,7 @@ async def _run_task(task_id: str, req: TaskCreateRequest, tenant_id: str = "", u
             dataset=req.dataset,
             max_samples=req.max_samples,
             timeout_seconds=req.timeout_seconds,
+            adapter_path=req.adapter_path or req.params.get("adapter_path", ""),
         )
         executor_cls = executor_registry.get_or_raise(req.executor_key)
         executor = executor_cls()

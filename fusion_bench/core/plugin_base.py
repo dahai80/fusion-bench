@@ -41,6 +41,8 @@ class TaskConfig:
     random_seed: int = 42
     timeout_seconds: int = 600
     priority: int = 0
+    # issue #29: LoRA adapter path forwarded to fusion-mlx as `adapters`
+    adapter_path: str = ""
 
     def get(self, key: str, default: Any = None) -> Any:
         return self.params.get(key, default)

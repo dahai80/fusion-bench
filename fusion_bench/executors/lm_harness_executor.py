@@ -27,11 +27,14 @@ class LMHarnessExecutor(ExecutorPlugin):
 
     async def run(self, config: TaskConfig) -> EvalResult:
         start = time.time()
+        # issue #29: adapter_path — top-level field wins, params key is the fallback
+        adapter_path = getattr(config, "adapter_path", "") or config.get("adapter_path", "")
         runner = LMEvalTaskRunner(
             model=config.model,
             mlx_base_url=config.get("mlx_base_url", self.mlx_base_url),
             tasks_dir=config.get("tasks_dir", self.tasks_dir),
             max_samples=config.max_samples or 0,
+            adapter_path=adapter_path,
         )
 
         task_name = config.get("task_name", config.dataset or "mmlu")
@@ -45,6 +48,9 @@ class LMHarnessExecutor(ExecutorPlugin):
 
             metrics = result.get("metrics", {})
             accuracy = metrics.get("accuracy", 0.0)
+            # issue #29: record which adapter was evaluated for selection tables
+            if adapter_path:
+                metrics = {**metrics, "adapter_path": adapter_path}
 
             cases: list[CaseResult] = []
             for item in result.get("results", []):

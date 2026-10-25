@@ -45,10 +45,12 @@ class LMEvalTaskRunner:
         mlx_base_url: str = "http://localhost:11432/v1",
         tasks_dir: str = "",
         max_samples: int = 0,
+        adapter_path: str = "",
     ):
         self.model_name = model
         self.mlx_base_url = mlx_base_url
         self.max_samples = max_samples
+        self.adapter_path = adapter_path
 
         # Auto-detect lm-evaluation-harness tasks directory
         if not tasks_dir:
@@ -121,6 +123,7 @@ class LMEvalTaskRunner:
         model = MLXModel(
             model=self.model_name,
             base_url=self.mlx_base_url,
+            adapter_path=self.adapter_path,
         )
 
         max_s = max_samples or self.max_samples or task_data.get("num_fewshot", 0)
@@ -130,6 +133,7 @@ class LMEvalTaskRunner:
             result = await self._evaluate_task(model, task_data, max_s, fewshot)
             result["task"] = task_name
             result["model"] = self.model_name
+            result["adapter_path"] = self.adapter_path
             result["usage"] = model.get_usage_report()
             return result
         finally:

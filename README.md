@@ -380,6 +380,17 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.11 (2026-10-26)
+
+- **Fix #29 — LoRA adapter passthrough**: bench tasks can now evaluate checkpointed LoRA weights instead of silently benching the base model.
+  - `POST /api/v1/tasks` gains a top-level optional `adapter_path` field (`params={"adapter_path": ...}` still works as fallback — the fusion-trainer workaround payload is accepted as-is).
+  - `TaskConfig` carries `adapter_path`; `MLXModel` injects `adapters: <path>` into `/v1/chat/completions` and `/v1/completions` payloads when non-empty.
+  - Result records the adapter: task status record + `EvalResult.meta.adapter_path` + `run_task` result dict — selection tables can cite which checkpoint produced the score.
+  - Executors: `lm_harness` and `opencompass` both forward it.
+  - **Note**: fusion-mlx 0.10.15 validates `adapters` as a **string** (list form is rejected with 400 `invalid_request`), so bench sends the string form. The issue's "string or list" description matches a newer/different fusion-mlx validation — bench matches the deployed impl.
+  - **E2E evidence (real adapter)**: `mlx-community--Llama-3.2-1B-Instruct-4bit` + `router-light-1b-intent-v3` adapter via fusion-mlx :11434 — 200 OK, adapter-active generation confirmed (intent classification output "math" for a math question), usage tokens reported.
+- **Verification**: 651 tests passed (+8 adapter-passthrough tests), 0 failed, 3 skipped; ruff clean.
+
 ### v0.4.10 (2026-10-26)
 
 - **Fix #28 (P0) — metric integrity**: the benchmark's numbers are now measured, not fabricated.
