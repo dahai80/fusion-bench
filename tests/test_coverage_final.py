@@ -25,6 +25,49 @@ class MockResponse:
         return self._json
 
 
+SSE_OK_LINES = [
+    'data: {"choices": [{"delta": {"content": "he"}}]}',
+    'data: {"choices": [{"delta": {"content": "llo"}}]}',
+    'data: {"choices": [], "usage": {"prompt_tokens": 50, "completion_tokens": 100}}',
+    "data: [DONE]",
+]
+
+SSE_ZERO_LINES = [
+    'data: {"choices": [{"delta": {"content": "x"}}]}',
+    'data: {"choices": [], "usage": {"prompt_tokens": 0, "completion_tokens": 0}}',
+    "data: [DONE]",
+]
+
+
+class FakeStreamResponse:
+    def __init__(self, lines):
+        self._lines = lines
+
+    def raise_for_status(self):
+        pass
+
+    async def aiter_lines(self):
+        for line in self._lines:
+            yield line
+
+
+class FakeStreamCtx:
+    def __init__(self, lines):
+        self._lines = lines
+
+    async def __aenter__(self):
+        return FakeStreamResponse(self._lines)
+
+    async def __aexit__(self, *exc):
+        return False
+
+
+def make_stream_mock(lines=None, side_effect=None):
+    if side_effect is not None:
+        return MagicMock(side_effect=side_effect)
+    return MagicMock(return_value=FakeStreamCtx(lines if lines is not None else SSE_OK_LINES))
+
+
 class TestBenchmarkFinal:
     """Cover remaining uncovered branches in benchmark.py."""
 
@@ -33,11 +76,7 @@ class TestBenchmarkFinal:
         """Cover case where all benchmark runs fail."""
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(
-            return_value=MockResponse(
-                json_data={"usage": {"prompt_tokens": 0, "completion_tokens": 0}},
-            )
-        )
+        mock_client.stream = make_stream_mock(lines=SSE_ZERO_LINES)
         runner._client = mock_client
         results = await runner.benchmark(model="test", max_tokens=50, runs=3)
         for r in results:
@@ -48,7 +87,7 @@ class TestBenchmarkFinal:
         """Cover case where memory stats endpoint fails."""
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         mock_client.get = AsyncMock(side_effect=RuntimeError("stats fail"))
         runner._client = mock_client
         results = await runner.benchmark(model="test", max_tokens=50, runs=1)
@@ -61,7 +100,7 @@ class TestBenchmarkFinal:
         """Cover case where memory stats returns bad data."""
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         mock_client.get = AsyncMock(
             return_value=MockResponse(
                 status_code=200,
@@ -85,7 +124,7 @@ class TestBenchmarkFinal:
         """Cover run_single with custom config parameters."""
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         runner._client = mock_client
         config = {"extra_params": {"stop": ["\n"]}}
         _metrics = await runner.run_single(
@@ -95,7 +134,7 @@ class TestBenchmarkFinal:
             config=config,
         )
         # Verify the config was passed to the API call
-        call_kwargs = mock_client.post.call_args[1]["json"]
+        call_kwargs = mock_client.stream.call_args[1]["json"]
         assert "extra_params" in call_kwargs
 
     @pytest.mark.asyncio
@@ -104,9 +143,9 @@ class TestBenchmarkFinal:
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
         # First config succeeds, second fails
-        mock_client.post = AsyncMock(
+        mock_client.stream = make_stream_mock(
             side_effect=[
-                MockResponse(),
+                FakeStreamCtx(SSE_OK_LINES),
                 RuntimeError("fail"),
             ]
         )
@@ -120,7 +159,7 @@ class TestBenchmarkFinal:
         """Cover probe_max_context where max is reached."""
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         runner._client = mock_client
         ctx = await runner.probe_max_context(model="test", max_context=8192, step=8192)
         assert ctx >= 4096
@@ -130,7 +169,7 @@ class TestBenchmarkFinal:
         """Cover run_stability where all run_single calls fail silently."""
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(side_effect=RuntimeError("always fail"))
+        mock_client.stream = make_stream_mock(side_effect=RuntimeError("always fail"))
         runner._client = mock_client
         result = await runner.run_stability(model="test", rounds=5)
         assert result.stable is False

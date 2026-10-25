@@ -24,7 +24,7 @@ from pathlib import Path
 
 from .cache import BenchmarkCache
 from .engine.benchmark import BenchmarkRunner
-from .engine.task_runner import LMEvalTaskRunner
+from .engine.task_runner import TASKS_DIR_HINT, LMEvalTaskRunner, TasksDirMissingError
 from .optimizer.tuner import ParameterTuner
 
 
@@ -54,6 +54,7 @@ def main():
     # list-tasks
     list_parser = subparsers.add_parser("list-tasks", help="List available evaluation tasks")
     list_parser.add_argument("--pattern", default="", help="Filter tasks by pattern")
+    list_parser.add_argument("--tasks-dir", default="", help="lm-evaluation-harness tasks dir")
 
     # list-suites
     subparsers.add_parser("list-suites", help="List available benchmark suites")
@@ -70,6 +71,7 @@ def main():
     run_parser.add_argument("--cache-ttl", type=int, default=0, help="Cache TTL seconds (0=forever)")
     run_parser.add_argument("--executor", default="", help="Executor key (e.g., bnup, laya). Empty = auto by task")
     run_parser.add_argument("--testset", default="", help="Path to testset JSON or dir (for --executor bnup/laya)")
+    run_parser.add_argument("--tasks-dir", default="", help="lm-evaluation-harness tasks dir")
 
     # suite (NEW)
     suite_parser = subparsers.add_parser("suite", help="Run a benchmark suite with quality gates")
@@ -84,6 +86,11 @@ def main():
     suite_parser.add_argument("--output", default="", help="Output file path (JSON)")
     suite_parser.add_argument("--no-cache", action="store_true", help="Disable result cache")
     suite_parser.add_argument("--cache-ttl", type=int, default=0, help="Cache TTL seconds (0=forever)")
+    suite_parser.add_argument(
+        "--require-quality",
+        action="store_true",
+        help="Fail (exit 1) if zero lm-eval quality tasks ran successfully",
+    )
     speed_parser = subparsers.add_parser("speed", help="Benchmark model speed")
     speed_parser.add_argument("--runs", type=int, default=3, help="Number of runs")
     speed_parser.add_argument("--output", default="", help="Output file path (JSON)")
@@ -281,12 +288,15 @@ def main():
 
 def cmd_list_tasks(args):
     """List available evaluation tasks."""
-    runner = LMEvalTaskRunner(mlx_base_url=args.mlx_url)
+    runner = LMEvalTaskRunner(mlx_base_url=args.mlx_url, tasks_dir=getattr(args, "tasks_dir", ""))
     tasks = runner.list_tasks()
     if args.pattern:
         tasks = [t for t in tasks if args.pattern.lower() in t["name"].lower()]
     if not tasks:
-        print("No tasks found. Make sure lm-evaluation-harness is installed.")
+        print(
+            "No tasks found. Clone lm-evaluation-harness to "
+            "~/bench/lm-evaluation-harness (or pass --tasks-dir), then retry."
+        )
         return
     print(f"\n{'Task Name':<30} {'Group':<25} {'Fewshot':<8} {'Dataset'}")
     print("-" * 90)
@@ -384,6 +394,17 @@ async def cmd_suite(args):
         Path(args.output).write_text(json.dumps(result.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"\nResults saved to {args.output}")
 
+    # issue #28: --require-quality — fail loudly when zero quality tasks ran
+    if getattr(args, "require_quality", False) is True:
+        quality_ran = sum(1 for r in result.results if r.get("executor_key") == "lm_harness" and not r.get("errors"))
+        if quality_ran == 0:
+            print(
+                f"Error: --require-quality set but zero lm-eval quality tasks ran successfully. {TASKS_DIR_HINT}",
+                file=sys.stderr,
+            )
+            store.close()
+            sys.exit(1)
+
     store.close()
 
 
@@ -400,8 +421,13 @@ async def cmd_run(args):
         model=args.model,
         mlx_base_url=args.mlx_url,
         max_samples=args.max_samples,
+        tasks_dir=getattr(args, "tasks_dir", ""),
     )
-    result = await runner.run_task(args.task)
+    try:
+        result = await runner.run_task(args.task)
+    except TasksDirMissingError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
     print(json.dumps(result, indent=2, ensure_ascii=False))
     if args.output:
         Path(args.output).write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -568,7 +594,11 @@ async def cmd_speed(args):
         results = await runner.benchmark(args.model, runs=args.runs)
         for r in results:
             print(f"\n  Decode speed: {r.metrics.decode_speed:.1f} tok/s")
-            print(f"  Prefill speed: {r.metrics.prefill_speed:.1f} tok/s")
+            print(f"  Prefill speed: {r.metrics.prefill_speed:.1f} tok/s (measured from TTFT)")
+            print(f"  TTFT: {r.metrics.ttft * 1000:.0f} ms")
+            if r.metrics.ttft_p50_ms is not None:
+                print(f"  TTFT p50/p95: {r.metrics.ttft_p50_ms:.0f}/{r.metrics.ttft_p95_ms:.0f} ms")
+                print(f"  Decode p50/p95: {r.metrics.decode_speed_p50:.1f}/{r.metrics.decode_speed_p95:.1f} tok/s")
             print(f"  Peak memory: {r.metrics.peak_memory_mb:.0f} MB")
             print(f"  Total time: {r.metrics.total_time:.2f}s")
         if args.output:

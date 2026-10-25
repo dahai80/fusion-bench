@@ -57,12 +57,49 @@ class MockResponse:
         return self._json
 
 
+SSE_OK_LINES = [
+    'data: {"choices": [{"delta": {"content": "he"}}]}',
+    'data: {"choices": [{"delta": {"content": "llo"}}]}',
+    'data: {"choices": [], "usage": {"prompt_tokens": 50, "completion_tokens": 100}}',
+    "data: [DONE]",
+]
+
+
+class FakeStreamResponse:
+    def __init__(self, lines):
+        self._lines = lines
+
+    def raise_for_status(self):
+        pass
+
+    async def aiter_lines(self):
+        for line in self._lines:
+            yield line
+
+
+class FakeStreamCtx:
+    def __init__(self, lines):
+        self._lines = lines
+
+    async def __aenter__(self):
+        return FakeStreamResponse(self._lines)
+
+    async def __aexit__(self, *exc):
+        return False
+
+
+def make_stream_mock(lines=None, side_effect=None):
+    if side_effect is not None:
+        return MagicMock(side_effect=side_effect)
+    return MagicMock(return_value=FakeStreamCtx(lines if lines is not None else SSE_OK_LINES))
+
+
 class TestBenchmarkRunnerAdvanced:
     @pytest.mark.asyncio
     async def test_run_single_success(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         mock_client.get = AsyncMock(
             return_value=MockResponse(
                 json_data={
@@ -73,7 +110,9 @@ class TestBenchmarkRunnerAdvanced:
         runner._client = mock_client
         metrics = await runner.run_single(model="test-model", prompt="hi", max_tokens=50)
         assert metrics.decode_speed > 0
+        assert metrics.ttft > 0
         assert metrics.peak_memory_mb > 0
+        assert metrics.prefill_speed > 0  # measured from TTFT, not fabricated
 
     @pytest.mark.asyncio
     async def test_run_single_timeout(self):
@@ -81,7 +120,7 @@ class TestBenchmarkRunnerAdvanced:
         mock_client = MagicMock()
         from httpx import TimeoutException
 
-        mock_client.post = AsyncMock(side_effect=TimeoutException("timeout"))
+        mock_client.stream = make_stream_mock(side_effect=TimeoutException("timeout"))
         runner._client = mock_client
         metrics = await runner.run_single(model="test-model")
         assert metrics.total_time == 1.0
@@ -90,7 +129,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_run_single_generic_error(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(side_effect=RuntimeError("connection error"))
+        mock_client.stream = make_stream_mock(side_effect=RuntimeError("connection error"))
         runner._client = mock_client
         metrics = await runner.run_single(model="test-model")
         assert metrics.total_time == 0.0
@@ -99,7 +138,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_benchmark_multiple_runs(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         mock_client.get = AsyncMock(
             return_value=MockResponse(
                 json_data={
@@ -117,7 +156,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_benchmark_with_configs(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         runner._client = mock_client
         configs = [{"temperature": 0.0}, {"temperature": 0.7}]
         results = await runner.benchmark(model="test", configs=configs, max_tokens=50, runs=1)
@@ -127,7 +166,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_benchmark_no_configs(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         runner._client = mock_client
         results = await runner.benchmark(model="test", max_tokens=50, runs=1)
         assert len(results) >= 1
@@ -160,7 +199,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_run_stability_all_success(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         runner._client = mock_client
         result = await runner.run_stability(model="test", rounds=3)
         assert result.stable is True
@@ -169,13 +208,13 @@ class TestBenchmarkRunnerAdvanced:
     async def test_run_stability_partial_fail(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock()
-        # Two successes, one failure (caught by run_single)
-        mock_client.post.side_effect = [
-            MockResponse(),
-            RuntimeError("fail"),
-            MockResponse(),
-        ]
+        mock_client.stream = make_stream_mock(
+            side_effect=[
+                FakeStreamCtx(SSE_OK_LINES),
+                RuntimeError("fail"),
+                FakeStreamCtx(SSE_OK_LINES),
+            ]
+        )
         mock_client.get = AsyncMock(
             return_value=MockResponse(
                 json_data={
@@ -194,7 +233,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_probe_max_context(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         runner._client = mock_client
         ctx = await runner.probe_max_context(model="test", max_context=8192, step=4096)
         assert ctx >= 4096
@@ -203,7 +242,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_probe_max_context_fails_early(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(side_effect=RuntimeError("OOM"))
+        mock_client.stream = make_stream_mock(side_effect=RuntimeError("OOM"))
         runner._client = mock_client
         ctx = await runner.probe_max_context(model="test", max_context=8192, step=4096)
         assert ctx == 4096  # last valid is the initial value
@@ -219,7 +258,7 @@ class TestBenchmarkRunnerAdvanced:
     async def test_benchmark_no_prompt(self):
         runner = BenchmarkRunner(mlx_base_url="http://localhost:11432/v1")
         mock_client = MagicMock()
-        mock_client.post = AsyncMock(return_value=MockResponse())
+        mock_client.stream = make_stream_mock()
         runner._client = mock_client
         results = await runner.benchmark(model="test", prompt="", max_tokens=50, runs=1)
         assert len(results) >= 1

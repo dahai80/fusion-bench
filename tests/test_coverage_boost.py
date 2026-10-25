@@ -349,6 +349,9 @@ class TestCLIDispatch:
                 level="L1",
                 tier="experimental",
                 output="",
+                no_cache=False,
+                cache_ttl=0,
+                require_quality=False,
             )
             await cmd_suite(args)
 
@@ -438,6 +441,9 @@ class TestCLIDispatch:
                 level="L1",
                 tier="experimental",
                 output="",
+                no_cache=False,
+                cache_ttl=0,
+                require_quality=False,
             )
             await cmd_suite(args)
 
@@ -484,12 +490,11 @@ class TestTaskRunnerAdvanced:
 
     @pytest.mark.asyncio
     async def test_run_task_not_found(self):
-        from fusion_bench.engine.task_runner import LMEvalTaskRunner
+        from fusion_bench.engine.task_runner import LMEvalTaskRunner, TasksDirMissingError
 
         runner = LMEvalTaskRunner(model="m1", tasks_dir="/nonexistent/path")
-        result = await runner.run_task("nonexistent_task")
-        assert result["error"] is not None
-        assert "not found" in result["error"]
+        with pytest.raises(TasksDirMissingError):
+            await runner.run_task("nonexistent_task")
 
     @pytest.mark.asyncio
     async def test_run_task_found_but_no_dataset(self, tmp_path):

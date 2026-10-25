@@ -611,9 +611,11 @@ class TestLMEvalTaskRunner:
 
     @pytest.mark.asyncio
     async def test_run_task_not_found(self):
+        from fusion_bench.engine.task_runner import TasksDirMissingError
+
         runner = LMEvalTaskRunner(model="test-model", tasks_dir="")
-        result = await runner.run_task("nonexistent")
-        assert "error" in result
+        with pytest.raises(TasksDirMissingError):
+            await runner.run_task("nonexistent")
 
     @pytest.mark.asyncio
     async def test_run_benchmark(self):

@@ -16,6 +16,21 @@ from ..adapters.mlx_model import MLXModel
 
 logger = logging.getLogger(__name__)
 
+TASKS_DIR_HINT = (
+    "quality tasks unavailable: lm-evaluation-harness tasks directory not found. "
+    "Clone it (git clone https://github.com/EleutherAI/lm-evaluation-harness "
+    "~/bench/lm-evaluation-harness), pass tasks_dir explicitly, or skip "
+    "quality tasks (--skip-quality / --executor speed)."
+)
+
+
+class TasksDirMissingError(RuntimeError):
+    """Raised when quality tasks are requested but the lm-eval harness dir is missing."""
+
+    def __init__(self, tasks_dir: str | None = None):
+        searched = f" Searched: {tasks_dir}" if tasks_dir else ""
+        super().__init__(TASKS_DIR_HINT + searched)
+
 
 class LMEvalTaskRunner:
     """Runs lm-evaluation-harness tasks using MLXModel via fusion-mlx.
@@ -50,6 +65,7 @@ class LMEvalTaskRunner:
     def list_tasks(self) -> list[dict[str, Any]]:
         """List available tasks from lm-evaluation-harness."""
         if not self.tasks_dir or not self.tasks_dir.exists():
+            logger.warning("%s", TASKS_DIR_HINT)
             return []
 
         tasks = []
@@ -90,6 +106,10 @@ class LMEvalTaskRunner:
         Returns:
             Dict with task results.
         """
+        if not self.tasks_dir or not self.tasks_dir.exists():
+            # issue #28: never silently return empty results for quality tasks
+            raise TasksDirMissingError(str(self.tasks_dir))
+
         task_data = self._load_task(task_name)
         if not task_data:
             return {

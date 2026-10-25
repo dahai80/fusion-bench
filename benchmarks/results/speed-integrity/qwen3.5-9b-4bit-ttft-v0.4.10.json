@@ -1,0 +1,19 @@
+[
+  {
+    "prefill_tokens": 0,
+    "decode_tokens": 0,
+    "prefill_time_ms": 661.63,
+    "decode_time_ms": 3050.89,
+    "prefill_speed": 130.89,
+    "decode_speed": 84.32,
+    "total_time_s": 3.713,
+    "peak_memory_mb": 0.0,
+    "prompt_tokens": 43,
+    "completion_tokens": 257,
+    "ttft_ms": 661.63,
+    "ttft_p50_ms": 268.36,
+    "ttft_p95_ms": 1835.91,
+    "decode_speed_p50": 84.27,
+    "decode_speed_p95": 85.52
+  }
+]

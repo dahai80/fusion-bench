@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-336-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-643-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -329,7 +329,7 @@ pytest tests/ --cov=fusion_bench
 ```
 
 ### Test Stats
-- **475 tests** (+ 3 live judge e2e, gated), 0 failures
+- **643 tests** (+ 3 live judge e2e, gated), 0 failures
 - **66% statement coverage** on `api/app.py` (full suite higher)
 - **Python 3.12+** compatible
 
@@ -379,6 +379,22 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.10 (2026-10-26)
+
+- **Fix #28 (P0) — metric integrity**: the benchmark's numbers are now measured, not fabricated.
+  - **Real TTFT**: `run_single` streams responses (`stream: true` + `include_usage`) and timestamps the first content token. `SpeedMetrics` carries `ttft`, `ttft_p50_ms`, `ttft_p95_ms`, `decode_speed_p50/p95` — mean kept, percentiles added (n >= 2).
+  - **Fabricated prefill removed**: the hardcoded `elapsed * 0.3` prefill assumption is gone (grep-gated by test). `prefill_time` = measured TTFT; `prefill_speed` = prompt_tokens / TTFT — an honest, overhead-inclusive lower bound.
+  - **lm-eval never silently empty**: missing lm-evaluation-harness dir now raises `TasksDirMissingError` with an actionable message (clone path / skip hint) — CLI exits non-zero. New `suite --require-quality` flag fails if zero quality tasks ran. `run`/`list-tasks` gained `--tasks-dir`.
+  - **CI reference fixed**: `fusion_bench/cicd` module headers claimed a nonexistent `.github/workflows/benchmark.yml`; stale claim removed (CI = `ci.yml`, lint + full test suite).
+  - **Version drift fixed**: `api/app.py` OpenAPI version was stuck at 0.4.8; now synced from `pyproject.toml` (0.4.10). Test badge/stats refreshed to the real count (643).
+  - **Speed path auth**: `BenchmarkRunner` now reads `FUSION_MLX_API_KEY` from env (was hardcoded `local`, 401 via gateway) — aligned with executors.
+  - **Test hygiene**: laya executor tests no longer overwrite the committed `benchmarks/results/laya-integration/` report (report_dir now tmp_path); polluted report restored.
+- **Fresh-run evidence (AC #28)** — `mlx-community--Qwen3.5-9B-4bit`, fusion-mlx 0.10.15, 5 runs, commit of this release:
+  - TTFT mean 662 ms, **p50 268 ms / p95 1836 ms** (first non-None TTFT ever reported on this path)
+  - Decode 84.3 tok/s (p50 84.3 / p95 85.5), prefill 130.9 tok/s (measured from TTFT)
+  - Full JSON: `benchmarks/results/speed-integrity/qwen3.5-9b-4bit-ttft-v0.4.10.json`
+- **Verification**: 643 tests passed (12 new metric-integrity tests), 0 failed, 3 skipped; `ruff check` + `ruff format --check` clean.
 
 ### v0.4.9 (2026-10-25)
 

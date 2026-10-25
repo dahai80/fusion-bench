@@ -270,9 +270,14 @@ class TestPRF1:
 
 
 class TestRunWithLaya:
-    async def test_run_all_dims(self, monkeypatch):
+    async def test_run_all_dims(self, monkeypatch, tmp_path):
         executor = _make_executor(monkeypatch, laya_available=True)
-        config = TaskConfig(task_id="laya-test", model="test-model", executor_key="laya", params={})
+        config = TaskConfig(
+            task_id="laya-test",
+            model="test-model",
+            executor_key="laya",
+            params={"report_dir": str(tmp_path)},
+        )
         result = await executor.run(config)
         assert result.executor_key == "laya"
         assert result.level == "L4"
@@ -295,17 +300,27 @@ class TestRunWithLaya:
         result = await executor._bench_intent(testset)
         assert result["accuracy"] > 0
 
-    async def test_warmup_tracks_cold_start(self, monkeypatch):
+    async def test_warmup_tracks_cold_start(self, monkeypatch, tmp_path):
         executor = _make_executor(monkeypatch, laya_available=True)
-        config = TaskConfig(task_id="laya-warmup", model="test-model", executor_key="laya", params={})
+        config = TaskConfig(
+            task_id="laya-warmup",
+            model="test-model",
+            executor_key="laya",
+            params={"report_dir": str(tmp_path)},
+        )
         result = await executor.run(config)
         dims = result.meta["dimensions"]
         assert "cold_start_ms" in dims
         assert dims["cold_start_ms"] >= 0
 
-    async def test_cold_start_absent_when_skipped(self, monkeypatch):
+    async def test_cold_start_absent_when_skipped(self, monkeypatch, tmp_path):
         executor = _make_executor(monkeypatch, laya_available=False)
-        config = TaskConfig(task_id="laya-skip-cs", model="", executor_key="laya", params={})
+        config = TaskConfig(
+            task_id="laya-skip-cs",
+            model="",
+            executor_key="laya",
+            params={"report_dir": str(tmp_path)},
+        )
         result = await executor.run(config)
         dims = result.meta["dimensions"]
         assert "cold_start_ms" not in dims
@@ -355,9 +370,14 @@ class TestRunWithLaya:
 
 
 class TestAutoSkip:
-    async def test_laya_404_skips_dims_1_to_4(self, monkeypatch):
+    async def test_laya_404_skips_dims_1_to_4(self, monkeypatch, tmp_path):
         executor = _make_executor(monkeypatch, laya_available=False)
-        config = TaskConfig(task_id="laya-skip", model="test-model", executor_key="laya", params={})
+        config = TaskConfig(
+            task_id="laya-skip",
+            model="test-model",
+            executor_key="laya",
+            params={"report_dir": str(tmp_path)},
+        )
         result = await executor.run(config)
         dims = result.meta["dimensions"]
         assert dims["laya_endpoint_available"] is False
@@ -369,9 +389,14 @@ class TestAutoSkip:
         assert result.errors
         assert "laya endpoint" in result.errors[0]
 
-    async def test_no_model_skips_e2e(self, monkeypatch):
+    async def test_no_model_skips_e2e(self, monkeypatch, tmp_path):
         executor = _make_executor(monkeypatch, laya_available=False, model_stream=False)
-        config = TaskConfig(task_id="laya-no-model", model="", executor_key="laya", params={})
+        config = TaskConfig(
+            task_id="laya-no-model",
+            model="",
+            executor_key="laya",
+            params={"report_dir": str(tmp_path)},
+        )
         result = await executor.run(config)
         dims = result.meta["dimensions"]
         assert dims["e2e_latency"].get("skipped") is True

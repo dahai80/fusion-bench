@@ -7,7 +7,9 @@ Never imports MLX, mlx-lm, or any engine code directly.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import os
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -19,7 +21,13 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SpeedMetrics:
-    """Speed metrics for a single benchmark run."""
+    """Speed metrics for a single benchmark run.
+
+    prefill_time is the measured time-to-first-token (TTFT): request start to
+    first streamed token. It includes HTTP/queue overhead, so prefill_speed
+    (prompt_tokens / prefill_time) is a measured lower bound of prompt
+    processing throughput — never a fabricated assumption.
+    """
 
     prefill_tokens: int = 0
     decode_tokens: int = 0
@@ -31,9 +39,15 @@ class SpeedMetrics:
     peak_memory_mb: float = 0.0
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    ttft: float = 0.0  # seconds; == prefill_time, kept as explicit name
+    # Aggregation-only fields (populated by BenchmarkRunner.benchmark, n >= 2)
+    ttft_p50_ms: float | None = None
+    ttft_p95_ms: float | None = None
+    decode_speed_p50: float | None = None
+    decode_speed_p95: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d = {
             "prefill_tokens": self.prefill_tokens,
             "decode_tokens": self.decode_tokens,
             "prefill_time_ms": round(self.prefill_time * 1000, 2),
@@ -44,7 +58,17 @@ class SpeedMetrics:
             "peak_memory_mb": round(self.peak_memory_mb, 1),
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
+            "ttft_ms": round(self.ttft * 1000, 2),
         }
+        if self.ttft_p50_ms is not None:
+            d["ttft_p50_ms"] = self.ttft_p50_ms
+        if self.ttft_p95_ms is not None:
+            d["ttft_p95_ms"] = self.ttft_p95_ms
+        if self.decode_speed_p50 is not None:
+            d["decode_speed_p50"] = self.decode_speed_p50
+        if self.decode_speed_p95 is not None:
+            d["decode_speed_p95"] = self.decode_speed_p95
+        return d
 
 
 @dataclass
@@ -68,9 +92,12 @@ class BenchmarkRunner:
     def __init__(
         self,
         mlx_base_url: str = "http://localhost:11432/v1",
-        api_key: str = "local",
+        api_key: str = "",
         timeout: float = 300.0,
     ):
+        # 与 executors 对齐：默认从 FUSION_MLX_API_KEY 读取（gateway 401 修复）
+        if not api_key:
+            api_key = os.environ.get("FUSION_MLX_API_KEY", "local")
         self.mlx_base_url = mlx_base_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
@@ -125,34 +152,65 @@ class BenchmarkRunner:
         """Run a single benchmark for a model with given config."""
         config = config or {}
         metrics = SpeedMetrics()
-        prompt_tokens = len(prompt) // 4  # rough estimate
+        est_prompt_tokens = len(prompt) // 4  # rough estimate
 
         try:
-            start = time.time()
             client = await self.get_client()
-            resp = await client.post(
-                "/chat/completions",
-                json={
-                    "model": model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": max_tokens,
-                    "temperature": temperature,
-                    "stream": False,
-                    **config,
-                },
-            )
-            elapsed = time.time() - start
-            resp.raise_for_status()
-            data = resp.json()
+            start = time.time()
+            ttft = 0.0
+            usage: dict[str, Any] = {}
+            content_chunks = 0
 
-            usage = data.get("usage", {})
-            metrics.prompt_tokens = usage.get("prompt_tokens", prompt_tokens)
-            metrics.completion_tokens = usage.get("completion_tokens", max_tokens)
+            payload = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": True,
+                "stream_options": {"include_usage": True},
+                **config,
+            }
+
+            async with client.stream("POST", "/chat/completions", json=payload) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    data_str = line[5:].strip()
+                    if not data_str or data_str == "[DONE]":
+                        continue
+                    try:
+                        chunk = json.loads(data_str)
+                    except ValueError:
+                        continue
+                    if usage == {} and chunk.get("usage"):
+                        usage = chunk["usage"]
+                    choices = chunk.get("choices") or []
+                    if choices:
+                        delta = choices[0].get("delta") or {}
+                        content = delta.get("content")
+                        if content and ttft == 0.0:
+                            ttft = time.time() - start
+                        if content:
+                            content_chunks += 1
+
+            elapsed = time.time() - start
+            if ttft <= 0.0:
+                logger.warning("Stream finished without any content token for %s", model)
+
+            metrics.prompt_tokens = usage.get("prompt_tokens", est_prompt_tokens)
+            metrics.completion_tokens = usage.get("completion_tokens", content_chunks)
             metrics.total_time = elapsed
-            metrics.decode_speed = metrics.completion_tokens / max(elapsed, 0.001)
-            metrics.prefill_speed = metrics.prompt_tokens / max(elapsed * 0.3, 0.001)
+            metrics.ttft = ttft
+            metrics.prefill_time = ttft
+            metrics.decode_time = max(elapsed - ttft, 0.0)
             metrics.prefill_tokens = metrics.prompt_tokens
             metrics.decode_tokens = metrics.completion_tokens
+            if ttft > 0:
+                # Measured, overhead-inclusive lower bound of prompt throughput
+                metrics.prefill_speed = metrics.prompt_tokens / max(ttft, 0.001)
+            if metrics.decode_time > 0:
+                metrics.decode_speed = metrics.completion_tokens / metrics.decode_time
 
             # Get server stats for memory
             try:
@@ -267,6 +325,9 @@ class BenchmarkRunner:
                     avg.peak_memory_mb += m.peak_memory_mb
                     avg.prompt_tokens += m.prompt_tokens
                     avg.completion_tokens += m.completion_tokens
+                    avg.ttft += m.ttft
+                    avg.decode_time += m.decode_time
+                    avg.prefill_time += m.prefill_time
                 n = len(run_metrics)
                 avg.decode_speed /= n
                 avg.prefill_speed /= n
@@ -274,11 +335,35 @@ class BenchmarkRunner:
                 avg.peak_memory_mb /= n
                 avg.prompt_tokens //= n
                 avg.completion_tokens //= n
+                avg.ttft /= n
+                avg.decode_time /= n
+                avg.prefill_time /= n
+                # p50/p95 alongside the mean (issue #28: sample size >= 2)
+                if n >= 2:
+                    ttfts = sorted(m.ttft for m in run_metrics)
+                    dec_speeds = sorted(m.decode_speed for m in run_metrics)
+                    avg.ttft_p50_ms = round(self._percentile(ttfts, 50) * 1000, 2)
+                    avg.ttft_p95_ms = round(self._percentile(ttfts, 95) * 1000, 2)
+                    avg.decode_speed_p50 = round(self._percentile(dec_speeds, 50), 2)
+                    avg.decode_speed_p95 = round(self._percentile(dec_speeds, 95), 2)
                 result.metrics = avg
 
             results.append(result)
 
         return results
+
+    @staticmethod
+    def _percentile(sorted_values: list[float], pct: float) -> float:
+        """Linear-interpolated percentile over a pre-sorted list."""
+        if not sorted_values:
+            return 0.0
+        if len(sorted_values) == 1:
+            return sorted_values[0]
+        rank = (len(sorted_values) - 1) * (pct / 100.0)
+        lo = int(rank)
+        hi = min(lo + 1, len(sorted_values) - 1)
+        frac = rank - lo
+        return sorted_values[lo] * (1 - frac) + sorted_values[hi] * frac
 
     @staticmethod
     def _parse_memory(mem_str: str) -> float:
