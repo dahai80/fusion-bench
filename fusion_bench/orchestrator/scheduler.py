@@ -145,6 +145,21 @@ class Scheduler:
             ],
         )
 
+        # L4 — Arabic/multilingual capability (issue #32, ai-speech-exam gap G9):
+        # translation BLEU/chrF, RTL integrity, Arabic understanding, STT roundtrip.
+        self.register_suite(
+            "arabic-multilingual",
+            [
+                BenchmarkTask(
+                    "l4-arabic",
+                    "Arabic/multilingual evaluation",
+                    EvalLevel.L4_ARTIFACT,
+                    "arabic",
+                    params={},
+                ),
+            ],
+        )
+
         # Full — All levels
         self.register_suite(
             "full",

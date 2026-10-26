@@ -1,0 +1,17 @@
+[
+    {"question": "ما هي عاصمة مصر؟", "expected_keywords": ["القاهرة"]},
+    {"question": "كم عدد أيام الأسبوع؟", "expected_keywords": ["سبعة", "7"]},
+    {"question": "ما هو أطول نهر في العالم؟", "expected_keywords": ["النيل", "الأمازون"]},
+    {"question": "بأي لغة يتحدث سكان المغرب رسميا إلى جانب الأمازيغية؟", "expected_keywords": ["العربية"]},
+    {"question": "ما نتيجة ضرب ستة في سبعة؟", "expected_keywords": ["اثنان وأربعون", "42"]},
+    {"question": "في أي قارة تقع المملكة العربية السعودية؟", "expected_keywords": ["آسيا"]},
+    {"question": "ما هي أكبر مدينة في الإمارات العربية المتحدة؟", "expected_keywords": ["دبي"]},
+    {"question": "ما اسم الكتاب المقدس عند المسلمين؟", "expected_keywords": ["القرآن"]},
+    {"question": "كم عدد أحرف الأبجدية العربية؟", "expected_keywords": ["28", "ثمانية وعشرون", "ثمان وعشرون"]},
+    {"question": "ما هو عكس كلمة «الليل»؟", "expected_keywords": ["النهار", "الصباح"]},
+    {"question": "أي كوكب نعيش عليه؟", "expected_keywords": ["الأرض"]},
+    {"question": "ما هي العملة الرسمية في الكويت؟", "expected_keywords": ["الدينار"]},
+    {"question": "من مؤسس علم الجبر؟", "expected_keywords": ["الخوارزمي"]},
+    {"question": "ما هو العنصر الكيميائي الذي رمزه O؟", "expected_keywords": ["الأكسجين"]},
+    {"question": "في أي شهر يصوم المسلمون رمضان؟ أجب باسم الشهر القمري.", "expected_keywords": ["رمضان"]}
+]

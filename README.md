@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-661-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-694-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -379,6 +379,21 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.13 (2026-10-26)
+
+- **Feat #32 — Arabic/multilingual evaluation suite** (ai-speech-exam gap G9: local-model Arabic NLP capability was unverified). New `ArabicEvalExecutor` (`fusion-bench run arabic`), 5 dimensions:
+  - `translation_ar_en` / `translation_en_ar` — corpus BLEU + chrF via **sacrebleu** (pure Python; no torch/transformers, per repo constraint; COMET-style neural metrics need model downloads and stay out of scope). chrF is primary for EN→AR (Arabic morphology makes token-BLEU brittle).
+  - `rtl_integrity` — Arabic script presence, mojibake (UTF-8-as-Latin1 lead bytes), legacy presentation forms (visual-order encoding), U+FFFD. Specific encodings diagnosed before the generic script check so mojibake isn't masked as "no Arabic".
+  - `arabic_understanding` — Arabic QA accuracy via normalized keyword containment (diacritics stripped).
+  - `stt_arabic` — fusion-speech TTS→STT roundtrip WER; **auto-skips** when the daemon is unreachable (mirrors the laya executor's 404 auto-skip).
+  - Composite via active-weight normalization; skipped dims drop out by weight.
+- **Test sets committed** (`benchmarks/testsets/`): 30 hand-authored MSA translation pairs (15 each direction, expert references), 20 RTL generation prompts, 15 QA items — 65 live model calls per run.
+- **Wiring**: executor registered in `register_all()`, `arabic-multilingual` suite in `Scheduler`, CLI `run arabic` dispatch (mirrors laya), `sacrebleu>=2.4.0` added to core deps (CI needs it; `is_available()` gates on import).
+- **Routing follows #31 convention**: gateway default; `--direct-mlx` / `FUSION_BENCH_DIRECT_MLX=1` explicit opt-in, logged, mode recorded in result meta + report.
+- **First baseline established** (real model, `mlx-community--Qwen3.5-9B-4bit`, direct fusion-mlx `:11434`): AR→EN chrF **87.8** / BLEU **79.0**, EN→AR chrF **73.5** / BLEU **46.7**, RTL integrity **100%**, understanding **100%**, STT skipped (fusion-speech down), composite **1.0**. All 5 dims exceeded provisional targets — targets are explicitly labeled first-baseline-provisional and should be re-tuned from real runs (honesty precedent: #28).
+- **Upstream issues filed** (per repo rule — upstream gaps get issues, not cross-repo edits): fusion-mlx#1416 (optional Arabic-capable models + `languages` metadata in `/v1/models`), fusion-gateway#330 (language-aware routing keyed off that metadata; depends on fusion-mlx#1416).
+- **Verification**: 691 tests passed (+33 new arabic executor tests), 0 failed, 3 skipped (694 collected); drift guard exit 0; ruff clean; live e2e via real fusion-mlx HTTP API.
 
 ### v0.4.12 (2026-10-26)
 

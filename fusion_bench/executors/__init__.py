@@ -1,6 +1,7 @@
 """Executor plugins — each wraps an evaluation tool behind the ExecutorPlugin interface."""
 
 from .agent_executor import AgentExecutor
+from .arabic_executor import ArabicEvalExecutor
 from .artifact_executor import ArtifactExecutor
 from .bnup_executor import BNUPEvaluator
 from .code_executor import CodeExecutor
@@ -24,6 +25,7 @@ __all__ = [
     "SecurityExecutor",
     "OpenCompassExecutor",
     "AgentExecutor",
+    "ArabicEvalExecutor",
     "CodeExecutor",
     "ArtifactExecutor",
     "EvalScopeExecutor",
@@ -46,6 +48,7 @@ def register_all() -> None:
         SecurityExecutor,
         OpenCompassExecutor,
         AgentExecutor,
+        ArabicEvalExecutor,
         CodeExecutor,
         ArtifactExecutor,
         EvalScopeExecutor,

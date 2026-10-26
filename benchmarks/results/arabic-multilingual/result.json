@@ -1,0 +1,55 @@
+{
+  "task_id": "arabic-multilingual",
+  "executor_key": "arabic",
+  "model": "mlx-community--Qwen3.5-9B-4bit",
+  "level": "L4",
+  "metric_name": "arabic_composite",
+  "metric_value": 1.0,
+  "pass_rate": 1.0,
+  "num_cases": 65,
+  "duration_seconds": 324.53959012031555,
+  "errors": [],
+  "meta": {
+    "mode": "direct-mlx",
+    "dimensions": {
+      "mode": "direct-mlx",
+      "translation_ar_en": {
+        "bleu": 79.02,
+        "chrf": 87.8,
+        "sample_count": 15
+      },
+      "translation_en_ar": {
+        "bleu": 46.65,
+        "chrf": 73.45,
+        "sample_count": 15
+      },
+      "rtl_integrity": {
+        "integrity": 1.0,
+        "failure_kinds": {},
+        "sample_count": 20
+      },
+      "arabic_understanding": {
+        "accuracy": 1.0,
+        "sample_count": 15
+      },
+      "stt_arabic": {
+        "skipped": true,
+        "reason": "fusion-speech unavailable"
+      }
+    },
+    "spec_targets": {
+      "chrf_ar2en": 40.0,
+      "chrf_en2ar": 35.0,
+      "rtl_integrity": 0.9,
+      "understanding_accuracy": 0.6,
+      "stt_wer": 0.3
+    },
+    "report_files": {
+      "json": "benchmarks/results/arabic-multilingual/report.json",
+      "markdown": "benchmarks/results/arabic-multilingual/report.md"
+    }
+  },
+  "failure_category": "",
+  "failure_detail": "",
+  "optimization_hints": []
+}

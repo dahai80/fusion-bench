@@ -64,13 +64,13 @@ def main():
 
     # run
     run_parser = subparsers.add_parser("run", help="Run a benchmark task")
-    run_parser.add_argument("task", help="Task name (e.g., mmlu, gsm8k) or 'bnup'/'laya' for BNUP/Laya suite")
+    run_parser.add_argument("task", help="Task name (e.g., mmlu, gsm8k) or 'bnup'/'laya'/'arabic' for BNUP/Laya/Arabic suite")
     run_parser.add_argument("--max-samples", type=int, default=0, help="Max samples to evaluate")
     run_parser.add_argument("--output", default="", help="Output file path (JSON)")
     run_parser.add_argument("--no-cache", action="store_true", help="Disable result cache")
     run_parser.add_argument("--cache-ttl", type=int, default=0, help="Cache TTL seconds (0=forever)")
-    run_parser.add_argument("--executor", default="", help="Executor key (e.g., bnup, laya). Empty = auto by task")
-    run_parser.add_argument("--testset", default="", help="Path to testset JSON or dir (for --executor bnup/laya)")
+    run_parser.add_argument("--executor", default="", help="Executor key (e.g., bnup, laya, arabic). Empty = auto by task")
+    run_parser.add_argument("--testset", default="", help="Path to testset JSON or dir (for --executor bnup/laya/arabic)")
     run_parser.add_argument("--tasks-dir", default="", help="lm-evaluation-harness tasks dir")
     run_parser.add_argument(
         "--direct-mlx",
@@ -421,6 +421,9 @@ async def cmd_run(args):
     if args.executor == "laya" or args.task == "laya":
         await _cmd_run_laya(args)
         return
+    if args.executor == "arabic" or args.task == "arabic":
+        await _cmd_run_arabic(args)
+        return
     print(f"Running task '{args.task}' with model '{args.model}'...")
     runner = LMEvalTaskRunner(
         model=args.model,
@@ -488,6 +491,36 @@ async def _cmd_run_laya(args):
         params={"testset_dir": testset_dir} if testset_dir else {},
     )
     print(f"Running Laya-MLX integration benchmark (model={args.model or 'N/A'})...")
+    result = await evaluator.run(config)
+    out = result.to_dict()
+    print(json.dumps(out, indent=2, ensure_ascii=False, default=str))
+    if args.output:
+        Path(args.output).write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+        print(f"\nResults saved to {args.output}")
+    print(f"\nReport: {result.meta.get('report_files', {}).get('markdown', 'N/A')}")
+
+
+async def _cmd_run_arabic(args):
+    # Arabic/multilingual eval (#32, ai-speech-exam gap G9): 5-dimension eval
+    # via ArabicEvalExecutor (translation BLEU/chrF, RTL integrity, QA, STT roundtrip).
+    from .core.plugin_base import TaskConfig
+    from .executors.arabic_executor import ArabicEvalExecutor
+
+    evaluator = ArabicEvalExecutor(
+        mlx_base_url=args.mlx_url,
+        direct_mlx=getattr(args, "direct_mlx", False),
+    )
+    testset_dir = args.testset if args.testset else ""
+    params = {"testset_dir": testset_dir} if testset_dir else {}
+    if args.output:
+        params["report_dir"] = str(Path(args.output).parent) if Path(args.output).suffix else args.output
+    config = TaskConfig(
+        task_id="arabic-multilingual",
+        model=args.model,
+        executor_key="arabic",
+        params=params,
+    )
+    print(f"Running Arabic/multilingual evaluation (model={args.model or 'N/A'})...")
     result = await evaluator.run(config)
     out = result.to_dict()
     print(json.dumps(out, indent=2, ensure_ascii=False, default=str))
