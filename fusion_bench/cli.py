@@ -64,13 +64,19 @@ def main():
 
     # run
     run_parser = subparsers.add_parser("run", help="Run a benchmark task")
-    run_parser.add_argument("task", help="Task name (e.g., mmlu, gsm8k) or 'bnup'/'laya'/'arabic' for BNUP/Laya/Arabic suite")
+    run_parser.add_argument(
+        "task", help="Task name (e.g., mmlu, gsm8k) or 'bnup'/'laya'/'arabic' for BNUP/Laya/Arabic suite"
+    )
     run_parser.add_argument("--max-samples", type=int, default=0, help="Max samples to evaluate")
     run_parser.add_argument("--output", default="", help="Output file path (JSON)")
     run_parser.add_argument("--no-cache", action="store_true", help="Disable result cache")
     run_parser.add_argument("--cache-ttl", type=int, default=0, help="Cache TTL seconds (0=forever)")
-    run_parser.add_argument("--executor", default="", help="Executor key (e.g., bnup, laya, arabic). Empty = auto by task")
-    run_parser.add_argument("--testset", default="", help="Path to testset JSON or dir (for --executor bnup/laya/arabic)")
+    run_parser.add_argument(
+        "--executor", default="", help="Executor key (e.g., bnup, laya, arabic). Empty = auto by task"
+    )
+    run_parser.add_argument(
+        "--testset", default="", help="Path to testset JSON or dir (for --executor bnup/laya/arabic)"
+    )
     run_parser.add_argument("--tasks-dir", default="", help="lm-evaluation-harness tasks dir")
     run_parser.add_argument(
         "--direct-mlx",
