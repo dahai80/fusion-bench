@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-122-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-661-success.svg)](tests/)
 
 [English](README.md) · [快速开始](#快速开始) · [CLI 参考](#cli-参考) · [架构](#架构) · [文档](docs/)
 

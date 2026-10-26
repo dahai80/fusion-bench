@@ -9,8 +9,15 @@ dimensions:
 5. VRAM isolation — load competing 32B model, verify laya stays resident (P0_NEVER_EVICT)
 6. End-to-end latency — full chat completion path (gateway → mlx → response)
 
-The laya endpoint lives on fusion-mlx (:11434), not the gateway. The gateway's
-LayaClassifier (fusion-gateway #191) calls this same endpoint internally.
+Routing (issue #31): the default base URL is the gateway (:11432), so bench
+traffic is gateway-visible (audit/metrics/rate limits) and dim-6 e2e latency
+includes the real production path. The gateway fronts fusion-mlx's laya
+endpoint (fusion-gateway #191 LayaClassifier calls it internally). Direct
+fusion-mlx (:11434) is an explicit opt-in for raw-engine benchmarks —
+--direct-mlx CLI flag, FUSION_BENCH_DIRECT_MLX=1, or
+LayaBenchmarkExecutor(direct_mlx=True) — logged at construction; never a
+silent default. Direct mode measures laya/chat latency without the gateway
+hop; gateway mode measures the full production path.
 """
 
 from __future__ import annotations
@@ -44,6 +51,11 @@ _PRESETS = ["router", "guard", "moderation"]
 _DEFAULT_COMPETING_MODEL = "mlx-community--Qwen3.8-27B-4bit"
 
 _WARMUP_REQUESTS = 5
+
+# Routing defaults (issue #31): gateway is the single traffic entry point;
+# direct fusion-mlx is an explicit opt-in for raw-engine benchmarks only.
+_GATEWAY_BASE_URL = "http://localhost:11432/v1"
+_DIRECT_MLX_BASE_URL = "http://localhost:11434/v1"
 
 # laya domain.choice labels — testset uses same labels
 _LAYA_DOMAINS = {"code", "math_or_logic", "writing", "factual_lookup", "data_analysis", "chitchat"}
@@ -91,8 +103,25 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
     name = "laya"
     executor_type = ExecutorType.LAYA
 
-    def __init__(self, mlx_base_url: str | None = None, api_key: str | None = None):
-        self.mlx_base_url = (mlx_base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11434/v1")).rstrip("/")
+    def __init__(
+        self,
+        mlx_base_url: str | None = None,
+        api_key: str | None = None,
+        direct_mlx: bool | None = None,
+    ):
+        if direct_mlx is None:
+            direct_mlx = os.environ.get("FUSION_BENCH_DIRECT_MLX", "").lower() in ("1", "true", "yes")
+        if direct_mlx:
+            base = (mlx_base_url or _DIRECT_MLX_BASE_URL).rstrip("/")
+            logger.info(
+                "Laya executor: DIRECT fusion-mlx mode (%s) — bypasses gateway, measures raw engine latency",
+                base,
+            )
+        else:
+            base = (mlx_base_url or os.environ.get("FUSION_MLX_URL", _GATEWAY_BASE_URL)).rstrip("/")
+            logger.info("Laya executor: gateway mode (%s) — bench traffic routes through the gateway", base)
+        self.mlx_base_url = base
+        self.direct_mlx = direct_mlx or ":11434" in base
         self.api_key = api_key or os.environ.get("FUSION_MLX_API_KEY", "fg-admin-key")
         self._laya_available: bool | None = None
 
@@ -171,6 +200,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             duration_seconds=time.time() - start,
             errors=errors,
             meta={
+                "mode": "direct-mlx" if self.direct_mlx else "gateway",
                 "dimensions": dims,
                 "spec_targets": _SPEC_TARGETS,
                 "report_files": report_paths,
@@ -590,6 +620,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         report = {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "model": model,
+            "mode": "direct-mlx" if self.direct_mlx else "gateway",
             "endpoint": f"{self.mlx_base_url}/laya/decide",
             "laya_available": dims.get("laya_endpoint_available", False),
             "composite_score": round(composite, 4),

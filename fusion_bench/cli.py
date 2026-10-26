@@ -72,6 +72,11 @@ def main():
     run_parser.add_argument("--executor", default="", help="Executor key (e.g., bnup, laya). Empty = auto by task")
     run_parser.add_argument("--testset", default="", help="Path to testset JSON or dir (for --executor bnup/laya)")
     run_parser.add_argument("--tasks-dir", default="", help="lm-evaluation-harness tasks dir")
+    run_parser.add_argument(
+        "--direct-mlx",
+        action="store_true",
+        help="Bypass the gateway and hit fusion-mlx directly (raw-engine latency; default routes through the gateway)",
+    )
 
     # suite (NEW)
     suite_parser = subparsers.add_parser("suite", help="Run a benchmark suite with quality gates")
@@ -471,7 +476,10 @@ async def _cmd_run_laya(args):
     from .core.plugin_base import TaskConfig
     from .executors.laya_executor import LayaBenchmarkExecutor
 
-    evaluator = LayaBenchmarkExecutor(mlx_base_url=args.mlx_url)
+    evaluator = LayaBenchmarkExecutor(
+        mlx_base_url=args.mlx_url,
+        direct_mlx=getattr(args, "direct_mlx", False),
+    )
     testset_dir = args.testset if args.testset else ""
     config = TaskConfig(
         task_id="laya-integration",

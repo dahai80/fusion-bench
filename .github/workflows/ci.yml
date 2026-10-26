@@ -37,3 +37,5 @@ jobs:
         run: pip install -e ".[test]"
       - name: Run tests
         run: pytest tests/ -q
+      - name: Check test count badge (issue #30 drift guard)
+        run: python scripts/check_test_count.py

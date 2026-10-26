@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-643-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-661-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -379,6 +379,18 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.12 (2026-10-26)
+
+- **Fix #30 — test-count drift guard**: README badges are now recomputable, not hand-edited.
+  - `scripts/check_test_count.py` (security#43 pattern, exact-match): recomputes the count via `pytest --collect-only -q` and fails on any drift — flipping the badge by ±1 exits non-zero (demonstrated). Wired into CI as a post-test step.
+  - Badge corrected: README.md 643 (stale since #29's 651), README_CN.md 122 (stale for months) — both now `Tests-661`, enforced by CI.
+- **Fix #31 — laya executor routes through the gateway by default**: bench traffic is now gateway-visible (audit/metrics/rate limits, fusion-gateway#301 AC3).
+  - Default base URL is the gateway (`http://localhost:11432/v1`); direct fusion-mlx (`:11434`) is explicit opt-in: `--direct-mlx` CLI flag, `FUSION_BENCH_DIRECT_MLX=1`, or `LayaBenchmarkExecutor(direct_mlx=True)` — logged at construction, never a silent default.
+  - Report and `EvalResult.meta` record the mode (`gateway` / `direct-mlx`) so results cite which path was measured.
+  - **Upstream blockers filed**: fusion-gateway#327 — gateway 404s `/v1/laya/*` (no pass-through) and 401s `fg-admin-key`; until fixed, gateway-mode laya dims auto-skip and `--direct-mlx` is the functional raw-engine path (live-verified: direct :11434 laya status 200, gateway :11432 404).
+- **Verification**: 658 tests passed (+7 routing tests), 0 failed, 3 skipped; drift guard exit 0 on main (±1 demo exit 1); ruff clean.
+
 
 ### v0.4.11 (2026-10-26)
 

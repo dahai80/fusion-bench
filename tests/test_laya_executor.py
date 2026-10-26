@@ -444,3 +444,54 @@ class TestReport:
         md = Path(report_files["markdown"]).read_text(encoding="utf-8")
         assert "Laya-MLX Integration Benchmark Report" in md
         assert "Skipped" in md
+
+
+class TestRouting:
+    # issue #31: gateway is the default route; direct fusion-mlx is explicit opt-in.
+
+    def test_default_is_gateway(self, monkeypatch):
+        monkeypatch.delenv("FUSION_MLX_URL", raising=False)
+        monkeypatch.delenv("FUSION_BENCH_DIRECT_MLX", raising=False)
+        executor = LayaBenchmarkExecutor()
+        assert executor.mlx_base_url == "http://localhost:11432/v1"
+        assert executor.direct_mlx is False
+
+    def test_env_overrides_default(self, monkeypatch):
+        monkeypatch.delenv("FUSION_BENCH_DIRECT_MLX", raising=False)
+        monkeypatch.setenv("FUSION_MLX_URL", "http://gw.example:11432/v1")
+        executor = LayaBenchmarkExecutor()
+        assert executor.mlx_base_url == "http://gw.example:11432/v1"
+        assert executor.direct_mlx is False
+
+    def test_direct_flag_opt_in(self, monkeypatch):
+        monkeypatch.delenv("FUSION_MLX_URL", raising=False)
+        executor = LayaBenchmarkExecutor(direct_mlx=True)
+        assert executor.mlx_base_url == "http://localhost:11434/v1"
+        assert executor.direct_mlx is True
+
+    def test_direct_env_opt_in(self, monkeypatch):
+        monkeypatch.delenv("FUSION_MLX_URL", raising=False)
+        monkeypatch.setenv("FUSION_BENCH_DIRECT_MLX", "1")
+        executor = LayaBenchmarkExecutor()
+        assert executor.mlx_base_url == "http://localhost:11434/v1"
+        assert executor.direct_mlx is True
+
+    def test_explicit_url_wins_over_direct_flag(self):
+        executor = LayaBenchmarkExecutor(mlx_base_url="http://mlx.example:11434/v1", direct_mlx=True)
+        assert executor.mlx_base_url == "http://mlx.example:11434/v1"
+        assert executor.direct_mlx is True
+
+    def test_explicit_11434_url_inferred_direct(self):
+        executor = LayaBenchmarkExecutor(mlx_base_url="http://localhost:11434/v1")
+        assert executor.direct_mlx is True
+
+    async def test_mode_recorded_in_meta_and_report(self, monkeypatch, tmp_path):
+        import json as jsonlib
+        from pathlib import Path
+
+        executor = _make_executor(monkeypatch, laya_available=False)
+        config = TaskConfig(task_id="laya-mode", model="", executor_key="laya", params={"report_dir": str(tmp_path)})
+        result = await executor.run(config)
+        assert result.meta["mode"] == "direct-mlx"
+        report = jsonlib.loads(Path(result.meta["report_files"]["json"]).read_text(encoding="utf-8"))
+        assert report["mode"] == "direct-mlx"
