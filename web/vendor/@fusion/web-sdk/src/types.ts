@@ -35,7 +35,10 @@ export interface ShellSdkOptions {
     timeoutMs?: number;
     /** Retry attempts for failed bridge requests. Default 2. */
     retries?: number;
-    /** Force embedded/standalone posture. Default: parent iframe OR ?embedded=1. */
+    /**
+     * Force embedded mode. Default: framed by a parent OR opened as a shell
+     * deep link (?embedded=1) at top level (#1298).
+     */
     embedded?: boolean;
 }
 

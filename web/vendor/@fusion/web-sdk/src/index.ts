@@ -1,4 +1,5 @@
 import { HttpError, withRetry } from './retry';
+import { createThemeState } from './theme';
 import type {
     BridgeMessage,
     DeviceInfo,
@@ -12,6 +13,7 @@ import type {
 } from './types';
 
 export { withRetry, withTimeout, isRetryableError, TimeoutError, HttpError } from './retry';
+export { createThemeState } from './theme';
 export { createPoller, type PollerOptions } from './poll';
 export { createHostBridge, type HostBridgeHandle, type HostBridgeOptions } from './host';
 export * from './types';
@@ -46,9 +48,7 @@ async function directRequest<T>(path: string, init?: HttpRequestInit): Promise<H
             ? { 'content-type': 'application/json', ...init?.headers }
             : init?.headers;
     const controller = new AbortController();
-    const timer = init?.timeoutMs
-        ? setTimeout(() => controller.abort(), init.timeoutMs)
-        : undefined;
+    const timer = init?.timeoutMs ? setTimeout(() => controller.abort(), init.timeoutMs) : undefined;
     let res: Response;
     try {
         res = await fetch(path, {
@@ -59,11 +59,7 @@ async function directRequest<T>(path: string, init?: HttpRequestInit): Promise<H
         });
     } catch (err) {
         if (init?.timeoutMs && controller.signal.aborted) {
-            throw new HttpError(
-                0,
-                'timeout',
-                `request timed out after ${init.timeoutMs}ms`
-            );
+            throw new HttpError(0, 'timeout', `request timed out after ${init.timeoutMs}ms`);
         }
         throw err;
     } finally {
@@ -81,10 +77,7 @@ interface BridgeDeps {
     log(level: 'log' | 'warn' | 'error', ...args: unknown[]): void;
 }
 
-function createBridge(
-    deps: BridgeDeps,
-    opts: Required<Omit<ShellSdkOptions, 'embedded'>>
-) {
+function createBridge(deps: BridgeDeps, opts: Required<Omit<ShellSdkOptions, 'embedded'>>) {
     const pending = new Map<
         string,
         {
@@ -260,7 +253,9 @@ export function createShellSdk(options?: ShellSdkOptions): FusionShellSdk {
         );
     }
 
-    const themeListeners = new Set<(mode: ThemeMode) => void>();
+    const themeState = createThemeState(
+        document.documentElement.classList.contains('light') ? 'light' : 'dark'
+    );
     const visListeners = new Set<(visible: boolean) => void>();
 
     const bridge = createBridge(
@@ -279,8 +274,19 @@ export function createShellSdk(options?: ShellSdkOptions): FusionShellSdk {
 
     bridge.eventListeners.set(
         'theme',
-        new Set([(payload) => themeListeners.forEach((fn) => fn(payload as ThemeMode))])
+        new Set([(payload) => themeState.set(payload as ThemeMode)])
     );
+    // Seed from the host (issue #77): the mount-time theme push can be lost
+    // to about:blank before the module's listener exists, so pull once in the
+    // background; themeState.set dedupes against a push that did land.
+    // #1298: without a parent frame there is no host to answer — skip the
+    // pull and keep the document-derived seed instead of parking a timer.
+    if (hasHostFrame) {
+        void bridge
+            .call<ThemeMode>('theme', null, 5000)
+            .then((mode) => themeState.set(mode))
+            .catch(() => undefined);
+    }
     bridge.eventListeners.set(
         'visibility',
         new Set([(payload) => visListeners.forEach((fn) => fn(payload as boolean))])
@@ -386,14 +392,12 @@ export function createShellSdk(options?: ShellSdkOptions): FusionShellSdk {
             },
         },
         theme: {
-            get: () =>
-                typeof document !== 'undefined' &&
-                document.documentElement.classList.contains('light')
-                    ? 'light'
-                    : 'dark',
+            // Cached sync read (issue #77): seeded from the module document,
+            // corrected by the background host pull above, kept fresh by
+            // host push events.
+            get: () => themeState.get(),
             subscribe(listener) {
-                themeListeners.add(listener);
-                return () => themeListeners.delete(listener);
+                return themeState.subscribe(listener);
             },
         },
         devices: {

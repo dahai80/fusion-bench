@@ -380,6 +380,15 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.14 (2026-10-27)
+
+- **Fix #33 — re-sync vendored `@fusion/web-sdk` to upstream v0.1.2**. The vendored copy in `web/vendor/@fusion/web-sdk/` was at 0.1.0 with local patches; re-vendored from `dahai80/fusion-web-shell` tag v0.1.2:
+  - **host.ts**: new `isHttpErrorResult()` type predicate — `'__httpError' in (result as object)` threw a TypeError on bare-string bridge results (e.g. theme `'light'`); the predicate guards the type first (upstream issue #75).
+  - **theme.ts**: new `createThemeState()` — cached-sync `theme.get()` seeded from the module document, corrected by a background host pull (issue #77: the mount-time theme push can be lost to `about:blank` before the module's listener exists), kept fresh by host push events. Public API unchanged (`get(): ThemeMode` stays sync).
+  - Vendored tests re-synced (`host`, `theme`, `poll`, `retry`, `standalone`).
+- **Local #1298 fix re-applied on top of v0.1.2** (fusion-bench-local, never upstreamed): `?embedded=1` deep links opened at top level have no parent frame — the SDK still recognizes the flag, skips the standalone warning, wires the message listeners, and degrades explicitly (http goes direct fetch, toast/tab log locally, visibility/lang derive from the document) instead of timing out through the bridge. `embedded` option restored in `ShellSdkOptions` (`web/src/sdk.ts` passes it explicitly). All 6 vendored `embedded-param-1298` tests pass against the v0.1.2 base.
+- **Verification**: `bun test vendor/@fusion/web-sdk` — 25 tests, 0 fail; `tsc --noEmit` clean; `vite build` clean (59 modules). Python suite unaffected (badge stays 694; vendored tests are bun-side).
+
 ### v0.4.13 (2026-10-26)
 
 - **Feat #32 — Arabic/multilingual evaluation suite** (ai-speech-exam gap G9: local-model Arabic NLP capability was unverified). New `ArabicEvalExecutor` (`fusion-bench run arabic`), 5 dimensions:

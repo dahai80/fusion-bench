@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Fusion-Bench API",
-    version="0.4.13",
+    version="0.4.14",
     description="Fusion-Bench — MLX model benchmarking REST API",
     lifespan=lifespan,
 )
