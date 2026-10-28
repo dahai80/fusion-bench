@@ -380,6 +380,13 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.15 (2026-10-28)
+
+- **Fix #34 — process title remediation**. `fusion-bench serve` showed as bare homebrew `Python` in `ps`/Activity Monitor. Now sets the title via `fusion_core.proc.set_process_title` (fusion-core v0.7.0): `ps -axww -o comm` shows `fusion-bench serve :<port>`. `setproctitle` added to core deps; the helper degrades safely (try/except) when missing. `cmd_serve` is the single serve entrypoint (start.sh and the Dockerfile CMD both route through it); start.sh PID-file kill/health logic unaffected.
+- **Refactor #35 — adopt `fusion_core.config.client_key()` single-point resolution** (config Phase 2.2, depends on fusion-core#31 / v0.7.0). All seven hand-rolled `os.environ.get("FUSION_MLX_API_KEY", ...)` sites replaced: bnup/laya/speed/arabic executors, LLMJudge, BenchmarkRunner, `scripts/ecosystem_benchmark.py`. Hardcoded dev fallbacks (`"local"`, `"fg-admin-key"`) removed — semantics now canonical: dev missing key = `""` + warn-once; prod missing key = `RuntimeError`; alias chain `FUSION_CLIENT_KEY` → `FUSION_MLX_API_KEY` → `MLX_API_KEY` keeps existing deployments working (deprecation warning). `service_port`/`service_data_dir`/`admin_key` not adopted — no hand-rolled equivalents exist to replace.
+- **Dependency bump**: fusion-core `v0.5.0` → `v0.7.0`; `sacrebleu>=2.4.0` unchanged.
+- **Verification**: workspace `scripts/check-env.py` reports **0 findings** for fusion-bench (was 8 WARN legacy-key references); `grep 'def _resolve.*key'` clean; live serve title check passed; pytest 691 passed / 3 skipped; ruff clean; badge 694 OK.
+
 ### v0.4.14 (2026-10-27)
 
 - **Fix #33 — re-sync vendored `@fusion/web-sdk` to upstream v0.1.2**. The vendored copy in `web/vendor/@fusion/web-sdk/` was at 0.1.0 with local patches; re-vendored from `dahai80/fusion-web-shell` tag v0.1.2:
