@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from typing import Any
 
 import httpx
+from fusion_core.config import client_key
 
 from .base import Judge
 from .config import JudgeConfig, JudgeInput, JudgeVerdict
@@ -52,8 +52,8 @@ class LLMJudge(Judge):
     ):
         self.config = config
         self.base_url = base_url.rstrip("/")
-        # Match MLXModel/BenchmarkRunner convention: env override, default "local".
-        self.api_key = api_key or os.environ.get("FUSION_MLX_API_KEY", "local")
+        # #35: single-point resolution in fusion-core (alias chain + profile semantics)
+        self.api_key = api_key or client_key()
 
     async def judge(self, judge_input: JudgeInput) -> JudgeVerdict:
         prompt = self._build_prompt(judge_input)

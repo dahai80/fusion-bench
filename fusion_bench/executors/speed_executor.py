@@ -6,6 +6,8 @@ import logging
 import os
 import time
 
+from fusion_core.config import client_key
+
 from ..core.plugin_base import (
     CaseResult,
     EvalResult,
@@ -24,9 +26,9 @@ class SpeedExecutor(ExecutorPlugin):
 
     def __init__(self, mlx_base_url: str | None = None):
         # issue #23 E2E: api_key 之前硬编码 "local", 经 gateway/直连 mlx 均 401。
-        # 与 bnup/laya executor 对齐 — FUSION_MLX_URL / FUSION_MLX_API_KEY env。
+        # 与 bnup/laya executor 对齐 — FUSION_MLX_URL env；api_key 走 #35 fusion-core 单点解析。
         self.mlx_base_url = mlx_base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")
-        self.api_key = os.environ.get("FUSION_MLX_API_KEY", "local")
+        self.api_key = client_key()
 
     async def run(self, config: TaskConfig) -> EvalResult:
         start = time.time()

@@ -9,12 +9,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
+from fusion_core.config import client_key
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +95,9 @@ class BenchmarkRunner:
         api_key: str = "",
         timeout: float = 300.0,
     ):
-        # 与 executors 对齐：默认从 FUSION_MLX_API_KEY 读取（gateway 401 修复）
+        # 与 executors 对齐：默认走 fusion-core 单点解析（#35，含 gateway 401 修复语义）
         if not api_key:
-            api_key = os.environ.get("FUSION_MLX_API_KEY", "local")
+            api_key = client_key()
         self.mlx_base_url = mlx_base_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout

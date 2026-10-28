@@ -18,15 +18,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from fusion_core.config import client_key
+
 from fusion_bench.engine.benchmark import BenchmarkRunner
 from fusion_bench.reporter.bench_site_db import BenchSiteDB
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-MLX_API_KEY = os.environ.get("FUSION_MLX_API_KEY", "")
-if not MLX_API_KEY:
-    logger.error("FUSION_MLX_API_KEY 未设置，拒绝启动 (fail visibly)。请 export FUSION_MLX_API_KEY=<key>")
+# #35: fusion-core single-point client-key resolution (alias chain + profile semantics)
+CLIENT_KEY = client_key()
+if not CLIENT_KEY:
+    logger.error("API key 未设置，拒绝启动 (fail visibly)。请 export FUSION_CLIENT_KEY=<key>")
     sys.exit(1)
 MLX_BASE_URL = os.environ.get("FUSION_MLX_BASE_URL", "http://localhost:11432/v1")
 logger.info("MLX_BASE_URL=%s, API_KEY=set", MLX_BASE_URL)
@@ -79,7 +82,7 @@ async def phase1_speed():
     logger.info("=" * 60)
     logger.info("Phase 1: fusion-mlx Speed Benchmark")
     logger.info("=" * 60)
-    runner = BenchmarkRunner(mlx_base_url=MLX_BASE_URL, api_key=MLX_API_KEY)
+    runner = BenchmarkRunner(mlx_base_url=MLX_BASE_URL, api_key=CLIENT_KEY)
     db = BenchSiteDB()
     results = []
     for model in SPEED_MODELS:
@@ -119,7 +122,7 @@ async def phase2_security():
                 from fusion_bench.core.plugin_base import TaskConfig
                 from fusion_bench.executors.security_executor import SecurityExecutor
 
-                executor = SecurityExecutor(mlx_base_url=MLX_BASE_URL, api_key=MLX_API_KEY)
+                executor = SecurityExecutor(mlx_base_url=MLX_BASE_URL, api_key=CLIENT_KEY)
                 config = TaskConfig(
                     model=model,
                     task_id=f"security-{probe_set}",
@@ -156,7 +159,7 @@ async def phase3_code():
     async with httpx.AsyncClient(
         base_url=MLX_BASE_URL,
         timeout=120.0,
-        headers={"Authorization": f"Bearer {MLX_API_KEY}"},
+        headers={"Authorization": f"Bearer {CLIENT_KEY}"},
     ) as client:
         for task in CODE_PROMPTS:
             logger.info("Code task: %s (%s) ...", task["name"], task["lang"])

@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from fusion_core.config import client_key
 
 from ..core.plugin_base import CaseResult, EvalResult, ExecutorPlugin, ExecutorType, TaskConfig
 
@@ -122,7 +123,8 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
             logger.info("Laya executor: gateway mode (%s) — bench traffic routes through the gateway", base)
         self.mlx_base_url = base
         self.direct_mlx = direct_mlx or ":11434" in base
-        self.api_key = api_key or os.environ.get("FUSION_MLX_API_KEY", "fg-admin-key")
+        # #35: single-point resolution in fusion-core (alias chain + profile semantics)
+        self.api_key = api_key or client_key()
         self._laya_available: bool | None = None
 
     async def run(self, config: TaskConfig) -> EvalResult:

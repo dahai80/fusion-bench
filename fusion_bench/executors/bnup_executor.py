@@ -19,6 +19,7 @@ import time
 from typing import Any
 
 import httpx
+from fusion_core.config import client_key
 
 from ..checkers.dsl_eval_executor import DSLEvalExecutor
 from ..checkers.dsl_format_checker import DSLFormatChecker, FormatReport
@@ -43,7 +44,8 @@ class BNUPEvaluator(ExecutorPlugin):
         sxs_judge: SxSJudge | None = None,
     ):
         self.mlx_base_url = (mlx_base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")).rstrip("/")
-        self.api_key = os.environ.get("FUSION_MLX_API_KEY", "local")
+        # #35: single-point resolution in fusion-core (alias chain + profile semantics)
+        self.api_key = client_key()
         self.format_checker = format_checker or DSLFormatChecker(eval_executor or DSLEvalExecutor())
         self.eval_executor = eval_executor or self.format_checker._eval_executor
         self._sxs_judge = sxs_judge
