@@ -761,6 +761,13 @@ def cmd_traces(args):
 def cmd_serve(args):
     import uvicorn
 
+    # #34: bare `Python` in ps/Activity Monitor is unidentifiable — set the
+    # product name (setproctitle is the only reliable way on macOS homebrew
+    # Python; fusion_core.proc degrades safely when it is missing).
+    from fusion_core.proc import set_process_title
+
+    set_process_title(f"fusion-bench serve :{args.port}")
+
     ssl_kwargs = {}
     if args.ssl_certfile and args.ssl_keyfile:
         ssl_kwargs["ssl_certfile"] = args.ssl_certfile
