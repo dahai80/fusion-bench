@@ -380,6 +380,11 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.16 (2026-10-30)
+
+- **Feat #36 — start.sh register-then-start self-check** (config governance Phase 3.3). `start.sh start` now verifies its `port-registry.yaml` entry before serving, so an unregistered port fails at start instead of being caught later by CI check-ports. Semantics: refuse on unregistered port (exit 1); `FUSION_SKIP_REGISTRY_CHECK=1` bypasses; missing registry file = warn + continue (standalone deploy). Registry path overridable via `FUSION_REGISTRY` (default `$HOME/fusion/architecture/port-registry.yaml`).
+- **Verification**: all four paths live-tested with temp registry copies — absent entry refuses (exit 1), present entry starts, bypass flag starts with warn, missing file warns and continues; `bash -n` clean.
+
 ### v0.4.15 (2026-10-28)
 
 - **Fix #34 — process title remediation**. `fusion-bench serve` showed as bare homebrew `Python` in `ps`/Activity Monitor. Now sets the title via `fusion_core.proc.set_process_title` (fusion-core v0.7.0): `ps -axww -o comm` shows `fusion-bench serve :<port>`. `setproctitle` added to core deps; the helper degrades safely (try/except) when missing. `cmd_serve` is the single serve entrypoint (start.sh and the Dockerfile CMD both route through it); start.sh PID-file kill/health logic unaffected.
