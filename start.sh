@@ -40,6 +40,20 @@ start() {
         exit 1
     fi
     ensure_log_dir
+    # #36: refuse to serve on a port missing from the workspace port-registry
+    # (CI check-ports catches this late; self-check fails at start instead)
+    SERVICE="fusion-bench"
+    PORT="${FUSION_BENCH_PORT:-11467}"
+    REGISTRY="${FUSION_REGISTRY:-$HOME/fusion/architecture/port-registry.yaml}"
+    if [ ! -f "$REGISTRY" ]; then
+        echo "warn: port-registry.yaml not found at $REGISTRY — registry self-check skipped" >&2
+    elif ! grep -A3 "^  ${SERVICE}:" "$REGISTRY" 2>/dev/null | grep -q "port: $PORT$"; then
+        if [ "${FUSION_SKIP_REGISTRY_CHECK:-}" != "1" ]; then
+            echo "port $PORT for ${SERVICE} not registered in $REGISTRY — refusing to start" >&2
+            exit 1
+        fi
+        echo "warn: registry check bypassed (FUSION_SKIP_REGISTRY_CHECK=1)" >&2
+    fi
     echo "Starting Fusion-Bench ..."
     echo "  MLX URL: $MLX_URL"
     # fusion_bench.api.server was removed — FastAPI app lives in api/app.py,
