@@ -380,6 +380,11 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.17 (2026-10-31)
+
+- **Fix #37 — relax fusion-core pin that clobbered workspace editable installs**. `pyproject.toml` pinned the in-tree dependency as a direct URL reference (`fusion-core @ git+...@v0.7.0`); fusion-core is not on PyPI, so in the shared workspace venv `uv pip install -e fusion-bench` replaced the editable 0.9.0 install with a non-editable stale v0.7.0 from git, breaking downstream consumers (`service_port` normalization missing; `fusion-core>=0.8.0` requirements unsatisfiable). Pin relaxed to `fusion-core>=0.9.0` — the workspace venv resolves via the editable install (source == lock), and CI installs `git+https://github.com/dahai80/fusion-core.git@v0.9.0` explicitly before `pip install -e ".[test]"`, keeping the pin out of package metadata.
+- **Verification**: local project venv upgraded to fusion-core 0.9.0 from git tag, then `pip install -e ".[test]"` re-run — 0.9.0 install survives (no clobber); pytest 691 passed / 3 skipped; ruff clean; badge 694 OK.
+
 ### v0.4.16 (2026-10-30)
 
 - **Feat #36 — start.sh register-then-start self-check** (config governance Phase 3.3). `start.sh start` now verifies its `port-registry.yaml` entry before serving, so an unregistered port fails at start instead of being caught later by CI check-ports. Semantics: refuse on unregistered port (exit 1); `FUSION_SKIP_REGISTRY_CHECK=1` bypasses; missing registry file = warn + continue (standalone deploy). Registry path overridable via `FUSION_REGISTRY` (default `$HOME/fusion/architecture/port-registry.yaml`).
