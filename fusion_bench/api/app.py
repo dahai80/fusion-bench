@@ -11,7 +11,7 @@ import logging
 import os as _os
 import time
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 import httpx
@@ -65,14 +65,28 @@ def _tenant_id() -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _get_store()
+    # #38: union-web shell self-registration + heartbeat, env-gated
+    # (FUSION_SHELL_GATEWAY_URL + admin key). Disabled by default.
+    registry_task = None
+    try:
+        from fusion_bench.shell_registry import run_shell_registry, shell_registration_enabled
+
+        if shell_registration_enabled():
+            registry_task = asyncio.create_task(run_shell_registry())
+    except Exception as e:
+        logger.warning("shell registry startup skipped: %s", e)
     yield
+    if registry_task:
+        registry_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await registry_task
     if _store:
         _store.close()
 
 
 app = FastAPI(
     title="Fusion-Bench API",
-    version="0.4.17",
+    version="0.4.18",
     description="Fusion-Bench — MLX model benchmarking REST API",
     lifespan=lifespan,
 )

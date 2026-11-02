@@ -1,7 +1,7 @@
 {
     "id": "fusion-bench",
-    "title": "模型基准测试",
-    "title_en": "Model Benchmark",
+    "title": "模型评测",
+    "title_en": "Bench",
     "description": "基准任务提交/列表/进度、指标趋势图、历史结果对比。",
     "description_en": "Benchmark task submit/list/progress, metric trend charts, historical result comparison.",
     "version": "0.1.0",
@@ -14,9 +14,10 @@
         "desktop",
         "mobile-readonly"
     ],
-    "category": "platform",
+    "category": "governance",
+    "sort": 23,
     "upstream": "http://127.0.0.1:11474",
-    "api_key_env": "FUSION_BENCH_TOKEN",
+    "api_key_env": "FUSION_BENCH_SHELL_API_KEY",
     "pages": [
         {
             "route": "/tasks",
