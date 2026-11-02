@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-694-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-705-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -379,6 +379,12 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.18 (2026-11-02)
+
+- **Feat #38 — register Bench into the union web menu under Governance**. `web/manifest.json` re-taxed per the approved menu inventory (decision D4): `category: governance`, `title: 模型评测`, `title_en: Bench`, `sort: 23` (between the capability center and Security), health endpoint retained, `api_key_env` aligned to `FUSION_BENCH_SHELL_API_KEY`.
+- **Shell self-registration** (`fusion_bench/shell_registry.py`, pattern from fusion-security #35): lifespan task in `api/app.py` POSTs the manifest to the gateway registry (`POST /api/v1/shell/manifests`) and heartbeats every 15s; a down gateway never takes the bench service down (rate-limited failure logs, retry forever). Env-gated, disabled by default: enable with `FUSION_SHELL_GATEWAY_URL` + gateway admin key (`fusion_core.config.admin_key()`); optional `FUSION_BENCH_SHELL_API_KEY` (carried as the proxy credential; without it the gateway issues an `fm-` service key). Dynamic registration carries `upstream`, so the gateway proxies `/shell/fusion-bench/` from the registration itself — no gateway-side static config required (#232). Stopped module = gray dot, entry stays visible (MT-D).
+- **Verification**: 11 new tests (env gating, manifest taxonomy fields, register round-trip incl. module-key carry, non-2xx rejection, heartbeat exception survival); full suite 702 passed / 3 skipped; ruff clean; badge 705.
 
 ### v0.4.17 (2026-10-31)
 
