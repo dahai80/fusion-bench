@@ -20,6 +20,7 @@ import {
     retryTask,
     submitTask,
 } from "../api";
+import { useT } from "../i18n";
 
 // issue #23: bench task submit + list + run progress. Cancel/retry are
 // destructive ops behind a danger confirm (spec S5).
@@ -39,11 +40,30 @@ function statusToKind(status: string): StatusKind {
     }
 }
 
+// S9 four-state copy: bilingual status labels (raw ids are enum values).
+function statusZh(status: string): string {
+    switch (status) {
+        case "completed":
+            return "已完成";
+        case "running":
+            return "运行中";
+        case "pending":
+            return "等待中";
+        case "failed":
+            return "失败";
+        case "cancelled":
+            return "已取消";
+        default:
+            return status;
+    }
+}
+
 type PendingOp =
     | { kind: "cancel"; taskId: string }
     | { kind: "retry"; taskId: string };
 
 export function TasksPage() {
+    const t = useT();
     const [tasks, setTasks] = useState<TaskSummary[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [pending, setPending] = useState<PendingOp | null>(null);
@@ -147,7 +167,7 @@ export function TasksPage() {
     };
 
     if (error && !tasks) {
-        return <ErrorState message={error} retryLabel="Retry" />;
+        return <ErrorState message={error} retryLabel={t("重试", "Retry")} />;
     }
     if (!tasks) {
         return <SkeletonLines rows={6} />;
@@ -156,7 +176,7 @@ export function TasksPage() {
     const columns: DataTableColumn<TaskSummary>[] = [
         {
             key: "task_id",
-            header: "Task",
+            header: t("任务", "Task"),
             render: (r) => (
                 <button
                     type="button"
@@ -173,22 +193,25 @@ export function TasksPage() {
         },
         {
             key: "status",
-            header: "Status",
+            header: t("状态", "Status"),
             render: (r) => (
-                <StatusBadge status={statusToKind(r.status)} label={r.status} />
+                <StatusBadge
+                    status={statusToKind(r.status)}
+                    label={t(statusZh(r.status), r.status)}
+                />
             ),
         },
-        { key: "model", header: "Model", sortable: true },
-        { key: "executor_key", header: "Executor" },
-        { key: "level", header: "Level" },
+        { key: "model", header: t("模型", "Model"), sortable: true },
+        { key: "executor_key", header: t("执行器", "Executor") },
+        { key: "level", header: t("层级", "Level") },
         {
             key: "actions",
-            header: "Actions",
+            header: t("操作", "Actions"),
             render: (r) => (
                 <div className="flex gap-1">
                     {r.status === "pending" || r.status === "running" ? (
                         <ActionBtn
-                            label="Cancel"
+                            label={t("取消", "Cancel")}
                             danger
                             onClick={() =>
                                 setPending({
@@ -200,7 +223,7 @@ export function TasksPage() {
                     ) : null}
                     {r.status === "failed" || r.status === "cancelled" ? (
                         <ActionBtn
-                            label="Retry"
+                            label={t("重试", "Retry")}
                             onClick={() =>
                                 setPending({ kind: "retry", taskId: r.task_id })
                             }
@@ -213,10 +236,12 @@ export function TasksPage() {
 
     return (
         <div className="mx-auto max-w-4xl px-4">
-            <h1 className="mb-3 text-base text-text-primary">Tasks</h1>
+            <h1 className="mb-3 text-base text-text-primary">
+                {t("评测任务", "Tasks")}
+            </h1>
             <div className="mb-4 rounded-card border border-border bg-bg-elevated p-3">
                 <div className="mb-2 text-xs text-text-secondary">
-                    New benchmark task
+                    {t("新建评测任务", "New benchmark task")}
                 </div>
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                     <select
@@ -225,7 +250,7 @@ export function TasksPage() {
                         className="rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-primary"
                     >
                         {models.length === 0 ? (
-                            <option value="">loading models…</option>
+                            <option value="">{t("模型加载中…", "loading models…")}</option>
                         ) : (
                             models.map((m) => (
                                 <option key={m} value={m}>
@@ -258,7 +283,7 @@ export function TasksPage() {
                         onChange={(e) => setSuite(e.target.value)}
                         className="rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-primary"
                     >
-                        <option value="">suite: none</option>
+                        <option value="">{t("套件：无", "suite: none")}</option>
                         <option value="quick">quick</option>
                         <option value="standard">standard</option>
                         <option value="full">full</option>
@@ -271,7 +296,7 @@ export function TasksPage() {
                     onClick={onSubmit}
                     className="mt-2 rounded-md bg-brand px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    {submitting ? "Submitting…" : "Submit task"}
+                    {submitting ? t("提交中…", "Submitting…") : t("提交任务", "Submit task")}
                 </button>
             </div>
             {error ? (
@@ -286,7 +311,7 @@ export function TasksPage() {
                 pageSize={20}
                 emptyState={
                     <div className="py-8 text-center text-xs text-text-muted">
-                        No tasks yet — submit one above.
+                        {t("暂无任务 — 在上方提交一个。", "No tasks yet — submit one above.")}
                     </div>
                 }
             />
@@ -298,7 +323,7 @@ export function TasksPage() {
                         </span>
                         <StatusBadge
                             status={statusToKind(detail.status)}
-                            label={detail.status}
+                            label={t(statusZh(detail.status), detail.status)}
                         />
                     </div>
                     <TaskProgress
@@ -321,14 +346,24 @@ export function TasksPage() {
             <ConfirmDialog
                 open={pending !== null}
                 danger
-                title={pending ? `${pending.kind} ${pending.taskId}?` : ""}
+                title={
+                    pending
+                        ? `${pending.kind === "cancel" ? t("取消", "cancel") : t("重试", "retry")} ${pending.taskId}?`
+                        : ""
+                }
                 description={
                     pending?.kind === "cancel"
-                        ? "The running benchmark task is cancelled and cannot be resumed."
-                        : "A new task is created re-running the same request."
+                        ? t(
+                              "运行中的评测任务将被取消，且无法恢复。",
+                              "The running benchmark task is cancelled and cannot be resumed.",
+                          )
+                        : t(
+                              "将创建一个新任务，按原请求重新执行。",
+                              "A new task is created re-running the same request.",
+                          )
                 }
-                confirmLabel="Confirm"
-                cancelLabel="Cancel"
+                confirmLabel={t("确认", "Confirm")}
+                cancelLabel={t("取消", "Cancel")}
                 onConfirm={runOp}
                 onCancel={() => setPending(null)}
             />

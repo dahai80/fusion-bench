@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useT } from "./i18n";
 import { ComparePage } from "./pages/ComparePage";
 import { ResultsPage } from "./pages/ResultsPage";
 import { TasksPage } from "./pages/TasksPage";
@@ -44,16 +45,17 @@ export function App() {
     );
 }
 
-const NAV_ITEMS: Array<{ id: Route; label: string }> = [
-    { id: "tasks", label: "Tasks" },
-    { id: "results", label: "Results" },
-    { id: "compare", label: "Compare" },
+const NAV_ITEMS: Array<{ id: Route; zh: string; en: string }> = [
+    { id: "tasks", zh: "任务", en: "Tasks" },
+    { id: "results", zh: "结果", en: "Results" },
+    { id: "compare", zh: "对比", en: "Compare" },
 ];
 
 function EmbeddedTabs({
     route,
     onChange,
 }: { route: Route; onChange: (r: Route) => void }) {
+    const t = useT();
     return (
         <nav className="flex shrink-0 border-b border-border bg-bg-elevated">
             {NAV_ITEMS.map((it) => (
@@ -61,13 +63,13 @@ function EmbeddedTabs({
                     key={it.id}
                     type="button"
                     onClick={() => onChange(it.id)}
-                    className={`flex-1 py-2 text-center text-xs uppercase tracking-wide ${
+                    className={`flex-1 py-2 text-center text-xs tracking-wide ${
                         route === it.id
                             ? "border-b-2 border-brand text-brand"
                             : "text-text-secondary"
                     }`}
                 >
-                    {it.label}
+                    {t(it.zh, it.en)}
                 </button>
             ))}
         </nav>
@@ -78,6 +80,7 @@ function BottomNav({
     route,
     onChange,
 }: { route: Route; onChange: (r: Route) => void }) {
+    const t = useT();
     return (
         <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-border bg-bg-elevated">
             {NAV_ITEMS.map((it) => (
@@ -89,7 +92,7 @@ function BottomNav({
                         route === it.id ? "text-brand" : "text-text-secondary"
                     }`}
                 >
-                    {it.label}
+                    {t(it.zh, it.en)}
                 </button>
             ))}
         </nav>

@@ -11,6 +11,7 @@ import {
     fetchCompare,
     fetchTasks,
 } from "../api";
+import { useT } from "../i18n";
 
 // issue #23: historical comparison — pick 2+ completed tasks, POST
 // /api/v1/results/compare, render metric rows in a DataTable.
@@ -34,6 +35,7 @@ function toView(row: CompareRow): CompareRowView {
 }
 
 export function ComparePage() {
+    const t = useT();
     const [tasks, setTasks] = useState<TaskSummary[] | null>(null);
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [rows, setRows] = useState<CompareRowView[] | null>(null);
@@ -75,7 +77,7 @@ export function ComparePage() {
     }, [selected]);
 
     if (error && !tasks) {
-        return <ErrorState message={error} retryLabel="Retry" />;
+        return <ErrorState message={error} retryLabel={t("重试", "Retry")} />;
     }
     if (!tasks) {
         return <SkeletonLines rows={6} />;
@@ -84,17 +86,17 @@ export function ComparePage() {
     const columns: DataTableColumn<CompareRowView>[] = [
         {
             key: "task_id",
-            header: "Task",
+            header: t("任务", "Task"),
             render: (r) => (
                 <span className="font-mono text-xs text-text-primary">
                     {r.task_id}
                 </span>
             ),
         },
-        { key: "metric_name", header: "Metric" },
+        { key: "metric_name", header: t("指标", "Metric") },
         {
             key: "metric_value",
-            header: "Value",
+            header: t("数值", "Value"),
             sortable: true,
             align: "right",
             render: (r) => (
@@ -105,7 +107,7 @@ export function ComparePage() {
         },
         {
             key: "pass_rate",
-            header: "Pass rate",
+            header: t("通过率", "Pass rate"),
             sortable: true,
             align: "right",
             render: (r) => (
@@ -114,20 +116,20 @@ export function ComparePage() {
                 </span>
             ),
         },
-        { key: "num_cases", header: "Cases", align: "right" },
+        { key: "num_cases", header: t("用例数", "Cases"), align: "right" },
     ];
 
     return (
         <div className="mx-auto max-w-4xl px-4">
             <div className="mb-3 flex items-center justify-between">
-                <h1 className="text-base text-text-primary">Compare</h1>
+                <h1 className="text-base text-text-primary">{t("历史对比", "Compare")}</h1>
                 <button
                     type="button"
                     disabled={selected.size < 2}
                     onClick={runCompare}
                     className="rounded-md bg-brand px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    Compare {selected.size} tasks
+                    {t(`对比 ${selected.size} 个任务`, `Compare ${selected.size} tasks`)}
                 </button>
             </div>
             {error ? (
@@ -137,7 +139,7 @@ export function ComparePage() {
             ) : null}
             <div className="mb-4 rounded-card border border-border bg-bg-elevated p-3">
                 <div className="mb-2 text-xs text-text-secondary">
-                    Select at least 2 completed tasks
+                    {t("选择至少 2 个已完成的任务", "Select at least 2 completed tasks")}
                 </div>
                 <div className="flex max-h-32 flex-wrap gap-1 overflow-auto">
                     {tasks.map((t) => (
@@ -165,7 +167,7 @@ export function ComparePage() {
                 />
             ) : (
                 <div className="py-8 text-center text-xs text-text-muted">
-                    Pick 2+ tasks above, then Compare.
+                    {t("在上方选择 2 个以上任务后点击对比。", "Pick 2+ tasks above, then Compare.")}
                 </div>
             )}
         </div>
