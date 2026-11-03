@@ -1302,3 +1302,21 @@ async def restore_backup(
     backup = DataBackup()
     backup.restore(label=label, db_name=db_name)
     return {"label": label, "restored": True}
+
+
+# ── Union-web shell module UI (#38) ─────────────────────────────────
+# Serve the built SPA (web/dist) so the gateway /shell/fusion-bench/
+# proxy targets this single origin for both the UI and the API.
+# API routes take precedence (registered above; mounts match last).
+# Hash router + relative base keep deep paths off the server.
+if _os.environ.get("FUSION_BENCH_DISABLE_UI") != "1":
+    from pathlib import Path as _Path
+
+    from starlette.staticfiles import StaticFiles as _StaticFiles
+
+    _DIST = _Path(__file__).resolve().parent.parent.parent / "web" / "dist"
+    if _DIST.is_dir():
+        app.mount("/", _StaticFiles(directory=_DIST, html=True), name="web")
+        logger.info("Shell module UI mounted from %s", _DIST)
+    else:
+        logger.warning("web/dist not found at %s — module UI unavailable (run: cd web && bun run build)", _DIST)
