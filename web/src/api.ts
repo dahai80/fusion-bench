@@ -86,6 +86,11 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     return (await resp.json()) as T;
 }
 
+export async function fetchModels(): Promise<string[]> {
+    const data = await getJson<{ models: string[] }>(`/api/v1/models`);
+    return data.models ?? [];
+}
+
 export async function fetchTasks(
     page = 1,
     pageSize = 20,

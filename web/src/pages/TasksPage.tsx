@@ -14,6 +14,7 @@ import {
     type TaskDetail,
     type TaskSummary,
     cancelTask,
+    fetchModels,
     fetchTask,
     fetchTasks,
     retryTask,
@@ -50,6 +51,7 @@ export function TasksPage() {
     const [selected, setSelected] = useState<string>("");
     // submit form state
     const [model, setModel] = useState("");
+    const [models, setModels] = useState<string[]>([]);
     const [executorKey, setExecutorKey] = useState("speed");
     const [level, setLevel] = useState("L1");
     const [suite, setSuite] = useState("");
@@ -70,6 +72,17 @@ export function TasksPage() {
         const t = setInterval(load, 5000);
         return () => clearInterval(t);
     }, [load]);
+
+    // #38 UX: submit form model field is a dropdown over models actually
+    // downloaded in fusion-mlx — no free-text entry.
+    useEffect(() => {
+        fetchModels()
+            .then((ids) => {
+                setModels(ids);
+                setModel((cur) => cur || ids[0] || "");
+            })
+            .catch((e) => console.error("[bench-web] models load fail:", e));
+    }, []);
 
     // selected task detail poll (progress while running)
     useEffect(() => {
@@ -206,12 +219,21 @@ export function TasksPage() {
                     New benchmark task
                 </div>
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                    <input
+                    <select
                         value={model}
                         onChange={(e) => setModel(e.target.value)}
-                        placeholder="model (e.g. qwen3.5-9b)"
-                        className="rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm text-text-primary outline-none focus:border-brand"
-                    />
+                        className="rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-primary"
+                    >
+                        {models.length === 0 ? (
+                            <option value="">loading models…</option>
+                        ) : (
+                            models.map((m) => (
+                                <option key={m} value={m}>
+                                    {m}
+                                </option>
+                            ))
+                        )}
+                    </select>
                     <select
                         value={executorKey}
                         onChange={(e) => setExecutorKey(e.target.value)}

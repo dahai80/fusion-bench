@@ -380,6 +380,12 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.21 (2026-11-03)
+
+- **Fix #38 — module API 401: fetches escaped the proxy sub-path**. Embedded in the shell iframe the SPA is served under `/shell/fusion-bench/`, but the API client used root-relative `/api/...` URLs, so fetches hit the gateway's own API surface (401) instead of the module proxy. `apiBase()` now derives the fetch base from `window.location.pathname` (standalone dev at `/` resolves to `""`, vite proxy unchanged).
+- **Feat — Tasks page model field is a dropdown of downloaded models** (#38 UX, user request). New `GET /api/v1/models` proxies fusion-mlx `/v1/models` via the gateway and returns sorted model ids; the submit form replaced the free-text input with a `<select>` over those ids (defaults to the first, "loading models…" placeholder while fetching). Route registered before the SPA mount (the catch-all `/` mount would otherwise shadow routes added after it).
+- **Verification (live)**: module Bearer → 200 on `/`, `/assets/*`, `/api/v1/tasks`, and `/api/v1/models` (52 ids from fusion-mlx); wrong key → 401; no key → 401. 3 new tests; suite 716 passed / 3 skipped; ruff clean.
+
 ### v0.4.20 (2026-11-03)
 
 - **Fix #38 — manifest `upstream` pointed at the dead vite dev port**. Re-verification found the gateway proxy failing with `backend_unavailable: dial tcp 127.0.0.1:11474: connection refused` — `web/manifest.json` declared `upstream: http://127.0.0.1:11474` (dev-only vite port per port-registry, not running in the fleet) while the actual backend lives on 11467. Changed to `http://127.0.0.1:11467`; serve restart re-registered, gateway registry now shows `upstream=http://127.0.0.1:11467`, and `/shell/fusion-bench/` proxy dial succeeds (proceeds to shell-session auth instead of backend_unavailable).

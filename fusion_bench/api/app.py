@@ -1304,6 +1304,25 @@ async def restore_backup(
     return {"label": label, "restored": True}
 
 
+# ── Models (#38 UX): downloaded-model dropdown source ───────────────
+# Must register BEFORE the SPA mount below — the catch-all "/" mount
+# matches after explicit routes, but only for routes known at mount time.
+@app.get("/api/v1/models")
+async def list_available_models() -> dict[str, Any]:
+    # Model ids actually loaded/available in fusion-mlx (/v1/models via the
+    # gateway) — the Tasks page submit form is a dropdown over these.
+    from ..engine.benchmark import BenchmarkRunner
+
+    runner = BenchmarkRunner()
+    try:
+        models = await runner.list_models()
+    finally:
+        await runner.close()
+    ids = sorted({str(m.get("id")) for m in models if m.get("id")})
+    logger.info("list_available_models: %d models from fusion-mlx", len(ids))
+    return {"models": ids}
+
+
 # ── Union-web shell module UI (#38) ─────────────────────────────────
 # Serve the built SPA (web/dist) so the gateway /shell/fusion-bench/
 # proxy targets this single origin for both the UI and the API.
