@@ -46,6 +46,15 @@ if [ -z "${FUSION_BENCH_SHELL_API_KEY:-}" ]; then
     export FUSION_BENCH_SHELL_API_KEY
 fi
 
+# #38: module UI — the SPA (web/dist) is served by the API app through the
+# gateway /shell/fusion-bench/ proxy. Build it when missing (dist is
+# gitignored; requires bun). Failure warns but does not block API serving.
+if [ ! -f "$SCRIPT_DIR/web/dist/index.html" ] && command -v bun >/dev/null 2>&1; then
+    echo "Building module UI (web/dist) ..."
+    (cd "$SCRIPT_DIR/web" && bun install --silent && bun run build) \
+        || echo "warn: web/dist build failed — module UI unavailable" >&2
+fi
+
 ensure_log_dir() {
     mkdir -p "$LOG_DIR"
 }

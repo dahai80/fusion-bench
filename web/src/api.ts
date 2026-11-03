@@ -45,8 +45,24 @@ function headers(): Record<string, string> {
     return h;
 }
 
+// #38: keep API calls inside the module proxy path. Embedded mode serves
+// the SPA under /shell/fusion-bench/ — a root-relative /api/... escapes to
+// the gateway's own API surface (401). Standalone dev runs at "/" so the
+// base resolves to "" and the vite proxy handles /api as before.
+function apiBase(): string {
+    let p = window.location.pathname;
+    if (!p.endsWith("/index.html")) {
+        p = p.endsWith("/") ? p : `${p}/`;
+    }
+    let base = p.endsWith("/") ? p.slice(0, -1) : p;
+    if (base.endsWith("/index.html")) {
+        base = base.slice(0, -"/index.html".length);
+    }
+    return base;
+}
+
 async function getJson<T>(path: string): Promise<T> {
-    const resp = await fetch(path, { headers: headers() });
+    const resp = await fetch(`${apiBase()}${path}`, { headers: headers() });
     if (!resp.ok) {
         throw new Error(`GET ${path} failed: ${resp.status}`);
     }
@@ -54,7 +70,7 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
-    const resp = await fetch(path, {
+    const resp = await fetch(`${apiBase()}${path}`, {
         method: "POST",
         headers: headers(),
         body: JSON.stringify(body ?? {}),
