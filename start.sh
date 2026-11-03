@@ -14,6 +14,20 @@ LOG_DIR="$SCRIPT_DIR/logs"
 STDOUT_LOG="$LOG_DIR/stdout.log"
 STDERR_LOG="$LOG_DIR/stderr.log"
 
+# #38 follow-up: persist union-web shell registration across reboots.
+# Without these the dynamic menu entry dies on every machine restart
+# (gateway prunes heartbeats older than 30s). Gateway URL defaults on;
+# admin key is NOT hardcoded here (committed file) — resolved from the
+# gateway's own config.yaml, overridable via FUSION_ADMIN_KEY.
+export FUSION_SHELL_GATEWAY_URL="${FUSION_SHELL_GATEWAY_URL:-http://127.0.0.1:11432}"
+if [ -z "${FUSION_ADMIN_KEY:-}" ]; then
+    GATEWAY_CFG="${FUSION_GATEWAY_CONFIG:-$HOME/fusion/fusion-gateway/config.yaml}"
+    if [ -f "$GATEWAY_CFG" ]; then
+        FUSION_ADMIN_KEY="$(sed -n 's/^[[:space:]]*admin_key:[[:space:]]*//p' "$GATEWAY_CFG" | head -1 | tr -d '\"')"
+        export FUSION_ADMIN_KEY
+    fi
+fi
+
 ensure_log_dir() {
     mkdir -p "$LOG_DIR"
 }
