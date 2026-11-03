@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-705-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-716-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -383,6 +383,8 @@ scripts/release.sh
 ### v0.4.20 (2026-11-03)
 
 - **Fix #38 — manifest `upstream` pointed at the dead vite dev port**. Re-verification found the gateway proxy failing with `backend_unavailable: dial tcp 127.0.0.1:11474: connection refused` — `web/manifest.json` declared `upstream: http://127.0.0.1:11474` (dev-only vite port per port-registry, not running in the fleet) while the actual backend lives on 11467. Changed to `http://127.0.0.1:11467`; serve restart re-registered, gateway registry now shows `upstream=http://127.0.0.1:11467`, and `/shell/fusion-bench/` proxy dial succeeds (proceeds to shell-session auth instead of backend_unavailable).
+- **Fix #38 — module iframe 401: bench had no path for the gateway-injected module credential**. The shell proxy forwards module traffic as `Authorization: Bearer <module key>` and strips the session token — and never injects `X-Tenant-Id`, so every proxied request died at the tenant middleware ("missing X-Tenant-Id"). New `auth/shell_module.py`: `start.sh` generates and persists `FUSION_BENCH_SHELL_API_KEY` (untracked file, secret never in repo); the registration body carries it (gateway proxy injects the same value); a header middleware outside the tenant middleware supplies the synthetic `shell` tenant header for those requests, and `verify_jwt` admits the matching key as a `shell`/operator principal (fail-closed: mismatched key, no key, or no token still 401; JWT-shaped tokens and opaque identity tokens take their existing paths).
+- **Verification (live)**: module Bearer without tenant header → 200 on `/api/v1/tasks`; wrong key → 401; no token → 401; gateway proxy dial OK. 13 new tests; suite 713 passed / 3 skipped; badge 716.
 
 ### v0.4.19 (2026-11-03)
 
