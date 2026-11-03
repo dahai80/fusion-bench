@@ -380,6 +380,10 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.20 (2026-11-03)
+
+- **Fix #38 — manifest `upstream` pointed at the dead vite dev port**. Re-verification found the gateway proxy failing with `backend_unavailable: dial tcp 127.0.0.1:11474: connection refused` — `web/manifest.json` declared `upstream: http://127.0.0.1:11474` (dev-only vite port per port-registry, not running in the fleet) while the actual backend lives on 11467. Changed to `http://127.0.0.1:11467`; serve restart re-registered, gateway registry now shows `upstream=http://127.0.0.1:11467`, and `/shell/fusion-bench/` proxy dial succeeds (proceeds to shell-session auth instead of backend_unavailable).
+
 ### v0.4.19 (2026-11-03)
 
 - **Fix — persist union-web shell registration across reboots (#38 follow-up)**. After a machine restart the dynamic menu entry died: the gateway prunes heartbeats older than 30s, and a plain `./start.sh start` launched serve without `FUSION_SHELL_GATEWAY_URL`, so nothing re-registered. `start.sh` now defaults `FUSION_SHELL_GATEWAY_URL` to `http://127.0.0.1:11432` and resolves the gateway admin key from the gateway's own `config.yaml` (`FUSION_GATEWAY_CONFIG` overrides the path, `FUSION_ADMIN_KEY` overrides the value) — the key is never hardcoded in this committed file. Without a key the registration stays silently off (existing env gating).
