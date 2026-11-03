@@ -52,9 +52,14 @@ export function ResultsPage() {
     return (
         <div className="mx-auto max-w-4xl px-4">
             <div className="mb-3 flex items-center justify-between">
-                <h1 className="text-base text-text-primary">{t("评测结果", "Results")}</h1>
+                <h1 className="text-base text-text-primary">
+                    {t("评测结果", "Results")}
+                </h1>
                 <span className="text-xs text-text-muted">
-                    {t(`${trend.length} 次运行 · 15s 刷新`, `${trend.length} runs · 15s poll`)}
+                    {t(
+                        `${trend.length} 次运行 · 15s 刷新`,
+                        `${trend.length} runs · 15s poll`,
+                    )}
                 </span>
             </div>
             <div className="flex flex-col gap-3">

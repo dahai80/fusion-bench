@@ -250,7 +250,9 @@ export function TasksPage() {
                         className="rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-primary"
                     >
                         {models.length === 0 ? (
-                            <option value="">{t("模型加载中…", "loading models…")}</option>
+                            <option value="">
+                                {t("模型加载中…", "loading models…")}
+                            </option>
                         ) : (
                             models.map((m) => (
                                 <option key={m} value={m}>
@@ -296,7 +298,9 @@ export function TasksPage() {
                     onClick={onSubmit}
                     className="mt-2 rounded-md bg-brand px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    {submitting ? t("提交中…", "Submitting…") : t("提交任务", "Submit task")}
+                    {submitting
+                        ? t("提交中…", "Submitting…")
+                        : t("提交任务", "Submit task")}
                 </button>
             </div>
             {error ? (
@@ -311,7 +315,10 @@ export function TasksPage() {
                 pageSize={20}
                 emptyState={
                     <div className="py-8 text-center text-xs text-text-muted">
-                        {t("暂无任务 — 在上方提交一个。", "No tasks yet — submit one above.")}
+                        {t(
+                            "暂无任务 — 在上方提交一个。",
+                            "No tasks yet — submit one above.",
+                        )}
                     </div>
                 }
             />

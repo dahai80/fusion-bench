@@ -122,14 +122,19 @@ export function ComparePage() {
     return (
         <div className="mx-auto max-w-4xl px-4">
             <div className="mb-3 flex items-center justify-between">
-                <h1 className="text-base text-text-primary">{t("历史对比", "Compare")}</h1>
+                <h1 className="text-base text-text-primary">
+                    {t("历史对比", "Compare")}
+                </h1>
                 <button
                     type="button"
                     disabled={selected.size < 2}
                     onClick={runCompare}
                     className="rounded-md bg-brand px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    {t(`对比 ${selected.size} 个任务`, `Compare ${selected.size} tasks`)}
+                    {t(
+                        `对比 ${selected.size} 个任务`,
+                        `Compare ${selected.size} tasks`,
+                    )}
                 </button>
             </div>
             {error ? (
@@ -139,7 +144,10 @@ export function ComparePage() {
             ) : null}
             <div className="mb-4 rounded-card border border-border bg-bg-elevated p-3">
                 <div className="mb-2 text-xs text-text-secondary">
-                    {t("选择至少 2 个已完成的任务", "Select at least 2 completed tasks")}
+                    {t(
+                        "选择至少 2 个已完成的任务",
+                        "Select at least 2 completed tasks",
+                    )}
                 </div>
                 <div className="flex max-h-32 flex-wrap gap-1 overflow-auto">
                     {tasks.map((t) => (
@@ -167,7 +175,10 @@ export function ComparePage() {
                 />
             ) : (
                 <div className="py-8 text-center text-xs text-text-muted">
-                    {t("在上方选择 2 个以上任务后点击对比。", "Pick 2+ tasks above, then Compare.")}
+                    {t(
+                        "在上方选择 2 个以上任务后点击对比。",
+                        "Pick 2+ tasks above, then Compare.",
+                    )}
                 </div>
             )}
         </div>
