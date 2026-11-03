@@ -380,6 +380,11 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.19 (2026-11-03)
+
+- **Fix — persist union-web shell registration across reboots (#38 follow-up)**. After a machine restart the dynamic menu entry died: the gateway prunes heartbeats older than 30s, and a plain `./start.sh start` launched serve without `FUSION_SHELL_GATEWAY_URL`, so nothing re-registered. `start.sh` now defaults `FUSION_SHELL_GATEWAY_URL` to `http://127.0.0.1:11432` and resolves the gateway admin key from the gateway's own `config.yaml` (`FUSION_GATEWAY_CONFIG` overrides the path, `FUSION_ADMIN_KEY` overrides the value) — the key is never hardcoded in this committed file. Without a key the registration stays silently off (existing env gating).
+- **Verification**: plain `./start.sh start` re-registered the entry live (heartbeat 5.2s, governance/模型评测) with no manual env; `bash -n` clean; API on :11467 returns 401 without JWT.
+
 ### v0.4.18 (2026-11-02)
 
 - **Feat #38 — register Bench into the union web menu under Governance**. `web/manifest.json` re-taxed per the approved menu inventory (decision D4): `category: governance`, `title: 模型评测`, `title_en: Bench`, `sort: 23` (between the capability center and Security), health endpoint retained, `api_key_env` aligned to `FUSION_BENCH_SHELL_API_KEY`.
