@@ -3,6 +3,7 @@ __pycache__/
 .coverage
 .DS_Store
 .fusion-bench.pid
+.fusion-bench-shell-key
 .idea/
 .logs/
 logs/

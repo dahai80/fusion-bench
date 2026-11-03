@@ -60,6 +60,16 @@ def _verify_jwt(token: str) -> dict:
     the middleware inspects for tid/role/scope. Raises on any rejection so
     the middleware answers 401 (fail-closed).
     """
+    # #38 re-verification: non-JWT-shaped Bearer = gateway shell proxy
+    # module credential (see auth/shell_module.py). Match -> shell service
+    # claims; mismatch -> fail-closed 401. JWT-shaped tokens fall through
+    # to identity below.
+    from fusion_bench.auth.shell_module import verify_module_token
+
+    module_claims = verify_module_token(token)
+    if module_claims is not None:
+        logger.debug("tenant verify: shell module credential accepted (tid=%s)", module_claims["tid"])
+        return module_claims
     service_token = _service_token()
     if not service_token:
         logger.error("tenant verify: FUSION_IDENTITY_SERVICE_TOKEN unset — fail-closed")

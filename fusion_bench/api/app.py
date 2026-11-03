@@ -20,6 +20,7 @@ from fusion_core.tenant import install_tenant_middleware
 from pydantic import BaseModel, Field, model_validator
 
 from ..auth.rbac import Permission, require_permission
+from ..auth.shell_module import ShellModuleHeaderMiddleware
 from ..auth.tenant import _report_usage, _verify_jwt
 from ..core.models import EvalLevel, GateTier, TaskStatus
 from ..storage.trace_store import TraceStore
@@ -86,7 +87,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Fusion-Bench API",
-    version="0.4.20",
+    version="0.4.21",
     description="Fusion-Bench — MLX model benchmarking REST API",
     lifespan=lifespan,
 )
@@ -101,6 +102,14 @@ install_tenant_middleware(
     exempt_paths=frozenset({"/api/v1/system/health", "/docs", "/openapi.json", "/redoc"}),
 )
 logger.info("Tenant middleware registered (fusion-identity integration, fail-closed)")
+
+# #38 re-verification: gateway shell proxy injects Bearer <module key>
+# without X-Tenant-Id — this outer middleware supplies the synthetic shell
+# tenant header for those requests so the tenant middleware can admit them
+# (verify_jwt validates the key itself). Added after install_tenant_middleware
+# so it runs OUTSIDE it (last added = outermost).
+app.add_middleware(ShellModuleHeaderMiddleware)
+logger.info("Shell module header middleware registered (gateway proxy path)")
 
 
 # ── Request/Response schemas ────────────────────────────────────────

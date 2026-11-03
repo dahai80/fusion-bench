@@ -28,6 +28,24 @@ if [ -z "${FUSION_ADMIN_KEY:-}" ]; then
     fi
 fi
 
+# #38 re-verification: module credential for the gateway shell proxy — the
+# proxy injects this exact value as Bearer, so the registration body and
+# the bench-side validator must agree. Generated once and persisted in an
+# untracked file (the secret never enters the repo); FUSION_BENCH_SHELL_API_KEY
+# overrides.
+SHELL_KEY_FILE="$SCRIPT_DIR/.fusion-bench-shell-key"
+if [ -z "${FUSION_BENCH_SHELL_API_KEY:-}" ]; then
+    if [ -f "$SHELL_KEY_FILE" ]; then
+        FUSION_BENCH_SHELL_API_KEY="$(cat "$SHELL_KEY_FILE")"
+    else
+        FUSION_BENCH_SHELL_API_KEY="fm-bench-$(openssl rand -hex 16)"
+        printf '%s' "$FUSION_BENCH_SHELL_API_KEY" > "$SHELL_KEY_FILE"
+        chmod 600 "$SHELL_KEY_FILE"
+        echo "Generated module credential: $SHELL_KEY_FILE"
+    fi
+    export FUSION_BENCH_SHELL_API_KEY
+fi
+
 ensure_log_dir() {
     mkdir -p "$LOG_DIR"
 }
