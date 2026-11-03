@@ -16,7 +16,7 @@
     ],
     "category": "governance",
     "sort": 23,
-    "upstream": "http://127.0.0.1:11474",
+    "upstream": "http://127.0.0.1:11467",
     "api_key_env": "FUSION_BENCH_SHELL_API_KEY",
     "pages": [
         {
