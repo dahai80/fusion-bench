@@ -10,20 +10,27 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import {
     type Approval,
+    type AuditEntry,
+    type BackupEntry,
     type Schedule,
     type ScheduleInput,
+    createBackup,
     createSchedule,
     decideApproval,
     deleteSchedule,
     fetchApprovals,
+    fetchAuditLogs,
+    fetchBackups,
     fetchModels,
     fetchSchedules,
+    restoreBackup,
     toggleSchedule,
 } from "../api";
 import { useT } from "../i18n";
 
 // #39: cron schedules (toggle/delete/create) + gate approval workflow
-// (pending filter, approve/reject with approver + remark).
+// (pending filter, approve/reject with approver + remark) + backup/
+// restore + audit logs.
 function approvalKind(status: string): StatusKind {
     switch (status) {
         case "approved":
@@ -56,6 +63,10 @@ export function OpsPage() {
     const t = useT();
     const [schedules, setSchedules] = useState<Schedule[] | null>(null);
     const [approvals, setApprovals] = useState<Approval[] | null>(null);
+    const [backups, setBackups] = useState<BackupEntry[]>([]);
+    const [audit, setAudit] = useState<AuditEntry[]>([]);
+    const [pendingRestore, setPendingRestore] = useState<string>("");
+    const [backupBusy, setBackupBusy] = useState(false);
     const [pendingOnly, setPendingOnly] = useState(true);
     const [models, setModels] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -89,15 +100,56 @@ export function OpsPage() {
         }
     }, [pendingOnly]);
 
+    const loadSystem = useCallback(async () => {
+        // Backup + audit surfaces are best-effort: admin-gated endpoints
+        // may 403 for operator tenants — keep the page usable.
+        try {
+            setBackups(await fetchBackups());
+        } catch (e) {
+            console.error("[bench-web] backups load fail:", e);
+        }
+        try {
+            setAudit(await fetchAuditLogs(20));
+        } catch (e) {
+            console.error("[bench-web] audit load fail:", e);
+        }
+    }, []);
+
     useEffect(() => {
         load();
+        loadSystem();
         fetchModels()
             .then((ids) => {
                 setModels(ids);
                 setForm((f) => ({ ...f, model: f.model || ids[0] || "" }));
             })
             .catch((e) => console.error("[bench-web] models load fail:", e));
-    }, [load]);
+    }, [load, loadSystem]);
+
+    const onBackup = async () => {
+        setBackupBusy(true);
+        try {
+            await createBackup();
+            setError(null);
+            loadSystem();
+        } catch (e) {
+            console.error("[bench-web] backup create fail:", e);
+            setError(e instanceof Error ? e.message : String(e));
+        }
+        setBackupBusy(false);
+    };
+
+    const onRestore = async () => {
+        try {
+            await restoreBackup(pendingRestore);
+            setError(null);
+        } catch (e) {
+            console.error("[bench-web] backup restore fail:", e);
+            setError(e instanceof Error ? e.message : String(e));
+        }
+        setPendingRestore("");
+        loadSystem();
+    };
 
     const onCreate = async () => {
         if (!form.name.trim() || !form.cron.trim() || !form.model) return;
@@ -280,6 +332,66 @@ export function OpsPage() {
     const fieldCls =
         "rounded-md border border-border bg-bg px-3 py-2 text-sm text-text-primary";
 
+    const backupColumns: DataTableColumn<BackupEntry>[] = [
+        {
+            key: "label",
+            header: t("标签", "Label"),
+            render: (r) => (
+                <span className="font-mono text-xs text-text-primary">
+                    {r.label}
+                </span>
+            ),
+        },
+        {
+            key: "file_count",
+            header: t("文件数", "Files"),
+            align: "right",
+        },
+        {
+            key: "total_size",
+            header: t("大小", "Size"),
+            align: "right",
+            render: (r) => `${(r.total_size / 1024).toFixed(1)} KiB`,
+        },
+        {
+            key: "actions",
+            header: t("操作", "Actions"),
+            render: (r) => (
+                <button
+                    type="button"
+                    onClick={() => setPendingRestore(r.label)}
+                    className="rounded-md border border-border px-2 py-1 text-xs text-text-secondary hover:bg-bg-muted"
+                >
+                    {t("恢复", "Restore")}
+                </button>
+            ),
+        },
+    ];
+
+    const auditColumns: DataTableColumn<AuditEntry>[] = [
+        {
+            key: "timestamp",
+            header: t("时间", "Time"),
+            render: (r) => (
+                <span className="font-mono text-xs text-text-secondary">
+                    {r.timestamp.slice(0, 19)}
+                </span>
+            ),
+        },
+        { key: "actor", header: t("操作者", "Actor") },
+        {
+            key: "action",
+            header: t("动作", "Action"),
+            render: (r) => (
+                <span className="font-mono text-xs text-text-primary">
+                    {r.action}
+                </span>
+            ),
+        },
+        { key: "resource_type", header: t("对象类型", "Resource") },
+        { key: "resource_id", header: t("对象", "ID") },
+    ];
+
     return (
         <div className="mx-auto max-w-4xl px-4">
             <h1 className="mb-3 text-base text-text-primary">
@@ -412,6 +524,53 @@ export function OpsPage() {
                 }
             />
 
+            <div className="mt-6 mb-3 flex items-center justify-between">
+                <h2 className="text-sm text-text-primary">
+                    {t("备份与恢复", "Backup & Restore")}
+                </h2>
+                <button
+                    type="button"
+                    disabled={backupBusy}
+                    onClick={onBackup}
+                    className="rounded-md border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-muted disabled:opacity-40"
+                >
+                    {backupBusy
+                        ? t("备份中…", "Backing up…")
+                        : t("创建备份", "Create backup")}
+                </button>
+            </div>
+            <DataTable
+                columns={backupColumns}
+                rows={backups}
+                rowKey={(r) => r.label}
+                pageSize={10}
+                emptyState={
+                    <div className="py-8 text-center text-xs text-text-muted">
+                        {t(
+                            "暂无备份 — 点击右上角创建。",
+                            "No backups yet — create one above.",
+                        )}
+                    </div>
+                }
+            />
+
+            <div className="mt-6 mb-3">
+                <h2 className="text-sm text-text-primary">
+                    {t("审计日志（最近 20 条）", "Audit logs (latest 20)")}
+                </h2>
+            </div>
+            <DataTable
+                columns={auditColumns}
+                rows={audit}
+                rowKey={(r) => r.audit_id}
+                pageSize={20}
+                emptyState={
+                    <div className="py-8 text-center text-xs text-text-muted">
+                        {t("暂无审计记录。", "No audit records.")}
+                    </div>
+                }
+            />
+
             <ConfirmDialog
                 open={pendingDelete !== ""}
                 danger
@@ -452,6 +611,20 @@ export function OpsPage() {
                 cancelLabel={t("取消", "Cancel")}
                 onConfirm={onDecide}
                 onCancel={() => setPendingDecision(null)}
+            />
+            <ConfirmDialog
+                open={pendingRestore !== ""}
+                danger
+                title={`${t("恢复备份", "Restore backup")} ${pendingRestore}?`}
+                confirmName={pendingRestore}
+                description={t(
+                    "恢复将用备份覆盖当前数据，且无法撤销。",
+                    "Restoring overwrites current data with the backup and cannot be undone.",
+                )}
+                confirmLabel={t("确认", "Confirm")}
+                cancelLabel={t("取消", "Cancel")}
+                onConfirm={onRestore}
+                onCancel={() => setPendingRestore("")}
             />
         </div>
     );

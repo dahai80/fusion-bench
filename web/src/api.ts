@@ -332,3 +332,50 @@ async function fetchJson<T>(
     }
     return (await resp.json()) as T;
 }
+
+// ── #39: backup/restore + audit logs ────────────────────────────────
+
+export interface BackupEntry {
+    label: string;
+    file_count: number;
+    total_size: number;
+}
+
+export async function fetchBackups(): Promise<BackupEntry[]> {
+    const data = await getJson<{ backups: BackupEntry[] }>(
+        "/api/v1/system/backups",
+    );
+    return data.backups ?? [];
+}
+
+export async function createBackup(): Promise<string> {
+    const data = await postJson<{ label: string; path: string }>(
+        "/api/v1/system/backup?label=web",
+        {},
+    );
+    return data.label;
+}
+
+export async function restoreBackup(label: string): Promise<void> {
+    await fetchJson(
+        `/api/v1/system/restore?label=${encodeURIComponent(label)}`,
+        "POST",
+        {},
+    );
+}
+
+export interface AuditEntry {
+    audit_id: string;
+    action: string;
+    actor: string;
+    resource_type: string;
+    resource_id: string;
+    timestamp: string;
+}
+
+export async function fetchAuditLogs(limit = 20): Promise<AuditEntry[]> {
+    const data = await getJson<{ items: AuditEntry[] }>(
+        `/api/v1/system/audit-logs?page=1&page_size=${limit}`,
+    );
+    return data.items ?? [];
+}

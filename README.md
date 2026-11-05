@@ -380,6 +380,11 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.23 (2026-11-05)
+
+- **Feat #39 — backup/restore + audit logs in the Ops page**. Completes the issue's titled surface: a "Backup & Restore" panel lists backups (label/files/size) with create (`POST /api/v1/system/backup`) and restore behind the name-typing confirm guard (S5, admin-gated); an "Audit logs" panel shows the latest 20 entries (`GET /api/v1/system/audit-logs`). Backup/audit loads are best-effort — admin-only 403 for operator tenants keeps the page usable.
+- **Verification (live)**: typecheck + biome + build clean; module Bearer → 200 on `/api/v1/system/{backups,audit-logs}`; new bundle served through the gateway shell proxy.
+
 ### v0.4.22 (2026-11-05)
 
 - **Feat #39 — web surface for judges, baselines, schedules & approvals**. Three new pages close the audit gap between 3 pages and ~48 REST routes: **Judges** (LLM-as-judge config CRUD — list/create/delete with model dropdown over downloaded models), **Baselines** (named baselines — list/create/seed-defaults/delete + a diff panel that POSTs current metrics JSON and renders per-metric baseline/current/delta%/direction), **Ops** (cron schedules — create/toggle/delete; gate approvals — pending/all filter, approve/reject with approver + remark). Destructive deletes use the shared confirm dialog's name-typing guard (spec S5).
