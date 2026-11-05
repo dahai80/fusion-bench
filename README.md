@@ -380,6 +380,13 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.22 (2026-11-05)
+
+- **Feat #39 — web surface for judges, baselines, schedules & approvals**. Three new pages close the audit gap between 3 pages and ~48 REST routes: **Judges** (LLM-as-judge config CRUD — list/create/delete with model dropdown over downloaded models), **Baselines** (named baselines — list/create/seed-defaults/delete + a diff panel that POSTs current metrics JSON and renders per-metric baseline/current/delta%/direction), **Ops** (cron schedules — create/toggle/delete; gate approvals — pending/all filter, approve/reject with approver + remark). Destructive deletes use the shared confirm dialog's name-typing guard (spec S5).
+- **Bilingual copy (UI spec S9)** throughout the new pages via the SDK i18n channel (`t('中文', 'English')`), same as the existing pages. Nav grows to six bilingual tabs (任务/结果/对比/裁判/基线/调度审批).
+- **Note**: SxS double-blind pairwise judging remains library-level (`judge/sxs_judge.py`) — it has no REST surface yet, so it is not in the web UI; a REST/queue endpoint is a follow-up.
+- **Verification (live)**: `bun run typecheck` + `biome check` clean; vite build OK; module Bearer → 200 on `/api/v1/{judges,baselines,schedules,approvals,models}` and the new bundle (`index-C5Vk4AdE.js`); registry heartbeat fresh after reboot restart; gateway shell entry intact.
+
 ### v0.4.21 (2026-11-03)
 
 - **Fix #38 — module API 401: fetches escaped the proxy sub-path**. Embedded in the shell iframe the SPA is served under `/shell/fusion-bench/`, but the API client used root-relative `/api/...` URLs, so fetches hit the gateway's own API surface (401) instead of the module proxy. `apiBase()` now derives the fetch base from `window.location.pathname` (standalone dev at `/` resolves to `""`, vite proxy unchanged).

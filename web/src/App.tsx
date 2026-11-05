@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { useT } from "./i18n";
+import { BaselinesPage } from "./pages/BaselinesPage";
 import { ComparePage } from "./pages/ComparePage";
+import { JudgesPage } from "./pages/JudgesPage";
+import { OpsPage } from "./pages/OpsPage";
 import { ResultsPage } from "./pages/ResultsPage";
 import { TasksPage } from "./pages/TasksPage";
 import { embeddedParam, isEmbedded } from "./sdk";
 
 // Hash router (no router dep). Standalone shows a bottom tab bar; embedded
 // (?embedded=1 or iframe) the shell owns the chrome.
-type Route = "tasks" | "results" | "compare";
+type Route = "tasks" | "results" | "compare" | "judges" | "baselines" | "ops";
 
 const ROUTES: ReadonlySet<string> = new Set<Route>([
     "tasks",
     "results",
     "compare",
+    "judges",
+    "baselines",
+    "ops",
 ]);
 
 function parseHash(): Route {
@@ -39,6 +45,9 @@ export function App() {
                 {route === "tasks" && <TasksPage />}
                 {route === "results" && <ResultsPage />}
                 {route === "compare" && <ComparePage />}
+                {route === "judges" && <JudgesPage />}
+                {route === "baselines" && <BaselinesPage />}
+                {route === "ops" && <OpsPage />}
             </main>
             {!embedded && <BottomNav route={route} onChange={setRoute} />}
         </div>
@@ -49,6 +58,9 @@ const NAV_ITEMS: Array<{ id: Route; zh: string; en: string }> = [
     { id: "tasks", zh: "任务", en: "Tasks" },
     { id: "results", zh: "结果", en: "Results" },
     { id: "compare", zh: "对比", en: "Compare" },
+    { id: "judges", zh: "裁判", en: "Judges" },
+    { id: "baselines", zh: "基线", en: "Baselines" },
+    { id: "ops", zh: "调度审批", en: "Ops" },
 ];
 
 function EmbeddedTabs({

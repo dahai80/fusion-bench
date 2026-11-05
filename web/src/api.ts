@@ -87,7 +87,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function fetchModels(): Promise<string[]> {
-    const data = await getJson<{ models: string[] }>(`/api/v1/models`);
+    const data = await getJson<{ models: string[] }>("/api/v1/models");
     return data.models ?? [];
 }
 
@@ -138,4 +138,197 @@ export async function retryTask(taskId: string): Promise<TaskSummary> {
         `/api/v1/tasks/${encodeURIComponent(taskId)}/retry`,
         {},
     );
+}
+
+// ── #39: judge / baseline / schedule / approval surfaces ────────────
+
+export interface Judge {
+    name: string;
+    model: string;
+    judge_type: string;
+    weight: number;
+    temperature: number;
+    max_tokens: number;
+    created_at: string;
+}
+
+export interface JudgeInput {
+    name: string;
+    model: string;
+    judge_type: string;
+    weight: number;
+    temperature: number;
+}
+
+export async function fetchJudges(): Promise<Judge[]> {
+    const data = await getJson<{ judges: Judge[] }>("/api/v1/judges");
+    return data.judges ?? [];
+}
+
+export async function createJudge(input: JudgeInput): Promise<void> {
+    await postJson("/api/v1/judges", input);
+}
+
+export async function deleteJudge(name: string): Promise<void> {
+    await fetchJson(`/api/v1/judges/${encodeURIComponent(name)}`, "DELETE");
+}
+
+export interface Baseline {
+    baseline_id: string;
+    name: string;
+    model: string;
+    executor_key: string;
+    level: string;
+    metrics: Record<string, number>;
+    created_at: string;
+}
+
+export interface BaselineInput {
+    name: string;
+    model: string;
+    executor_key: string;
+    level: string;
+}
+
+export async function fetchBaselines(): Promise<Baseline[]> {
+    const data = await getJson<{ baselines: Baseline[] }>("/api/v1/baselines");
+    return data.baselines ?? [];
+}
+
+export async function createBaseline(input: BaselineInput): Promise<void> {
+    await postJson("/api/v1/baselines", input);
+}
+
+export async function deleteBaseline(name: string): Promise<void> {
+    await fetchJson(`/api/v1/baselines/${encodeURIComponent(name)}`, "DELETE");
+}
+
+export async function seedBaselines(): Promise<number> {
+    const data = await postJson<{ seeded: string[]; count: number }>(
+        "/api/v1/baselines/seed",
+        {},
+    );
+    return data.count ?? 0;
+}
+
+export interface BaselineDiff {
+    baseline_name: string;
+    baseline_found: boolean;
+    diffs: Record<
+        string,
+        {
+            baseline: number | null;
+            current: number | null;
+            delta: number | null;
+            delta_pct: number | null;
+            direction: string;
+        }
+    >;
+}
+
+export async function diffBaseline(
+    name: string,
+    input: {
+        model: string;
+        executor_key: string;
+        level: string;
+        current_metrics: Record<string, number>;
+    },
+): Promise<BaselineDiff> {
+    return postJson<BaselineDiff>(
+        `/api/v1/baselines/${encodeURIComponent(name)}/diff`,
+        input,
+    );
+}
+
+export interface Schedule {
+    schedule_id: string;
+    name: string;
+    cron: string;
+    model: string;
+    executor_key: string;
+    level: string;
+    enabled: boolean;
+}
+
+export interface ScheduleInput {
+    name: string;
+    cron: string;
+    model: string;
+    executor_key: string;
+    level: string;
+}
+
+export async function fetchSchedules(): Promise<Schedule[]> {
+    const data = await getJson<{ schedules: Schedule[] }>("/api/v1/schedules");
+    return data.schedules ?? [];
+}
+
+export async function createSchedule(input: ScheduleInput): Promise<void> {
+    await postJson("/api/v1/schedules", input);
+}
+
+export async function toggleSchedule(scheduleId: string): Promise<boolean> {
+    const data = await fetchJson<{ enabled: boolean }>(
+        `/api/v1/schedules/${encodeURIComponent(scheduleId)}/toggle`,
+        "PUT",
+    );
+    return data.enabled;
+}
+
+export async function deleteSchedule(scheduleId: string): Promise<void> {
+    await fetchJson(
+        `/api/v1/schedules/${encodeURIComponent(scheduleId)}`,
+        "DELETE",
+    );
+}
+
+export interface Approval {
+    request_id: string;
+    gate_id: string;
+    gate_name: string;
+    metric_name: string;
+    metric_value: number;
+    threshold: number;
+    requester: string;
+    status: string;
+}
+
+export async function fetchApprovals(pendingOnly = false): Promise<Approval[]> {
+    const data = await getJson<{ approvals: Approval[] }>(
+        `/api/v1/approvals${pendingOnly ? "?status=pending" : ""}`,
+    );
+    return data.approvals ?? [];
+}
+
+export async function decideApproval(
+    requestId: string,
+    decision: "approve" | "reject",
+    approver: string,
+    remark: string,
+): Promise<void> {
+    await fetchJson(
+        `/api/v1/approvals/${encodeURIComponent(requestId)}/${decision}`,
+        "PUT",
+        {
+            approver,
+            remark,
+        },
+    );
+}
+
+async function fetchJson<T>(
+    path: string,
+    method: string,
+    body?: unknown,
+): Promise<T> {
+    const resp = await fetch(`${apiBase()}${path}`, {
+        method,
+        headers: headers(),
+        body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (!resp.ok) {
+        throw new Error(`${method} ${path} failed: ${resp.status}`);
+    }
+    return (await resp.json()) as T;
 }
