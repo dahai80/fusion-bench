@@ -107,9 +107,7 @@ def main():
     speed_parser.add_argument("--output", default="", help="Output file path (JSON)")
 
     # profile (#40)
-    profile_parser = subparsers.add_parser(
-        "profile", help="Profile inference (unified JSON metrics)"
-    )
+    profile_parser = subparsers.add_parser("profile", help="Profile inference (unified JSON metrics)")
     profile_parser.add_argument("--runs", type=int, default=3, help="Number of runs")
     profile_parser.add_argument("--max-tokens", type=int, default=128, help="Max tokens per run")
     profile_parser.add_argument(
@@ -685,9 +683,7 @@ async def cmd_profile(args):
         result = await profiler.profile(args.model)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         if args.output:
-            Path(args.output).write_text(
-                json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            Path(args.output).write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
             print(f"\nSaved to {args.output}")
     finally:
         await profiler.close()
