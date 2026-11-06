@@ -87,7 +87,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Fusion-Bench API",
-    version="0.4.24",
+    version="0.4.25",
     description="Fusion-Bench — MLX model benchmarking REST API",
     lifespan=lifespan,
 )
@@ -1210,6 +1210,56 @@ async def delete_judge(name: str):
     store = JudgeStore()
     deleted = store.delete(name)
     return {"deleted": deleted}
+
+
+# ── SxS double-blind judge (issue #41) ───────────────────────────────
+
+
+class SxSRunRequest(BaseModel):
+    prompt: str
+    model_a_output: str
+    model_b_output: str
+    judge_model: str = ""
+    criteria: list[str] = Field(default_factory=list)
+    seed: int = 42
+    temperature: float = 0.0
+    max_tokens: int = 1024
+    persist: bool = True
+
+
+@app.post("/api/v1/judges/sxs/run")
+async def run_sxs_judge(req: SxSRunRequest):
+    from fusion_core.config import client_key
+
+    from ..judge.sxs_config import DEFAULT_CRITERIA, SxSConfig
+    from ..judge.sxs_judge import SxSJudge
+    from ..judge.sxs_store import SxSRunStore
+
+    cfg = SxSConfig(
+        judge_model=req.judge_model or "qwen2.5-32b-instruct",
+        criteria=list(req.criteria) if req.criteria else list(DEFAULT_CRITERIA),
+        seed=req.seed,
+        temperature=req.temperature,
+        max_tokens=req.max_tokens,
+    )
+    judge = SxSJudge(cfg, api_key=client_key())
+    verdict = await judge.judge_pair(req.model_a_output, req.model_b_output, req.prompt)
+    out = verdict.to_dict()
+    out["position_map"] = verdict.position_map
+    out["judge_model"] = cfg.judge_model
+    out["seed"] = cfg.seed
+    if req.persist:
+        store = SxSRunStore()
+        out["run_id"] = store.save_run(out, cfg.judge_model, cfg.seed, req.prompt)
+    return out
+
+
+@app.get("/api/v1/judges/sxs/runs")
+async def list_sxs_runs(limit: int = 20):
+    from ..judge.sxs_store import SxSRunStore
+
+    store = SxSRunStore()
+    return {"runs": store.list_runs(limit)}
 
 
 # ── Approvals ────────────────────────────────────────────────────────

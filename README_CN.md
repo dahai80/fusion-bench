@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-723-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-727-success.svg)](tests/)
 
 [English](README.md) · [快速开始](#快速开始) · [CLI 参考](#cli-参考) · [架构](#架构) · [文档](docs/)
 
@@ -107,6 +107,8 @@ asyncio.run(main())
 | `fusion-bench speed [--model] [--runs]` | 测试模型速度 |
 | `fusion-bench quant [--model] [--levels]` | 量化等级对比 |
 | `fusion-bench profile [--runs] [--max-tokens] [--enable-full-profile]` | 后端抽象推理性能剖析器（issue #40） |
+
+仅 REST：`POST /api/v1/judges/sxs/run`（双盲成对 SxS 评审 — 返回 winner/逐维评分/rationale 及槽位 `position_map`；可选持久化）与 `GET /api/v1/judges/sxs/runs`（最近运行记录，`~/.fusion-bench/sxs_runs.db`）— issue #41。
 
 ### 选项
 

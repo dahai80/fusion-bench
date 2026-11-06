@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-723-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-727-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -136,6 +136,8 @@ asyncio.run(main())
 | `fusion-bench cache <stats\|clear> [--model] [--task]` | Inspect/clear benchmark result cache |
 | `fusion-bench judge <create\|list\|show\|delete> [options]` | Manage LLM-as-Judge scoring configs (R1 JUDGE) |
 | `fusion-bench profile [--runs] [--max-tokens] [--enable-full-profile]` | Backend-abstracted inference profiler (issue #40) |
+
+REST-only: `POST /api/v1/judges/sxs/run` (double-blind pairwise SxS judge — returns winner/per-criterion scores/rationale plus the slot `position_map`; optional persistence) and `GET /api/v1/judges/sxs/runs` (recent runs from `~/.fusion-bench/sxs_runs.db`) — issue #41.
 
 ### Options
 
@@ -405,6 +407,11 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.25 (2026-11-06)
+
+- **Feat #41 — SxS double-blind judge REST surface**. Closes the follow-up noted in #39: `POST /api/v1/judges/sxs/run` (prompt + two candidate outputs → winner, per-criterion 1-5 scores, averages, rationale, slot `position_map`; optional judge_model/criteria/seed overrides; `persist` flag) and `GET /api/v1/judges/sxs/runs` (recent runs). New `judge/sxs_store.py` SQLite store (`~/.fusion-bench/sxs_runs.db`, JudgeStore pattern). Routes sit behind the existing fail-closed tenant middleware; rows always store the TRUE winner, never the shuffled slot identity.
+- **Verification (live)**: real run against fusion-mlx `mlx-community--Qwen3-0.6B-4bit` as judge — winner remapped correctly through the position map, run persisted and listed; 4 unit tests, 727-test suite green, ruff clean.
 
 ### v0.4.24 (2026-11-06)
 
