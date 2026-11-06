@@ -1,0 +1,25 @@
+{
+  "schema": "fusion-bench.profiler/v1",
+  "model": "mlx-community--Qwen3-0.6B-4bit",
+  "backend": "mlx",
+  "mode": "lightweight",
+  "runs": 2,
+  "engine": {
+    "engine_ttft_ms": {
+      "p50": 1582.72,
+      "p99": 1582.72
+    },
+    "prefill_tok_s": 149.02,
+    "decode_tok_s": 592.64,
+    "engine_itl_p50_p99": null
+  },
+  "agent": {
+    "agent_e2e_ms": {
+      "p50": 1651.43,
+      "p99": 1651.43
+    }
+  },
+  "memory": {
+    "peak_memory_mb": 3374.3
+  }
+}

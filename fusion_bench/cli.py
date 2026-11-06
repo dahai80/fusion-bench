@@ -106,6 +106,19 @@ def main():
     speed_parser.add_argument("--runs", type=int, default=3, help="Number of runs")
     speed_parser.add_argument("--output", default="", help="Output file path (JSON)")
 
+    # profile (#40)
+    profile_parser = subparsers.add_parser(
+        "profile", help="Profile inference (unified JSON metrics)"
+    )
+    profile_parser.add_argument("--runs", type=int, default=3, help="Number of runs")
+    profile_parser.add_argument("--max-tokens", type=int, default=128, help="Max tokens per run")
+    profile_parser.add_argument(
+        "--enable-full-profile",
+        action="store_true",
+        help="Full per-token trace (ITL p50/p99). Real overhead — keep off in CI.",
+    )
+    profile_parser.add_argument("--output", default="", help="Output file path (JSON)")
+
     # tune
     tune_parser = subparsers.add_parser("tune", help="Auto-tune model parameters")
     tune_parser.add_argument("--max-combinations", type=int, default=12, help="Max parameter combinations")
@@ -272,6 +285,7 @@ def main():
         "run": lambda: asyncio.run(cmd_run(args)),
         "suite": lambda: asyncio.run(cmd_suite(args)),
         "speed": lambda: asyncio.run(cmd_speed(args)),
+        "profile": lambda: asyncio.run(cmd_profile(args)),
         "tune": lambda: asyncio.run(cmd_tune(args)),
         "quant": lambda: asyncio.run(cmd_quant(args)),
         "security": lambda: asyncio.run(cmd_security(args)),
@@ -653,6 +667,30 @@ async def cmd_speed(args):
             Path(args.output).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     finally:
         await runner.close()
+
+
+async def cmd_profile(args):
+    """Profile inference with the backend-abstracted profiler (#40)."""
+    from fusion_bench.engine.profiler import InferenceProfiler, ProfilerConfig
+
+    cfg = ProfilerConfig(
+        full_profile=bool(args.enable_full_profile),
+        runs=args.runs,
+        max_tokens=args.max_tokens,
+    )
+    profiler = InferenceProfiler(mlx_base_url=args.mlx_url, config=cfg)
+    try:
+        mode = "full-trace" if cfg.full_profile else "lightweight"
+        print(f"Profiling '{args.model}' ({mode}, {cfg.runs} runs)...")
+        result = await profiler.profile(args.model)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        if args.output:
+            Path(args.output).write_text(
+                json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            print(f"\nSaved to {args.output}")
+    finally:
+        await profiler.close()
 
 
 async def cmd_quant(args):

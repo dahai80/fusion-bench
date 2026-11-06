@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-719-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-723-success.svg)](tests/)
 
 [English](README.md) · [快速开始](#快速开始) · [CLI 参考](#cli-参考) · [架构](#架构) · [文档](docs/)
 
@@ -106,6 +106,7 @@ asyncio.run(main())
 | `fusion-bench compare --models <m1,m2> [--tasks]` | 多模型对比 |
 | `fusion-bench speed [--model] [--runs]` | 测试模型速度 |
 | `fusion-bench quant [--model] [--levels]` | 量化等级对比 |
+| `fusion-bench profile [--runs] [--max-tokens] [--enable-full-profile]` | 后端抽象推理性能剖析器（issue #40） |
 
 ### 选项
 
@@ -114,6 +115,29 @@ asyncio.run(main())
 | `--mlx-url` | `http://localhost:11432/v1` | fusion-mlx API 地址 |
 | `--model` | `qwen3.5-9b` | 模型名称 |
 | `--output` | `""` | 输出文件路径 (JSON) |
+
+---
+
+## 推理性能剖析器 (issue #40)
+
+基于 fusion-mlx HTTP API 的后端抽象剖析器（不直接 import MLX）。统一 JSON schema — `fusion-bench.profiler/v1`；延迟键严格区分**引擎侧与代理侧、永不合并**；`backend` 键为必填，跨后端数字不得在缺少分后端明细时求平均。
+
+```bash
+# 轻量模式（默认）：每次运行边界仅一次时钟读取，开销可忽略
+fusion-bench profile --model qwen3.5-9b --runs 3 --max-tokens 128 --output profile.json
+
+# 全量追踪模式（可选）：额外输出逐 token ITL p50/p99。
+# 有真实开销（每 token 一次 perf_counter + 列表追加）— CI 中保持关闭。
+fusion-bench profile --model qwen3.5-9b --runs 1 --enable-full-profile
+```
+
+| 分组 | 键 | 测量点 |
+|------|----|--------|
+| `engine` | `engine_ttft_ms` (p50/p99)、`prefill_tok_s`、`decode_tok_s`、`engine_itl_p50_p99`（仅全量追踪） | fusion-mlx HTTP 流边界 |
+| `agent` | `agent_e2e_ms` (p50/p99) | 客户端整请求墙钟 |
+| `memory` | `peak_memory_mb` | fusion-mlx `/stats` |
+
+模式：**轻量**（默认，始终开启）与**全量追踪**（`--enable-full-profile`，CI 中关闭）。样例输出见 `docs/baselines/`。昇腾 NPU 后端不在本范围内。
 
 ---
 

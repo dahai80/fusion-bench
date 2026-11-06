@@ -8,7 +8,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-719-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-723-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -135,6 +135,7 @@ asyncio.run(main())
 | `fusion-bench api-key [options]` | Prints retirement guidance — API keys now issued by fusion-identity (#16) |
 | `fusion-bench cache <stats\|clear> [--model] [--task]` | Inspect/clear benchmark result cache |
 | `fusion-bench judge <create\|list\|show\|delete> [options]` | Manage LLM-as-Judge scoring configs (R1 JUDGE) |
+| `fusion-bench profile [--runs] [--max-tokens] [--enable-full-profile]` | Backend-abstracted inference profiler (issue #40) |
 
 ### Options
 
@@ -172,6 +173,31 @@ curl -X POST http://127.0.0.1:11467/api/v1/tasks \
   -H 'X-Tenant-Id: <tid>' -H 'Authorization: Bearer <jwt>' \
   -d '{"model": "agent-studio", "suite": "long-session"}'
 ```
+
+---
+
+## Inference Profiler (issue #40)
+
+Backend-abstracted profiler over the fusion-mlx HTTP API (no direct MLX imports). One unified JSON schema — `fusion-bench.profiler/v1` — with latency keys split **engine-side vs agent-side and never merged**; the `backend` key is mandatory so cross-backend numbers are never averaged without a per-backend breakdown.
+
+```bash
+# lightweight mode (default): one clock read per run boundary, negligible overhead
+fusion-bench profile --model qwen3.5-9b --runs 3 --max-tokens 128 --output profile.json
+
+# full-trace mode (opt-in): adds per-token inter-token latency p50/p99.
+# Real overhead (one perf_counter + list append per token) — keep OFF in CI.
+fusion-bench profile --model qwen3.5-9b --runs 1 --enable-full-profile
+```
+
+Schema groups:
+
+| Group | Keys | Measured at |
+|-------|------|-------------|
+| `engine` | `engine_ttft_ms` (p50/p99), `prefill_tok_s`, `decode_tok_s`, `engine_itl_p50_p99` (full-trace only) | fusion-mlx HTTP stream boundary |
+| `agent` | `agent_e2e_ms` (p50/p99) | full client wall-clock per request |
+| `memory` | `peak_memory_mb` | fusion-mlx `/stats` |
+
+Modes: **lightweight** (default, always on) and **full-trace** (`--enable-full-profile`, gated off in CI). Sample outputs live in `docs/baselines/`. Ascend NPU backends are out of scope.
 
 ---
 
@@ -379,6 +405,11 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.24 (2026-11-06)
+
+- **Feat #40 — backend-abstracted inference profiler**. New `fusion_bench/engine/profiler.py` (`InferenceProfiler` over the fusion-mlx HTTP API — never imports MLX directly) plus a `fusion-bench profile` CLI command. Two modes: **lightweight** (default, one clock read per run boundary) and **full-trace** (`--enable-full-profile`, per-token ITL p50/p99; real overhead — kept off in CI). Output is one unified JSON schema `fusion-bench.profiler/v1` with mandatory `backend` key; latency keys split engine-side (`engine_ttft_ms`, `engine_itl_p50_p99`) vs agent-side (`agent_e2e_ms`) and never merged; peak memory read from fusion-mlx `/stats` (bytes or formatted). Sample outputs committed under `docs/baselines/`.
+- **Verification (live)**: 4 unit tests + 723-test suite green; live run against fusion-mlx `mlx-community--Qwen3-0.6B-4bit` — all four metric groups populated (lightweight: ttft p50 1582.7ms, decode 592.6 tok/s, e2e 1651.4ms, 3374.3MB; full-trace: ITL p50 0.08ms / p99 77.46ms over 55 tokens).
 
 ### v0.4.23 (2026-11-05)
 
