@@ -1,3 +1,20 @@
+---
+doc_id: fusion-bench/api-detail
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: api-reference
+title: { zh: "Fusion-Bench API 字段级文档", en: "Fusion-Bench field-level API documentation" }
+source_of_truth:
+  - docs/api.md
+  - fusion_bench/api/app.py
+---
+
 # Fusion-Bench API Reference
 
 > Module-level documentation for `fusion_bench` packages.

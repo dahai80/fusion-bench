@@ -1,3 +1,20 @@
+---
+doc_id: fusion-bench/readme
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: readme
+title: { zh: "Fusion-Bench — MLX 模型评测与自动调优工作台", en: "Fusion-Bench — MLX benchmarking and auto-tuning workbench" }
+source_of_truth:
+  - README.md
+  - pyproject.toml
+---
+
 <div align="center">
 
 # Fusion-Bench
@@ -12,7 +29,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-[Quick Start](#quick-start) · [CLI Reference](#cli-reference) · [Architecture](#architecture) · [API Docs](docs/api/) · [Documentation](docs/)
+[Quick Start](#quick-start) · [CLI Reference](#cli-reference) · [Architecture](#architecture) · [API Docs](https://github.com/dahai80/fusion-bench/tree/main/docs/api) · [Documentation](docs/)
 
 </div>
 

@@ -1,3 +1,19 @@
+---
+doc_id: fusion-bench/plan-identity-integration
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: guide
+title: { zh: "计划：接入 fusion-identity（历史）", en: "Plan: integrating fusion-identity (historical)" }
+source_of_truth:
+  - docs/superpowers/plans/2026-09-03-identity-integration.md
+---
+
 # Plan: integrate fusion-identity (issue #16)
 
 ## Goal

@@ -1,3 +1,19 @@
+---
+doc_id: fusion-bench/spec-identity-activation
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: guide
+title: { zh: "设计：R1 身份与激活（历史）", en: "Design: R1 identity and activation (historical)" }
+source_of_truth:
+  - docs/superpowers/specs/2026-08-25-release1-identity-activation-design.md
+---
+
 # Release 1 — Identity & Activation (Design Spec)
 
 **Date:** 2026-08-25

@@ -1,3 +1,19 @@
+---
+doc_id: fusion-bench/web-console-readme
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: readme
+title: { zh: "Fusion-Bench Web 控制台（中文）", en: "Fusion-Bench web console (Chinese)" }
+source_of_truth:
+  - web/README_CN.md
+---
+
 # Fusion-Bench Web 控制台
 
 fusion-bench 的 Web UI 包 (issue #23, PRD N-5)。三个页面, 数据来自 REST API
