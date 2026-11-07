@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.25
+version: 0.4.26
 updated: 2026-11-07
 owner: @dahai
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.26 (2026-11-07)
+
+- Docs: fusion docs-system v1.1 contract (PR #42) — hardened validator `ci/validate_docs.py` (12-key frontmatter, LINK-BROKEN checks), six Tier 0/1 docs + two guides + `CHANGELOG.md`, `docs.yml` CI workflow; follow-up fix unblocked the lint and docs-validate jobs. 19 docs scanned, 0 errors / 0 warnings. No runtime changes.
 
 ## v0.4.25 (2026-11-06)
 

@@ -425,6 +425,11 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.26 (2026-11-07)
+
+- **Docs — fusion docs-system v1.1 contract (PR #42)**. Hardened docs validator (`ci/validate_docs.py`, 12-key frontmatter, LINK-BROKEN checks) shipped with six Tier 0/1 docs (product-page, get-started, api-reference, config-reference, architecture, troubleshooting), two guides (union-web shell embedding, CI benchmarks) and `CHANGELOG.md`; `docs.yml` CI workflow validates every docs-touching PR. Follow-up fix unblocked the lint and docs-validate jobs (ruff autofix in validator, canonical link in README). Validation: 19 docs scanned, 0 errors / 0 warnings.
+- Code-only delta: version strings. No runtime changes — the 727-test suite and ruff stay green.
+
 ### v0.4.25 (2026-11-06)
 
 - **Feat #41 — SxS double-blind judge REST surface**. Closes the follow-up noted in #39: `POST /api/v1/judges/sxs/run` (prompt + two candidate outputs → winner, per-criterion 1-5 scores, averages, rationale, slot `position_map`; optional judge_model/criteria/seed overrides; `persist` flag) and `GET /api/v1/judges/sxs/runs` (recent runs). New `judge/sxs_store.py` SQLite store (`~/.fusion-bench/sxs_runs.db`, JudgeStore pattern). Routes sit behind the existing fail-closed tenant middleware; rows always store the TRUE winner, never the shuffled slot identity.
