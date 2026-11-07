@@ -7,7 +7,7 @@ audience: engineer
 status: draft
 version: 0.4.25
 updated: 2026-11-07
-owner: @dahai
+owner: "@dahai"
 doc_type: readme
 title: { zh: "Fusion-Bench — MLX 模型评测与自动调优工作台（中文）", en: "Fusion-Bench — MLX benchmarking and auto-tuning workbench (Chinese)" }
 source_of_truth:

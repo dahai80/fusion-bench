@@ -7,7 +7,7 @@ audience: engineer
 status: draft
 version: 0.4.25
 updated: 2026-11-07
-owner: @dahai
+owner: "@dahai"
 doc_type: guide
 title: { zh: "fusion-bench 专属编码代理职责", en: "fusion-bench dedicated coder charter" }
 source_of_truth:

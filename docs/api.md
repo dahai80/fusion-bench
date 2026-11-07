@@ -7,7 +7,7 @@ audience: engineer
 status: draft
 version: 0.4.25
 updated: 2026-11-07
-owner: @dahai
+owner: "@dahai"
 doc_type: api-reference
 title: { zh: "Fusion-Bench API 字段级文档", en: "Fusion-Bench field-level API documentation" }
 source_of_truth:

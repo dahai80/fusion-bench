@@ -7,7 +7,7 @@ audience: engineer
 status: draft
 version: 0.4.25
 updated: 2026-11-07
-owner: @dahai
+owner: "@dahai"
 doc_type: guide
 title: { zh: "计划：接入 fusion-identity（历史）", en: "Plan: integrating fusion-identity (historical)" }
 source_of_truth:

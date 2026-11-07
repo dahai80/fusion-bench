@@ -7,7 +7,7 @@ audience: engineer
 status: draft
 version: 0.4.25
 updated: 2026-11-07
-owner: @dahai
+owner: "@dahai"
 doc_type: guide
 title: { zh: "设计：R1 身份与激活（历史）", en: "Design: R1 identity and activation (historical)" }
 source_of_truth:

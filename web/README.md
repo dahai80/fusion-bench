@@ -7,7 +7,7 @@ audience: engineer
 status: draft
 version: 0.4.25
 updated: 2026-11-07
-owner: @dahai
+owner: "@dahai"
 doc_type: readme
 title: { zh: "Fusion-Bench Web 控制台", en: "Fusion-Bench web console" }
 source_of_truth:
