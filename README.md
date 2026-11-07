@@ -29,7 +29,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-[Quick Start](#quick-start) · [CLI Reference](#cli-reference) · [Architecture](#architecture) · [API Docs](docs/api/) · [Documentation](docs/)
+[Quick Start](#quick-start) · [CLI Reference](#cli-reference) · [Architecture](#architecture) · [API Docs](https://github.com/dahai80/fusion-bench/tree/main/docs/api) · [Documentation](docs/)
 
 </div>
 
