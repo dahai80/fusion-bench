@@ -1,3 +1,20 @@
+---
+doc_id: fusion-bench/readme
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: readme
+title: { zh: "Fusion-Bench — MLX 模型评测与自动调优工作台", en: "Fusion-Bench — MLX benchmarking and auto-tuning workbench" }
+source_of_truth:
+  - README.md
+  - pyproject.toml
+---
+
 <div align="center">
 
 # Fusion-Bench

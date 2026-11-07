@@ -1,3 +1,19 @@
+---
+doc_id: fusion-bench/plan-identity-activation
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: guide
+title: { zh: "计划：R1 身份与激活（历史）", en: "Plan: R1 identity and activation (historical)" }
+source_of_truth:
+  - docs/superpowers/plans/2026-08-25-release1-identity-activation.md
+---
+
 # Release 1 — Identity & Activation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

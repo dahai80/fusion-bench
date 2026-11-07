@@ -1,3 +1,20 @@
+---
+doc_id: fusion-bench/web-console-readme
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+version: 0.4.25
+updated: 2026-11-07
+owner: @dahai
+doc_type: readme
+title: { zh: "Fusion-Bench Web 控制台", en: "Fusion-Bench web console" }
+source_of_truth:
+  - web/README.md
+  - web/package.json
+---
+
 # Fusion-Bench Web Console
 
 Web UI package for fusion-bench (issue #23, PRD N-5). Three pages over the
