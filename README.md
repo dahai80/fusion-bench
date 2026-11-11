@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-727-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-736-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -217,6 +217,19 @@ Schema groups:
 | `memory` | `peak_memory_mb` | fusion-mlx `/stats` |
 
 Modes: **lightweight** (default, always on) and **full-trace** (`--enable-full-profile`, gated off in CI). Sample outputs live in `docs/baselines/`. Ascend NPU backends are out of scope.
+
+---
+
+## SPS Speculative-Decoding Budget Tuning (issue #43)
+
+Benchmark-driven draft-token budget tuning for fusion-mlx speculative decoding (DSpine pattern): sweep draft widths x batch sizes against the live engine, score by median tokens/wall-time over warm repeats, emit a versioned profile (`fusion-bench.sps/v1`) with full provenance (chip/RAM/model/prefix digest).
+
+```bash
+fusion-bench sps tune --prefixes prefixes.jsonl --widths 4,8,12,16 --batch-sizes 1,2,4 --repeats 3 --output sps.json
+fusion-bench sps check --profile sps.json --prefixes prefixes.jsonl   # retune trigger
+```
+
+Widths ride the request body (`speculative: {"draft_tokens": W}`) — applied once fusion-mlx accepts per-request speculative params ([fusion-mlx#1528](https://github.com/dahai80/fusion-mlx/issues/1528)); until then the sweep degrades to the batch axis. Details in `docs/sps-tuning.md`; live sample in `docs/baselines/sps-live-sample.json`.
 
 ---
 
@@ -424,6 +437,11 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.27 (2026-11-11)
+
+- **Feat #43 — SPS speculative-decoding budget tuning suite**. New `fusion_bench/sps/` (prefix JSONL loader, width x batch-size sweep executor, `fusion-bench.sps/v1` profile with provenance — chip/RAM/model/engine/prefix-digest) plus `fusion-bench sps tune` / `sps check` CLI. Scoring: median tokens/wall-time over warm repeats of concurrent batches; acceptance-length captured from engine metrics when exposed. Width axis rides the request body pending per-request spec support upstream ([fusion-mlx#1528](https://github.com/dahai80/fusion-mlx/issues/1528)). Docs: `docs/sps-tuning.md`; live sample: `docs/baselines/sps-live-sample.json`.
+- **Verification (live)**: real sweep on fusion-mlx `mlx-community--Qwen3-0.6B-4bit` (widths 4/8, batches 1/2, 2 repeats) — all candidates scored, best width 4 per batch, provenance recorded (Apple M5 Max / 128GB / digest); `sps check` flags stale on workload digest change. 9 offline tests (727 collected total).
 
 ### v0.4.26 (2026-11-07)
 

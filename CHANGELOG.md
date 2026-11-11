@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.26
+version: 0.4.27
 updated: 2026-11-07
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.27 (2026-11-11)
+
+- Feat #43: SPS speculative-decoding budget tuning — `fusion_bench/sps/` (JSONL prefix loader, width x batch-size sweep, `fusion-bench.sps/v1` profile with chip/RAM/model/digest provenance) + `fusion-bench sps tune` / `sps check`. Median tokens/wall-time over warm repeats; width axis rides the request body pending per-request spec support (fusion-mlx#1528). Docs `docs/sps-tuning.md`; live sample `docs/baselines/sps-live-sample.json`.
 
 ## v0.4.26 (2026-11-07)
 

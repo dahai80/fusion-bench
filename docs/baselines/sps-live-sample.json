@@ -1,0 +1,59 @@
+{
+  "schema": "fusion-bench.sps/v1",
+  "generated_at": "",
+  "model": "mlx-community--Qwen3-0.6B-4bit",
+  "backend": "mlx",
+  "chip": "Apple M5 Max",
+  "ram_gb": 128.0,
+  "engine_base_url": "http://localhost:11434/v1",
+  "engine_version": "",
+  "input_digest": "cf9da79cdf24b819",
+  "width_transport": "request_body",
+  "engine_spec_support": "unverified",
+  "max_tokens": 48,
+  "repeats": 2,
+  "best": {
+    "1": 4,
+    "2": 4
+  },
+  "table": [
+    {
+      "width": 4,
+      "batch_size": 1,
+      "median_tok_s": 8785.37,
+      "repeats_tok_s": [
+        9757.32,
+        7813.42
+      ]
+    },
+    {
+      "width": 8,
+      "batch_size": 1,
+      "median_tok_s": 7706.35,
+      "repeats_tok_s": [
+        6797.29,
+        8615.4
+      ]
+    },
+    {
+      "width": 4,
+      "batch_size": 2,
+      "median_tok_s": 768.21,
+      "repeats_tok_s": [
+        986.71,
+        549.71
+      ]
+    },
+    {
+      "width": 8,
+      "batch_size": 2,
+      "median_tok_s": 749.7,
+      "repeats_tok_s": [
+        1100.85,
+        398.56
+      ]
+    }
+  ],
+  "acceptance_length": null,
+  "notes": "Width axis transported in the request body; applied only when the engine accepts per-request speculative params (upstream fusion-mlx#1528). Retune when hardware, model or workload digest changes."
+}

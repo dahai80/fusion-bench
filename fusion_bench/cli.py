@@ -117,6 +117,22 @@ def main():
     )
     profile_parser.add_argument("--output", default="", help="Output file path (JSON)")
 
+    # sps (#43) — speculative decoding budget tuning
+    sps_parser = subparsers.add_parser("sps", help="SPS speculative-decoding budget tuning")
+    sps_sub = sps_parser.add_subparsers(dest="sps_command", required=True)
+    sps_tune = sps_sub.add_parser("tune", help="Run the width x batch-size sweep, emit sps.json")
+    sps_tune.add_argument(
+        "--prefixes", required=True, help="JSONL prefix file ({'prompt': ..., 'sampling_params': {}})"
+    )
+    sps_tune.add_argument("--widths", default="4,8,12,16", help="Comma-separated draft widths")
+    sps_tune.add_argument("--batch-sizes", default="1", help="Comma-separated batch sizes")
+    sps_tune.add_argument("--repeats", type=int, default=3, help="Timed repeats per candidate")
+    sps_tune.add_argument("--max-tokens", type=int, default=128, help="Max tokens per request")
+    sps_tune.add_argument("--output", default="sps.json", help="Profile output path")
+    sps_check = sps_sub.add_parser("check", help="Flag a stored profile as stale/fresh")
+    sps_check.add_argument("--profile", required=True, help="Path to sps.json")
+    sps_check.add_argument("--prefixes", default="", help="Prefix file to re-digest for workload comparison")
+
     # tune
     tune_parser = subparsers.add_parser("tune", help="Auto-tune model parameters")
     tune_parser.add_argument("--max-combinations", type=int, default=12, help="Max parameter combinations")
@@ -284,6 +300,7 @@ def main():
         "suite": lambda: asyncio.run(cmd_suite(args)),
         "speed": lambda: asyncio.run(cmd_speed(args)),
         "profile": lambda: asyncio.run(cmd_profile(args)),
+        "sps": lambda: cmd_sps(args),
         "tune": lambda: asyncio.run(cmd_tune(args)),
         "quant": lambda: asyncio.run(cmd_quant(args)),
         "security": lambda: asyncio.run(cmd_security(args)),
@@ -687,6 +704,49 @@ async def cmd_profile(args):
             print(f"\nSaved to {args.output}")
     finally:
         await profiler.close()
+
+
+def cmd_sps(args):
+    """SPS speculative-decoding budget tuning (#43)."""
+    from fusion_bench.sps import SpsConfig, SpsTuner, is_stale, load_prefixes
+    from fusion_bench.sps.profile import SpsProfile
+
+    if args.sps_command == "tune":
+        prefixes = load_prefixes(args.prefixes)
+        cfg = SpsConfig(
+            widths=[int(x) for x in args.widths.split(",") if x.strip()],
+            batch_sizes=[int(x) for x in args.batch_sizes.split(",") if x.strip()],
+            repeats=args.repeats,
+            max_tokens=args.max_tokens,
+        )
+        tuner = SpsTuner(mlx_base_url=args.mlx_url, config=cfg)
+
+        async def _run():
+            # One loop for sweep + close: the httpx client must not be
+            # closed from a second event loop.
+            try:
+                print(f"SPS sweep on '{args.model}': widths={cfg.widths} batch={cfg.batch_sizes} repeats={cfg.repeats}")
+                return await tuner.sweep(args.model, prefixes, args.prefixes)
+            finally:
+                await tuner.close()
+
+        profile = asyncio.run(_run())
+        print(json.dumps(profile.to_dict(), indent=2, ensure_ascii=False))
+        profile.save(args.output)
+        print(f"\nProfile saved to {args.output}")
+        for reason in is_stale(profile, args.prefixes):
+            print(f"stale: {reason}")
+        for batch, width in sorted(profile.best.items(), key=lambda kv: int(kv[0])):
+            print(f"best: batch={batch} -> width={width}")
+    elif args.sps_command == "check":
+        profile = SpsProfile.load(args.profile)
+        reasons = is_stale(profile, args.prefixes or None)
+        if reasons:
+            print(f"STALE ({len(reasons)} reasons):")
+            for r in reasons:
+                print(f"  - {r}")
+        else:
+            print("FRESH: profile matches current hardware and workload digest")
 
 
 async def cmd_quant(args):
