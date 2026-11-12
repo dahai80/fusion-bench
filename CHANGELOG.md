@@ -7,8 +7,8 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.28
-updated: 2026-11-07
+version: 0.4.29
+updated: 2026-11-12
 owner: "@dahai"
 source_of_truth:
   - README.md
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.29 (2026-11-12)
+
+- Feat #43 AC3: bench-site rendering of the SPS sweep table — `fusion_bench/sps/report.py` maps one sweep profile onto the bench-site `benchmarks` schema (one row per width x batch candidate, `benchmark_type="sps"`, `metric_name=median_tok_s_w{W}_b{B}`, full provenance + best table in `detail` JSON). CLI: `fusion-bench sps tune --submit` and new `fusion-bench sps submit --profile <path>`; bench-site `/benchmarks` filter gains an SPS option. 741 tests collected.
 
 ## v0.4.28 (2026-11-12)
 

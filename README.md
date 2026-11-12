@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-739-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-741-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -437,6 +437,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.29 (2026-11-12)
+
+- **Feat #43 AC3 — SPS sweep table on bench-site**. `fusion_bench/sps/report.py` maps a sweep profile onto the bench-site `benchmarks` schema: one row per (width, batch) candidate with `benchmark_type="sps"`, headline `median_tok_s_w{W}_b{B}` metric, and the full candidate + provenance (applied rate, acceptance length, engine spec support, prefix digest, best table) in the `detail` JSON. CLI gains `fusion-bench sps tune --submit` and `fusion-bench sps submit --profile <path>`; the bench-site `/benchmarks` filter adds an SPS option. Rows land in the local `bench-site/data/bench.db` (remote submit rides the existing HTTP path). 2 new tests (741 collected).
 
 ### v0.4.28 (2026-11-12)
 

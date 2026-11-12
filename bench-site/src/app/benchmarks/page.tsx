@@ -37,6 +37,7 @@ const BENCHMARK_TYPES = [
     { value: "security", label: "🛡️ Security" },
     { value: "quant", label: "📊 Quant" },
     { value: "tune", label: "🔧 Tune" },
+    { value: "sps", label: "🚀 SPS" },
 ];
 
 export default function BenchmarksPage() {

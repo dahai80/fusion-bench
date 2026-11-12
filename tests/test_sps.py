@@ -186,3 +186,73 @@ class TestProfileRoundtripAndStaleness:
             engine_spec_support="verified",
         )
         assert is_stale(prof) == []
+
+
+class TestSiteSubmission:
+    def test_profile_to_records(self, tmp_path):
+        from fusion_bench.sps.report import profile_to_records
+
+        prof = SpsProfile(
+            model="mlx-community--Qwen3-0.6B-4bit",
+            chip="Apple M5 Max",
+            ram_gb=128.0,
+            engine_version="0.10.55",
+            input_digest="abc12345",
+            best={"1": 2},
+            table=[
+                {
+                    "width": 2,
+                    "batch_size": 1,
+                    "median_tok_s": 29149.43,
+                    "repeats_tok_s": [1.0],
+                    "width_applied_rate": 1.0,
+                }
+            ],
+            acceptance_length=None,
+            engine_spec_support="unverified",
+        )
+        recs = profile_to_records(prof)
+        assert len(recs) == 1
+        r = recs[0]
+        assert r.benchmark_type == "sps"
+        assert r.task_name == "sps-tune"
+        assert r.metric_name == "median_tok_s_w2_b1"
+        assert r.metric_value == 29149.43
+        assert r.chip_name == "Apple M5 Max"
+        assert r.memory_gb == 128
+        assert r.quantization == "4bit"
+        assert r.submission_group == "sps-abc12345"
+        detail = json.loads(r.detail)
+        assert detail["width"] == 2
+        assert detail["input_digest"] == "abc12345"
+
+    def test_submit_profile_roundtrip(self, tmp_path):
+        from fusion_bench.sps.report import submit_profile
+
+        db_file = tmp_path / "bench.db"
+        prof = SpsProfile(
+            model="m-4bit",
+            chip="Apple M5 Max",
+            ram_gb=128.0,
+            input_digest="d1",
+            table=[
+                {
+                    "width": 1,
+                    "batch_size": 1,
+                    "median_tok_s": 100.0,
+                    "repeats_tok_s": [100.0],
+                    "width_applied_rate": 0.0,
+                }
+            ],
+        )
+        n = submit_profile(prof, db_path=str(db_file))
+        assert n == 1
+        from fusion_bench.reporter.bench_site_db import BenchSiteDB
+
+        db = BenchSiteDB(str(db_file))
+        try:
+            rows = db.query(benchmark_type="sps")
+            assert len(rows) == 1
+            assert rows[0]["metric_name"] == "median_tok_s_w1_b1"
+        finally:
+            db.close()

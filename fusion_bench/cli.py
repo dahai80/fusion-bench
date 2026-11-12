@@ -129,6 +129,13 @@ def main():
     sps_tune.add_argument("--repeats", type=int, default=3, help="Timed repeats per candidate")
     sps_tune.add_argument("--max-tokens", type=int, default=128, help="Max tokens per request")
     sps_tune.add_argument("--output", default="sps.json", help="Profile output path")
+    sps_tune.add_argument(
+        "--submit",
+        action="store_true",
+        help="Also submit the sweep table to the bench-site DB (bench.dpdns.org)",
+    )
+    sps_submit = sps_sub.add_parser("submit", help="Submit an existing sps.json to the bench-site DB")
+    sps_submit.add_argument("--profile", required=True, help="Path to sps.json")
     sps_check = sps_sub.add_parser("check", help="Flag a stored profile as stale/fresh")
     sps_check.add_argument("--profile", required=True, help="Path to sps.json")
     sps_check.add_argument("--prefixes", default="", help="Prefix file to re-digest for workload comparison")
@@ -706,10 +713,25 @@ async def cmd_profile(args):
         await profiler.close()
 
 
+def _sps_submit(profile) -> None:
+    """Submit SPS sweep rows to the bench-site DB (#43 AC3)."""
+    import logging
+
+    from fusion_bench.sps.report import submit_profile
+
+    log = logging.getLogger(__name__)
+
+    try:
+        n = submit_profile(profile)
+        print(f"Submitted {n} SPS rows to bench-site DB")
+    except Exception as e:
+        log.error("SPS bench-site submission failed: %s", e)
+        print(f"Submission failed: {e}")
+
+
 def cmd_sps(args):
     """SPS speculative-decoding budget tuning (#43)."""
-    from fusion_bench.sps import SpsConfig, SpsTuner, is_stale, load_prefixes
-    from fusion_bench.sps.profile import SpsProfile
+    from fusion_bench.sps import SpsConfig, SpsProfile, SpsTuner, is_stale, load_prefixes
 
     if args.sps_command == "tune":
         prefixes = load_prefixes(args.prefixes)
@@ -734,10 +756,14 @@ def cmd_sps(args):
         print(json.dumps(profile.to_dict(), indent=2, ensure_ascii=False))
         profile.save(args.output)
         print(f"\nProfile saved to {args.output}")
+        if args.submit:
+            _sps_submit(profile)
         for reason in is_stale(profile, args.prefixes):
             print(f"stale: {reason}")
         for batch, width in sorted(profile.best.items(), key=lambda kv: int(kv[0])):
             print(f"best: batch={batch} -> width={width}")
+    elif args.sps_command == "submit":
+        _sps_submit(SpsProfile.load(args.profile))
     elif args.sps_command == "check":
         profile = SpsProfile.load(args.profile)
         reasons = is_stale(profile, args.prefixes or None)
