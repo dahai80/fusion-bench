@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-736-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-739-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -229,7 +229,7 @@ fusion-bench sps tune --prefixes prefixes.jsonl --widths 4,8,12,16 --batch-sizes
 fusion-bench sps check --profile sps.json --prefixes prefixes.jsonl   # retune trigger
 ```
 
-Widths ride the request body (`speculative: {"draft_tokens": W}`) — applied once fusion-mlx accepts per-request speculative params ([fusion-mlx#1528](https://github.com/dahai80/fusion-mlx/issues/1528)); until then the sweep degrades to the batch axis. Details in `docs/sps-tuning.md`; live sample in `docs/baselines/sps-live-sample.json`.
+Widths ride the request body (`speculative: {"draft_tokens": W}`, valid 1-4) — fusion-mlx >= 0.10.59 honors them on the single-request pure-decode path; the engine's response echo drives `width_applied_rate` per candidate and `engine_spec_support` in the profile. Acceptance length comes from `/stats` `spec_decode` counters (active with native MTP). Details in `docs/sps-tuning.md`; live sample in `docs/baselines/sps-live-sample.json`.
 
 ---
 
@@ -437,6 +437,11 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.28 (2026-11-12)
+
+- **Feat #43 — SPS tuner: engine echo verification + acceptance-length parsing** (follows [fusion-mlx#1528](https://github.com/dahai80/fusion-mlx/issues/1528) shipping in v0.10.59). Per-request `speculative: {"draft_tokens": 1-4}` verified through the engine's response echo — per-candidate `width_applied_rate` recorded, profile `engine_spec_support` flips to `"verified"` on any confirmed application (widths honored on the single-request pure-decode path only; batched traffic falls back and the echo reports it). Acceptance length parsed from `/stats` `spec_decode.<strategy>` (meaningful when native MTP active) with `/v1/metrics` fallback. Default widths 1,2,4 per engine range. 12 offline tests (739 collected).
+- **Live**: sweep against fusion-mlx 0.10.55 correctly detects unapplied widths (echo normalizes to server default) — the verification mechanism is exercised both offline (echo match → verified) and live.
 
 ### v0.4.27 (2026-11-11)
 

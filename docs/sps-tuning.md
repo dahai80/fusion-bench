@@ -23,16 +23,17 @@ Benchmark-driven draft-token budget tuning for fusion-mlx speculative decoding, 
 ## Sweep mechanics
 
 - **Input**: JSONL prefix file, one per line — `{"prompt": "...", "sampling_params": {"temperature": 0.0}}`. Use >= 8 distinct prefixes covering context lengths, tasks and reasoning levels; tune greedy and temperature sampling as separate runs. `input_ids`-only rows are skipped (the bench never loads a tokenizer).
-- **Candidates**: draft widths x batch sizes. Batch size is real client-side concurrency (async). Width rides the request body as `speculative: {"draft_tokens": W}` — applied once fusion-mlx accepts per-request speculative params ([fusion-mlx#1528](https://github.com/dahai80/fusion-mlx/issues/1528)); until then the sweep degrades to the batch axis and the profile says so (`engine_spec_support: "unverified"`).
+- **Candidates**: draft widths x batch sizes. Batch size is real client-side concurrency (async). Width rides the request body as `speculative: {"draft_tokens": W}` — fusion-mlx >= 0.10.59 honors it on the **single-request pure-decode path** (widths valid 1-4); batched traffic falls back to the server default. The engine echoes the applied spec config on every response, and the tuner records `width_applied_rate` per candidate; the profile flips `engine_spec_support` to `"verified"` once any echo confirms application ([fusion-mlx#1528](https://github.com/dahai80/fusion-mlx/issues/1528)).
 - **Scoring**: one untimed warm pass, then N timed repeats per candidate; each repeat = one concurrent batch, scored by total completion tokens / wall time (prefill + request overhead included). Median wins.
-- **Secondary metric**: acceptance length from engine metrics when exposed (null today, same upstream issue).
+- **Secondary metric**: acceptance length from `/stats` `spec_decode.<strategy>.acceptance_length` (or `/v1/metrics` Prometheus lines) — counters are meaningful only when the engine runs with native MTP enabled (`verifies > 0`); otherwise the profile records `null`.
 
 ## Commands
 
 ```bash
-# full sweep
+# full sweep (widths: engine accepts 1-4; batched traffic falls back to
+# the server default — width tuning is meaningful at batch size 1)
 fusion-bench sps tune --prefixes prefixes.jsonl \
-  --widths 4,8,12,16 --batch-sizes 1,2,4 --repeats 3 \
+  --widths 1,2,4 --batch-sizes 1,2,4 --repeats 3 \
   --max-tokens 128 --output sps.json
 
 # staleness check (retune trigger: hardware / model / workload change)

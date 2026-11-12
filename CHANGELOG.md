@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.27
+version: 0.4.28
 updated: 2026-11-07
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.28 (2026-11-12)
+
+- Feat #43 follow-through after fusion-mlx#1528 shipped (v0.10.59): SPS tuner verifies per-request width application via the engine's response echo (`width_applied_rate` per candidate, `engine_spec_support: verified|unverified`), parses acceptance length from `/stats` `spec_decode` counters (`/v1/metrics` fallback), default widths 1,2,4 per engine range. Live sweep on 0.10.55 correctly detects unapplied widths.
 
 ## v0.4.27 (2026-11-11)
 

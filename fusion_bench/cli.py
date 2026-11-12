@@ -124,7 +124,7 @@ def main():
     sps_tune.add_argument(
         "--prefixes", required=True, help="JSONL prefix file ({'prompt': ..., 'sampling_params': {}})"
     )
-    sps_tune.add_argument("--widths", default="4,8,12,16", help="Comma-separated draft widths")
+    sps_tune.add_argument("--widths", default="1,2,4", help="Comma-separated draft widths (engine accepts 1-4)")
     sps_tune.add_argument("--batch-sizes", default="1", help="Comma-separated batch sizes")
     sps_tune.add_argument("--repeats", type=int, default=3, help="Timed repeats per candidate")
     sps_tune.add_argument("--max-tokens", type=int, default=128, help="Max tokens per request")

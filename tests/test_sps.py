@@ -51,19 +51,26 @@ class TestPrefixLoader:
             load_prefixes(p)
 
 
-def _resp(tokens):
+def _resp(tokens, width=None):
     r = MagicMock()
     r.status_code = 200
     r.raise_for_status = MagicMock()
-    r.json.return_value = {"usage": {"completion_tokens": tokens}}
+    body = {"usage": {"completion_tokens": tokens}}
+    if width is not None:
+        body["speculative"] = {"draft_tokens": width}
+    r.json.return_value = body
     return r
 
 
-def _prof(repeats=2, widths=(4, 8), batch=(1,)):
+def _prof(repeats=2, widths=(4, 8), batch=(1,), echo_width=False):
     cfg = SpsConfig(widths=list(widths), batch_sizes=list(batch), repeats=repeats, max_tokens=32)
     t = SpsTuner(mlx_base_url="http://localhost:11432/v1", config=cfg)
     t._client = MagicMock()
-    t._client.post = AsyncMock(return_value=_resp(64))
+    # Echo only when the engine would apply the width (serial path).
+    if echo_width:
+        t._client.post = AsyncMock(side_effect=lambda url, json: _resp(64, json["speculative"]["draft_tokens"]))
+    else:
+        t._client.post = AsyncMock(return_value=_resp(64))
     t._client.aclose = AsyncMock()
     metrics = MagicMock()
     metrics.status_code = 404
@@ -99,6 +106,42 @@ class TestSweep:
         assert body["speculative"] == {"draft_tokens": 12}
         assert body["max_tokens"] == 32
 
+    async def test_echo_marks_support_verified(self, tmp_path):
+        p = tmp_path / "prefixes.jsonl"
+        p.write_text(json.dumps({"prompt": "q"}) + "\n", encoding="utf-8")
+        t = _prof(widths=(4,), batch=(1,), repeats=1, echo_width=True)
+        profile = await t.sweep("m", load_prefixes(p), str(p))
+        await t.close()
+        assert profile.engine_spec_support == "verified"
+        assert profile.table[0]["width_applied_rate"] == 1.0
+
+    async def test_no_echo_keeps_unverified(self, tmp_path):
+        p = tmp_path / "prefixes.jsonl"
+        p.write_text(json.dumps({"prompt": "q"}) + "\n", encoding="utf-8")
+        t = _prof(widths=(4,), batch=(1,), repeats=1, echo_width=False)
+        profile = await t.sweep("m", load_prefixes(p), str(p))
+        await t.close()
+        assert profile.engine_spec_support == "unverified"
+        assert profile.table[0]["width_applied_rate"] == 0.0
+
+    async def test_acceptance_from_stats(self, tmp_path):
+        p = tmp_path / "prefixes.jsonl"
+        p.write_text(json.dumps({"prompt": "q"}) + "\n", encoding="utf-8")
+        t = _prof(widths=(4,), batch=(1,), repeats=1)
+        stats_resp = MagicMock()
+        stats_resp.status_code = 200
+        stats_resp.json.return_value = {
+            "spec_decode": {"mtp_native": {"verifies": 40, "accepted": 60, "acceptance_length": 2.5}}
+        }
+
+        async def fake_get(path):
+            return stats_resp if path.endswith("/stats") else MagicMock(status_code=404)
+
+        t._client.get = AsyncMock(side_effect=fake_get)
+        profile = await t.sweep("m", load_prefixes(p), str(p))
+        await t.close()
+        assert profile.acceptance_length == 2.5
+
     async def test_best_picks_fastest_width(self, tmp_path):
         p = tmp_path / "prefixes.jsonl"
         p.write_text(json.dumps({"prompt": "q"}) + "\n", encoding="utf-8")
@@ -108,7 +151,7 @@ class TestSweep:
         async def fake_timed_pass(client, model, prefixes, width, batch):
             seen.append(width)
             rate = 100.0 if width == 8 else 50.0
-            return rate
+            return rate, 1, 1
 
         t._timed_pass = fake_timed_pass
         profile = await t.sweep("m", load_prefixes(p), str(p))
