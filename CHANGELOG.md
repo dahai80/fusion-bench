@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.29
+version: 0.4.30
 updated: 2026-11-12
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.30 (2026-11-13)
+
+- Feat #44: programmatic per-item scoring — `POST /api/v1/score` (single + `items` batch form), synchronous, no task record or trace write. Deterministic match (normalized equality, substring fallback) mirroring the lm-eval task runner; optional `params.extract` (boxed / last_number) for math completions; ground truth from explicit `expected`, `params.expected`, or the task's lm-eval dataset (prompt-matched, in-process cache). Built for fusion-trainer GRPO reward callbacks (sub-second, no task poll). 16 new tests (757 collected).
 
 ## v0.4.29 (2026-11-12)
 

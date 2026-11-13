@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-741-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-757-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -438,6 +438,9 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.30 (2026-11-13)
+
+- **Feat #44 — programmatic per-item scoring (`POST /api/v1/score`)** for GRPO verifier use. Single form `{task?, input, completion, expected?, params?}` → `{score, details}`; batch form `{items: [...]}` → `{results: [...]}`. Synchronous, no task record, no trace write. Expected-answer resolution: explicit `expected` → `params.expected` → task's lm-eval dataset ground truth (prompt-matched, cached in-process). Match mirrors `LMEvalTaskRunner` (normalized equality, substring fallback); optional `params.extract` (`boxed` / `last_number`). Module: `fusion_bench/scoring/`. 16 new tests (757 collected).
 ### v0.4.29 (2026-11-12)
 
 - **Feat #43 AC3 — SPS sweep table on bench-site**. `fusion_bench/sps/report.py` maps a sweep profile onto the bench-site `benchmarks` schema: one row per (width, batch) candidate with `benchmark_type="sps"`, headline `median_tok_s_w{W}_b{B}` metric, and the full candidate + provenance (applied rate, acceptance length, engine spec support, prefix digest, best table) in the `detail` JSON. CLI gains `fusion-bench sps tune --submit` and `fusion-bench sps submit --profile <path>`; the bench-site `/benchmarks` filter adds an SPS option. Rows land in the local `bench-site/data/bench.db` (remote submit rides the existing HTTP path). 2 new tests (741 collected).

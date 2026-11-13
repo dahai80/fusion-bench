@@ -87,7 +87,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Fusion-Bench API",
-    version="0.4.29",
+    version="0.4.30",
     description="Fusion-Bench — MLX model benchmarking REST API",
     lifespan=lifespan,
 )
@@ -1260,6 +1260,43 @@ async def list_sxs_runs(limit: int = 20):
 
     store = SxSRunStore()
     return {"runs": store.list_runs(limit)}
+
+
+# ── Per-item scoring (#44, GRPO verifier use) ───────────────────────
+
+
+class ScoreItemRequest(BaseModel):
+    task: str = ""
+    input: str
+    completion: str
+    expected: str = ""
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
+class ScoreRequest(BaseModel):
+    task: str = ""
+    input: str = ""
+    completion: str = ""
+    expected: str = ""
+    params: dict[str, Any] = Field(default_factory=dict)
+    items: list[ScoreItemRequest] | None = None
+
+
+@app.post("/api/v1/score")
+async def score_items_endpoint(
+    req: ScoreRequest,
+    _user: str = Depends(require_permission(Permission.TASK_CREATE)),
+):
+    # Synchronous per-item scoring: no task record, no trace write.
+    from ..scoring import score_item, score_items
+
+    if req.items:
+        results = score_items([item.model_dump() for item in req.items])
+        logger.info("Batch scored %d items", len(results))
+        return {"results": results}
+    if not req.input or not req.completion:
+        raise HTTPException(status_code=422, detail="input and completion are required")
+    return score_item(req.model_dump())
 
 
 # ── Approvals ────────────────────────────────────────────────────────
