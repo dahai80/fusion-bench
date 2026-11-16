@@ -5,7 +5,7 @@ class: platform
 entry: service
 audience: engineer
 status: draft
-version: 0.4.30
+version: 0.4.31
 updated: 2026-11-07
 owner: "@dahai"
 doc_type: readme

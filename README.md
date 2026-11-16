@@ -438,6 +438,9 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.31 (2026-11-16)
+
+- **CI retrofit (issue #45, [fusion#2](https://github.com/dahai80/fusion#2) checklist)** — `concurrency` cancel-in-progress grouped by ref, docs-only `paths-ignore`; assessments: dependency cache present, sharding/nightly tier unnecessary (full suite ~2 min per PR). CI-only, no runtime changes (PR #46).
 ### v0.4.30 (2026-11-13)
 
 - **Feat #44 — programmatic per-item scoring (`POST /api/v1/score`)** for GRPO verifier use. Single form `{task?, input, completion, expected?, params?}` → `{score, details}`; batch form `{items: [...]}` → `{results: [...]}`. Synchronous, no task record, no trace write. Expected-answer resolution: explicit `expected` → `params.expected` → task's lm-eval dataset ground truth (prompt-matched, cached in-process). Match mirrors `LMEvalTaskRunner` (normalized equality, substring fallback); optional `params.extract` (`boxed` / `last_number`). Module: `fusion_bench/scoring/`. 16 new tests (757 collected).

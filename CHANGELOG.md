@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.30
+version: 0.4.31
 updated: 2026-11-12
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.31 (2026-11-16)
+
+- CI retrofit per fusion#2 checklist (issue #45, PR #46): `concurrency` group by ref with `cancel-in-progress`, docs-only `paths-ignore` (`**.md`, `docs/`, `bench-site/`, `benchmarks/results/`); assessments recorded in the PR — dependency cache already present, sharding + nightly tier not needed (full suite ~2 min per PR). CI-only change, no runtime code.
 
 ## v0.4.30 (2026-11-13)
 
