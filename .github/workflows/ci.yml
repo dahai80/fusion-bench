@@ -7,8 +7,27 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "bench-site/**"
+      - "benchmarks/results/**"
+      - "LICENSE"
+      - ".gitignore"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "bench-site/**"
+      - "benchmarks/results/**"
+      - "LICENSE"
+      - ".gitignore"
+
+# Issue #45 (fusion#2 CI retrofit): cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
