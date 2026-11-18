@@ -24,7 +24,7 @@ source_of_truth:
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-766-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-778-success.svg)](tests/)
 
 [English](README.md) · [快速开始](#快速开始) · [CLI 参考](#cli-参考) · [架构](#架构) · [文档](docs/)
 
@@ -123,6 +123,7 @@ asyncio.run(main())
 | `fusion-bench speed [--model] [--runs]` | 测试模型速度 |
 | `fusion-bench quant [--model] [--levels]` | 量化等级对比 |
 | `fusion-bench profile [--runs] [--max-tokens] [--enable-full-profile]` | 后端抽象推理性能剖析器（issue #40） |
+| `fusion-bench harness-bench --model <m> [--harnesses] [--runs]` | 同模型 harness 横评：mini-swe vs fusion-harness（issue #48） |
 
 仅 REST：`POST /api/v1/judges/sxs/run`（双盲成对 SxS 评审 — 返回 winner/逐维评分/rationale 及槽位 `position_map`；可选持久化）与 `GET /api/v1/judges/sxs/runs`（最近运行记录，`~/.fusion-bench/sxs_runs.db`）— issue #41。
 
@@ -156,6 +157,25 @@ fusion-bench profile --model qwen3.5-9b --runs 1 --enable-full-profile
 | `memory` | `peak_memory_mb` | fusion-mlx `/stats` |
 
 模式：**轻量**（默认，始终开启）与**全量追踪**（`--enable-full-profile`，CI 中关闭）。样例输出见 `docs/baselines/`。昇腾 NPU 后端不在本范围内。
+
+---
+
+## 同模型 Harness 横评 (issue #48)
+
+Harness-bench 流派（洞察轴 N5/A12）：变量是 **harness** 而非模型。一套确定性 agent 任务（5 个离线沙箱文件任务 + 内容校验器）分别跑在两个驱动同一 fusion-mlx 模型的 harness 上：
+
+- **`mini-swe`** — 中立基线（mini-swe-agent 流派）：仅 bash 工具、线性只增历史、无准入机制。
+- **`fusion-harness`** — 相同循环但经由 fusion-harness 内核：LLM 调用走 `LLMFunnel` 计量，bash 调用走 `ToolFunnel` + `PermissionEngine` 准入，每 run 硬 token 预算（`--budget-tokens`）。
+
+每个 任务 × harness 指标：成功率、tokens in/out、缓存命中率（`X-Cache` 溯源，#47 卫生 — 始终 bypass，命中即告警）、耗时、成本，以及 DetourBench 式轨迹差（detours + 一步之差计数，对比任务最小动作参考轨迹）。
+
+```bash
+fusion-bench harness-bench --model mlx-community--Qwen3.5-4B-MLX-4bit \
+    --mlx-url http://localhost:11434/v1 --runs 1
+# 报告：benchmarks/results/harness-comparison/report.{json,md}
+```
+
+`fusion-harness` 分支需可 import `fusion_harness`（纯标准库）：`pip install -e fusion-harness`。缺失时该分支报跳过错误，`mini-swe` 照常运行。同时以 `harness-bench` executor 插件（L4）暴露给 Pipeline/REST 调度。样例报告：`benchmarks/results/harness-comparison/`。
 
 ---
 

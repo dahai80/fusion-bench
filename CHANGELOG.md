@@ -7,8 +7,8 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.32
-updated: 2026-11-12
+version: 0.4.33
+updated: 2026-11-18
 owner: "@dahai"
 source_of_truth:
   - README.md
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.33 (2026-11-18)
+
+- Feat #48: same-model harness comparison benchmark (harness-bench genre, insight axis N5/A12) — `fusion_bench/harness_bench/` + `fusion-bench harness-bench` CLI + `harness-bench` executor plugin (L4). One deterministic offline task suite (5 sandbox file tasks, content verifiers, minimal-action reference trajectories) runs against two harnesses driving the identical fusion-mlx model: `mini-swe` (neutral bash-only baseline, linear append-only history) and `fusion-harness` (loop routed through the kernel: `LLMFunnel` gating/metering, `ToolFunnel` + `PermissionEngine` tool admission, hard per-run token budget). Metrics per task x harness: success rate, tokens in/out, cache hit rate (`X-Cache` provenance, bypass always on per #47), wall time, cost (price per Mtok configurable), and DetourBench-style trajectory delta (detours + one-step misses vs reference). Report artifact: per-task harness x metric table + per-run cost table (`benchmarks/results/harness-comparison/report.{json,md}`). `fusion_harness` is an optional pure-stdlib dependency (arm skips with an explicit error when absent). Live run on `mlx-community--Qwen3.5-4B-MLX-4bit` @ 11434: 5/5 success on both harnesses, cache hit rate 0.00, detours 18 / one-step misses 2. 12 new tests (778 collected).
 
 ## v0.4.32 (2026-11-18)
 

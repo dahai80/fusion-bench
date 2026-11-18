@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-766-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-778-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -153,6 +153,7 @@ asyncio.run(main())
 | `fusion-bench cache <stats\|clear> [--model] [--task]` | Inspect/clear benchmark result cache |
 | `fusion-bench judge <create\|list\|show\|delete> [options]` | Manage LLM-as-Judge scoring configs (R1 JUDGE) |
 | `fusion-bench profile [--runs] [--max-tokens] [--enable-full-profile]` | Backend-abstracted inference profiler (issue #40) |
+| `fusion-bench harness-bench --model <m> [--harnesses] [--runs]` | Same-model harness comparison: mini-swe vs fusion-harness (issue #48) |
 
 REST-only: `POST /api/v1/judges/sxs/run` (double-blind pairwise SxS judge — returns winner/per-criterion scores/rationale plus the slot `position_map`; optional persistence) and `GET /api/v1/judges/sxs/runs` (recent runs from `~/.fusion-bench/sxs_runs.db`) — issue #41.
 
@@ -230,6 +231,25 @@ fusion-bench sps check --profile sps.json --prefixes prefixes.jsonl   # retune t
 ```
 
 Widths ride the request body (`speculative: {"draft_tokens": W}`, valid 1-4) — fusion-mlx >= 0.10.59 honors them on the single-request pure-decode path; the engine's response echo drives `width_applied_rate` per candidate and `engine_spec_support` in the profile. Acceptance length comes from `/stats` `spec_decode` counters (active with native MTP). Details in `docs/sps-tuning.md`; live sample in `docs/baselines/sps-live-sample.json`.
+
+---
+
+## Same-Model Harness Comparison (issue #48)
+
+Harness-bench genre (insight axis N5/A12): the **harness**, not the model, is the variable. One deterministic agent task suite (5 offline sandbox file tasks with content verifiers) runs against two harnesses driving the identical fusion-mlx model:
+
+- **`mini-swe`** — neutral baseline in the mini-swe-agent genre: bash-only tool, linear append-only history, no admission machinery.
+- **`fusion-harness`** — same loop routed through the fusion-harness kernel: every LLM call gated/metered by `LLMFunnel`, every bash call admitted by `ToolFunnel` + `PermissionEngine`, hard per-run token budget (`--budget-tokens`).
+
+Metrics per task x harness: success rate, tokens in/out, cache hit rate (`X-Cache` provenance, #47 hygiene — bypass is always on, a hit is flagged), wall time, cost, and DetourBench-style trajectory delta (detours + one-step misses vs the task's minimal-action reference).
+
+```bash
+fusion-bench harness-bench --model mlx-community--Qwen3.5-4B-MLX-4bit \
+    --mlx-url http://localhost:11434/v1 --runs 1
+# report: benchmarks/results/harness-comparison/report.{json,md}
+```
+
+The `fusion-harness` arm needs `fusion_harness` importable (pure stdlib): `pip install -e fusion-harness`. Without it the arm reports a skip error and `mini-swe` still runs. Also exposed as the `harness-bench` executor plugin (L4) for Pipeline/REST scheduling. Sample report: `benchmarks/results/harness-comparison/`.
 
 ---
 

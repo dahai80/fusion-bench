@@ -140,6 +140,18 @@ def main():
     sps_check.add_argument("--profile", required=True, help="Path to sps.json")
     sps_check.add_argument("--prefixes", default="", help="Prefix file to re-digest for workload comparison")
 
+    # harness-bench (#48) — same-model harness comparison
+    hb_parser = subparsers.add_parser("harness-bench", help="Same-model harness comparison (mini-swe vs fusion-harness)")
+    hb_parser.add_argument("--model", required=True, help="Model name served by fusion-mlx")
+    hb_parser.add_argument("--tasks", default="", help="Comma-separated task ids (default: all builtin tasks)")
+    hb_parser.add_argument("--harnesses", default="mini-swe,fusion-harness", help="Comma-separated harnesses")
+    hb_parser.add_argument("--runs", type=int, default=1, help="Runs per task x harness cell")
+    hb_parser.add_argument("--max-steps", type=int, default=8, help="Max agent loop steps per run")
+    hb_parser.add_argument("--budget-tokens", type=int, default=100000, help="fusion-harness per-run token budget")
+    hb_parser.add_argument("--price-in-per-m", type=float, default=0.0, help="Cost per million input tokens (USD)")
+    hb_parser.add_argument("--price-out-per-m", type=float, default=0.0, help="Cost per million output tokens (USD)")
+    hb_parser.add_argument("--out", default="", help="Output directory (default: benchmarks/results/harness-comparison)")
+
     # tune
     tune_parser = subparsers.add_parser("tune", help="Auto-tune model parameters")
     tune_parser.add_argument("--max-combinations", type=int, default=12, help="Max parameter combinations")
@@ -311,6 +323,7 @@ def main():
         "tune": lambda: asyncio.run(cmd_tune(args)),
         "quant": lambda: asyncio.run(cmd_quant(args)),
         "security": lambda: asyncio.run(cmd_security(args)),
+        "harness-bench": lambda: asyncio.run(cmd_harness_bench(args)),
         "compare": lambda: asyncio.run(cmd_compare(args)),
         "gates": lambda: cmd_gates(args),
         "traces": lambda: cmd_traces(args),
@@ -671,6 +684,32 @@ def _print_retention_diff(all_results, baseline_name, threshold, models):
                     print(f"  ✓ retention OK (threshold {threshold}%)")
     finally:
         store.close()
+
+
+async def cmd_harness_bench(args):
+    """Same-model harness comparison (issue #48): mini-swe vs fusion-harness."""
+    from fusion_bench.harness_bench.compare import run_comparison
+
+    task_ids = [t.strip() for t in args.tasks.split(",") if t.strip()] or None
+    harnesses = [h.strip() for h in args.harnesses.split(",") if h.strip()]
+    out_dir = args.out or str(Path("benchmarks") / "results" / "harness-comparison")
+    print(f"Harness comparison for '{args.model}' ({harnesses}, {args.runs} run(s) per cell)...")
+    report = await run_comparison(
+        model=args.model,
+        task_ids=task_ids,
+        harnesses=harnesses,
+        runs=args.runs,
+        max_steps=args.max_steps,
+        mlx_url=args.mlx_url,
+        budget_tokens=args.budget_tokens,
+        price_in_per_m=args.price_in_per_m,
+        price_out_per_m=args.price_out_per_m,
+        out_dir=out_dir,
+    )
+    from fusion_bench.harness_bench.report import render_markdown
+
+    print(render_markdown(report))
+    print(f"Report written to {out_dir}/report.json and report.md")
 
 
 async def cmd_speed(args):
