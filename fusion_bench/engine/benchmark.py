@@ -16,6 +16,8 @@ from typing import Any
 import httpx
 from fusion_core.config import client_key
 
+from .bench_http import bench_client
+
 logger = logging.getLogger(__name__)
 
 
@@ -107,7 +109,7 @@ class BenchmarkRunner:
     @property
     def client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(
+            self._client = bench_client(
                 base_url=self.mlx_base_url,
                 timeout=self.timeout,
                 headers={"Authorization": f"Bearer {self.api_key}"},
@@ -117,7 +119,7 @@ class BenchmarkRunner:
     async def get_client(self) -> httpx.AsyncClient:
         async with self._client_lock:
             if self._client is None:
-                self._client = httpx.AsyncClient(
+                self._client = bench_client(
                     base_url=self.mlx_base_url,
                     timeout=self.timeout,
                     headers={"Authorization": f"Bearer {self.api_key}"},

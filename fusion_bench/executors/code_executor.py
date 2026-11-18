@@ -14,8 +14,6 @@ import re
 import time
 from dataclasses import dataclass, field
 
-import httpx
-
 from fusion_bench.core.plugin_base import (
     CaseResult,
     EvalResult,
@@ -23,6 +21,8 @@ from fusion_bench.core.plugin_base import (
     ExecutorType,
     TaskConfig,
 )
+
+from ..engine.bench_http import bench_client
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ class CodeExecutor(ExecutorPlugin):
             },
             {"role": "user", "content": test_case.prompt},
         ]
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with bench_client(timeout=120.0) as client:
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
                 json={

@@ -29,6 +29,7 @@ from typing import Any
 import httpx
 from fusion_core.config import client_key
 
+from ..engine.bench_http import bench_client
 from .prefixes import SPrefix
 from .profile import SpsProfile, current_hardware, file_digest
 
@@ -85,7 +86,7 @@ class SpsTuner:
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
             headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
-            self._client = httpx.AsyncClient(base_url=self.mlx_base_url, timeout=self.config.timeout, headers=headers)
+            self._client = bench_client(base_url=self.mlx_base_url, timeout=self.config.timeout, headers=headers)
         return self._client
 
     async def close(self) -> None:

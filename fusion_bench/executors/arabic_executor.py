@@ -36,6 +36,7 @@ import httpx
 from fusion_core.config import client_key
 
 from ..core.plugin_base import CaseResult, EvalResult, ExecutorPlugin, ExecutorType, TaskConfig
+from ..engine.bench_http import bench_client
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ class ArabicEvalExecutor(ExecutorPlugin):
             "max_tokens": max_tokens,
             "temperature": 0.0,
         }
-        async with httpx.AsyncClient(timeout=120.0, headers={"Authorization": f"Bearer {self.api_key}"}) as client:
+        async with bench_client(timeout=120.0, headers={"Authorization": f"Bearer {self.api_key}"}) as client:
             resp = await client.post(f"{self.mlx_base_url}/chat/completions", json=payload)
             resp.raise_for_status()
             data = resp.json()

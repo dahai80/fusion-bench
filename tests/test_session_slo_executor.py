@@ -10,6 +10,17 @@ from fusion_bench.core.plugin_base import ExecutorType, TaskConfig
 from fusion_bench.executors.session_slo_executor import _SLO_METRICS, SessionSloExecutor
 from fusion_bench.orchestrator.scheduler import Scheduler
 
+
+def _patch_bench_client(post_mock):
+    client = MagicMock()
+    client.post = post_mock
+    client.__aenter__.return_value = client
+    return patch(
+        "fusion_bench.executors.session_slo_executor.bench_client",
+        return_value=client,
+    )
+
+
 _SLO_SUMMARY = {
     "sessions_completed": 12,
     "compactions_total": 5,
@@ -58,10 +69,7 @@ class TestSessionSloExecutor:
         mock_resp = MagicMock()
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = dict(_SLO_SUMMARY)
-        with patch(
-            "fusion_bench.executors.session_slo_executor.httpx.AsyncClient.post",
-            new=AsyncMock(return_value=mock_resp),
-        ):
+        with _patch_bench_client(AsyncMock(return_value=mock_resp)):
             result = await SessionSloExecutor().run(_task())
 
         assert result.errors == []
@@ -83,10 +91,7 @@ class TestSessionSloExecutor:
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = dict(_SLO_SUMMARY)
         post_mock = AsyncMock(return_value=mock_resp)
-        with patch(
-            "fusion_bench.executors.session_slo_executor.httpx.AsyncClient.post",
-            new=post_mock,
-        ):
+        with _patch_bench_client(post_mock):
             await SessionSloExecutor("http://127.0.0.1:11442").run(_task({"agent_studio_api_key": "sk-test"}))
         post_mock.assert_awaited_once()
         args, kwargs = post_mock.await_args
@@ -100,10 +105,7 @@ class TestSessionSloExecutor:
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = dict(_SLO_SUMMARY)
         post_mock = AsyncMock(return_value=mock_resp)
-        with patch(
-            "fusion_bench.executors.session_slo_executor.httpx.AsyncClient.post",
-            new=post_mock,
-        ):
+        with _patch_bench_client(post_mock):
             await SessionSloExecutor().run(_task({"agent_studio_url": "http://127.0.0.1:9999"}))
         args, _ = post_mock.await_args
         assert args[0] == "http://127.0.0.1:9999/v1/rpc"
@@ -113,10 +115,7 @@ class TestSessionSloExecutor:
         mock_resp = MagicMock()
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = {"sessions_completed": 1}
-        with patch(
-            "fusion_bench.executors.session_slo_executor.httpx.AsyncClient.post",
-            new=AsyncMock(return_value=mock_resp),
-        ):
+        with _patch_bench_client(AsyncMock(return_value=mock_resp)):
             result = await SessionSloExecutor().run(_task())
         assert result.errors == []
         assert len(result.cases) == len(_SLO_METRICS)
@@ -130,20 +129,14 @@ class TestSessionSloExecutor:
         mock_resp = MagicMock()
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = {**_SLO_SUMMARY, "approvals_total": "many"}
-        with patch(
-            "fusion_bench.executors.session_slo_executor.httpx.AsyncClient.post",
-            new=AsyncMock(return_value=mock_resp),
-        ):
+        with _patch_bench_client(AsyncMock(return_value=mock_resp)):
             result = await SessionSloExecutor().run(_task())
         by_metric = {c.meta["metric"]: c for c in result.cases}
         assert by_metric["approvals_total"].score == 0.0
 
     @pytest.mark.asyncio
     async def test_run_rpc_failure_returns_errors(self):
-        with patch(
-            "fusion_bench.executors.session_slo_executor.httpx.AsyncClient.post",
-            new=AsyncMock(side_effect=ConnectionError("refused")),
-        ):
+        with _patch_bench_client(AsyncMock(side_effect=ConnectionError("refused"))):
             result = await SessionSloExecutor().run(_task())
         assert len(result.errors) == 1
         assert "telemetry.session_slo RPC failed" in result.errors[0]
@@ -154,10 +147,7 @@ class TestSessionSloExecutor:
     async def test_run_http_error_returns_errors(self):
         mock_resp = MagicMock()
         mock_resp.raise_for_status = MagicMock(side_effect=Exception("HTTP 401"))
-        with patch(
-            "fusion_bench.executors.session_slo_executor.httpx.AsyncClient.post",
-            new=AsyncMock(return_value=mock_resp),
-        ):
+        with _patch_bench_client(AsyncMock(return_value=mock_resp)):
             result = await SessionSloExecutor().run(_task())
         assert len(result.errors) == 1
         assert "HTTP 401" in result.errors[0]

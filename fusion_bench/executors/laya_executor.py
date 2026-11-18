@@ -34,6 +34,7 @@ import httpx
 from fusion_core.config import client_key
 
 from ..core.plugin_base import CaseResult, EvalResult, ExecutorPlugin, ExecutorType, TaskConfig
+from ..engine.bench_http import bench_client
 
 logger = logging.getLogger(__name__)
 
@@ -247,7 +248,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         return round(cold_start_ms, 2)
 
     async def _call_laya_decide(self, prompt: str, preset: str = "router") -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0, headers={"Authorization": f"Bearer {self.api_key}"}) as client:
+        async with bench_client(timeout=30.0, headers={"Authorization": f"Bearer {self.api_key}"}) as client:
             resp = await client.post(
                 f"{self.mlx_base_url}/laya/decide",
                 json={"prompt": prompt, "preset": preset},
@@ -409,9 +410,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         if competing_model:
             try:
                 logger.info("VRAM test: loading competing model %s", competing_model)
-                async with httpx.AsyncClient(
-                    timeout=120.0, headers={"Authorization": f"Bearer {self.api_key}"}
-                ) as client:
+                async with bench_client(timeout=120.0, headers={"Authorization": f"Bearer {self.api_key}"}) as client:
                     resp = await client.post(
                         f"{self.mlx_base_url}/chat/completions",
                         json={

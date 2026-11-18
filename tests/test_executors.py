@@ -102,7 +102,7 @@ class TestSecurityExecutor:
         )
 
         with patch(
-            "fusion_bench.executors.security_executor.httpx.AsyncClient",
+            "fusion_bench.executors.security_executor.bench_client",
             return_value=mock_client,
         ):
             executor = SecurityExecutor()
@@ -148,7 +148,7 @@ class TestSecurityExecutor:
         )
 
         with patch(
-            "fusion_bench.executors.security_executor.httpx.AsyncClient",
+            "fusion_bench.executors.security_executor.bench_client",
             return_value=mock_client,
         ):
             executor = SecurityExecutor()
@@ -171,7 +171,7 @@ class TestSecurityExecutor:
         )
 
         with patch(
-            "fusion_bench.executors.security_executor.httpx.AsyncClient",
+            "fusion_bench.executors.security_executor.bench_client",
             return_value=mock_client,
         ):
             executor = SecurityExecutor()
@@ -195,7 +195,7 @@ class TestSecurityExecutor:
         )
 
         with patch(
-            "fusion_bench.executors.security_executor.httpx.AsyncClient",
+            "fusion_bench.executors.security_executor.bench_client",
             return_value=mock_client,
         ):
             executor = SecurityExecutor()
@@ -218,7 +218,7 @@ class TestSecurityExecutor:
         )
 
         with patch(
-            "fusion_bench.executors.security_executor.httpx.AsyncClient",
+            "fusion_bench.executors.security_executor.bench_client",
             return_value=mock_client,
         ):
             executor = SecurityExecutor()

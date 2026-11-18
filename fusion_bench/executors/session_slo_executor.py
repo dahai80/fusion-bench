@@ -14,8 +14,6 @@ import logging
 import os
 import time
 
-import httpx
-
 from ..core.plugin_base import (
     CaseResult,
     EvalResult,
@@ -23,6 +21,7 @@ from ..core.plugin_base import (
     ExecutorType,
     TaskConfig,
 )
+from ..engine.bench_http import bench_client
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +62,7 @@ class SessionSloExecutor(ExecutorPlugin):
             task_config.task_id,
         )
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with bench_client(timeout=30.0) as client:
                 resp = await client.post(
                     f"{base_url}/v1/rpc",
                     json={"method": "telemetry.session_slo", "params": {}},

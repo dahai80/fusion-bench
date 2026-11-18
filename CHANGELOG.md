@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.31
+version: 0.4.32
 updated: 2026-11-12
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.32 (2026-11-18)
+
+- Feat #47: dual-metric acceptance reporting + cache-proof bench requests. (1) Every model-inference request carries `X-Cache: bypass` via `engine/bench_http.bench_client` (12 call sites: adapter, SPS tuner, benchmark runner, 8 executors) — fusion-mlx force-caches non-streaming T=0 completions keyed on the full request fingerprint, so a repeated-prompt bench measured the cache, not the model. (2) `reporter/acceptance.py` splits baseline-vs-candidate deltas into elicitation (tasks baseline already scored on that improved) and expansion (tasks baseline scored 0 on that now pass) — never blended; regression reported separately; wired into the `compare --baseline` retention diff. Verified live: identical prompt twice without the header → 2nd response 0.017s `X-Cache: HIT`; with bypass → 2.59s / 1.36s fresh inference. 9 new tests (766 collected).
 
 ## v0.4.31 (2026-11-16)
 

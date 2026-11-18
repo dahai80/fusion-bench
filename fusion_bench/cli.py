@@ -661,6 +661,10 @@ def _print_retention_diff(all_results, baseline_name, threshold, models):
                 math_delta_pct = diff["diffs"].get("math_accuracy", {}).get("delta_pct")
                 print(f"  GSM8K: Δ={gsm8k_delta_pct}%" if gsm8k_delta_pct is not None else "  GSM8K: n/a")
                 print(f"  MATH:  Δ={math_delta_pct}%" if math_delta_pct is not None else "  MATH:  n/a")
+                from .reporter.acceptance import format_split_markdown, split_acceptance
+
+                split = split_acceptance(diff.get("baseline", {}), current)
+                print(format_split_markdown(split))
                 if gsm8k_delta_pct is not None and gsm8k_delta_pct <= threshold:
                     print(f"  ⚠ CATASTROPHIC FORGETTING: GSM8K Δ {gsm8k_delta_pct}% ≤ {threshold}%")
                 else:

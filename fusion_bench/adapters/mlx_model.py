@@ -17,6 +17,8 @@ import time
 
 import httpx
 
+from ..engine.bench_http import bench_client
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,7 +59,7 @@ class MLXModel:
     @property
     def client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(
+            self._client = bench_client(
                 base_url=self.base_url,
                 timeout=120.0,
                 headers={"Authorization": f"Bearer {self.api_key}"},
@@ -67,7 +69,7 @@ class MLXModel:
     async def get_client(self) -> httpx.AsyncClient:
         async with self._client_lock:
             if self._client is None:
-                self._client = httpx.AsyncClient(
+                self._client = bench_client(
                     base_url=self.base_url,
                     timeout=120.0,
                     headers={"Authorization": f"Bearer {self.api_key}"},

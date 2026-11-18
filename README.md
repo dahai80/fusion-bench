@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-757-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-766-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -438,6 +438,9 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.32 (2026-11-18)
+
+- **Feat #47 — dual-metric acceptance + cache-proof bench requests**. Request hygiene: all model-inference HTTP clients go through `engine/bench_http.bench_client`, which sends `X-Cache: bypass` (fusion-mlx force-caches non-streaming T=0 completions on the full request fingerprint — without it a repeated-prompt bench measures the cache; verified live: repeat without header = 0.017s `X-Cache: HIT`, with bypass = full fresh latency both runs). Reporting: `reporter/acceptance.py` derives the elicitation vs expansion acceptance split (arXiv 2610.27889) from baseline/candidate task scores at report time — never blended, regressions separate; surfaced in `compare --baseline` output. 9 new tests (766 collected).
 ### v0.4.31 (2026-11-16)
 
 - **CI retrofit (issue #45, [fusion#2](https://github.com/dahai80/fusion#2) checklist)** — `concurrency` cancel-in-progress grouped by ref, docs-only `paths-ignore`; assessments: dependency cache present, sharding/nightly tier unnecessary (full suite ~2 min per PR). CI-only, no runtime changes (PR #46).

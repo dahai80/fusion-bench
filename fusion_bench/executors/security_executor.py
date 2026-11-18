@@ -10,8 +10,6 @@ from __future__ import annotations
 import logging
 import time
 
-import httpx
-
 from ..core.plugin_base import (
     CaseResult,
     EvalResult,
@@ -19,6 +17,7 @@ from ..core.plugin_base import (
     ExecutorType,
     TaskConfig,
 )
+from ..engine.bench_http import bench_client
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +92,7 @@ class SecurityExecutor(ExecutorPlugin):
         api_key = config.get("api_key", self.api_key)
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
-        async with httpx.AsyncClient(base_url=base_url, timeout=60.0, headers=headers) as client:
+        async with bench_client(base_url=base_url, timeout=60.0, headers=headers) as client:
             for probe in probes:
                 try:
                     resp = await client.post(
