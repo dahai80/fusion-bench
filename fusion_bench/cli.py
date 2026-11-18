@@ -141,7 +141,9 @@ def main():
     sps_check.add_argument("--prefixes", default="", help="Prefix file to re-digest for workload comparison")
 
     # harness-bench (#48) — same-model harness comparison
-    hb_parser = subparsers.add_parser("harness-bench", help="Same-model harness comparison (mini-swe vs fusion-harness)")
+    hb_parser = subparsers.add_parser(
+        "harness-bench", help="Same-model harness comparison (mini-swe vs fusion-harness)"
+    )
     hb_parser.add_argument("--model", required=True, help="Model name served by fusion-mlx")
     hb_parser.add_argument("--tasks", default="", help="Comma-separated task ids (default: all builtin tasks)")
     hb_parser.add_argument("--harnesses", default="mini-swe,fusion-harness", help="Comma-separated harnesses")
@@ -150,7 +152,9 @@ def main():
     hb_parser.add_argument("--budget-tokens", type=int, default=100000, help="fusion-harness per-run token budget")
     hb_parser.add_argument("--price-in-per-m", type=float, default=0.0, help="Cost per million input tokens (USD)")
     hb_parser.add_argument("--price-out-per-m", type=float, default=0.0, help="Cost per million output tokens (USD)")
-    hb_parser.add_argument("--out", default="", help="Output directory (default: benchmarks/results/harness-comparison)")
+    hb_parser.add_argument(
+        "--out", default="", help="Output directory (default: benchmarks/results/harness-comparison)"
+    )
 
     # tune
     tune_parser = subparsers.add_parser("tune", help="Auto-tune model parameters")
