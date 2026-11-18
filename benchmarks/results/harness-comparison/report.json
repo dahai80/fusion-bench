@@ -1,0 +1,677 @@
+{
+  "schema": "fusion-bench/harness-comparison@v1",
+  "model": "mlx-community--Qwen3.5-4B-MLX-4bit",
+  "mlx_url": "http://localhost:11434/v1",
+  "seed": 42,
+  "runs_per_cell": 1,
+  "max_steps": 8,
+  "price_in_per_m": 0.0,
+  "price_out_per_m": 0.0,
+  "harnesses": [
+    "mini-swe",
+    "fusion-harness"
+  ],
+  "tasks": {
+    "fix-typo": {
+      "mini-swe": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 1802,
+          "tokens_out_total": 90,
+          "tokens_in_mean": 1802.0,
+          "tokens_out_mean": 90.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 216.935,
+          "wall_s_total": 216.935,
+          "steps_mean": 7.0,
+          "detours_total": 6,
+          "one_step_misses_total": 0
+        },
+        "runs": [
+          {
+            "task_id": "fix-typo",
+            "harness": "mini-swe",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 7,
+            "actions": [
+              "cat greeting.txt",
+              "sed -i 's/Helo/Hello/' greeting.txt",
+              "sed -i 's/Helo/Hello/' greeting.txt",
+              "sed -i 's/Helo/Hello/' greeting.txt",
+              "printf 'Hello world\\n' > greeting.txt",
+              "cat greeting.txt",
+              "cat greeting.txt"
+            ],
+            "tokens_in": 1802,
+            "tokens_out": 90,
+            "llm_calls": 8,
+            "cache_hits": 0,
+            "wall_s": 216.9346,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 6,
+              "one_step_misses": 0,
+              "minimal_delta": 6,
+              "reference_steps": 1,
+              "executed_steps": 7,
+              "matches": [
+                {
+                  "executed": "sed -i 's/Helo/Hello/' greeting.txt",
+                  "reference": "sed -i 's/Helo/Hello/' greeting.txt",
+                  "similarity": 1.0
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      },
+      "fusion-harness": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 1802,
+          "tokens_out_total": 90,
+          "tokens_in_mean": 1802.0,
+          "tokens_out_mean": 90.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 117.233,
+          "wall_s_total": 117.233,
+          "steps_mean": 7.0,
+          "detours_total": 6,
+          "one_step_misses_total": 0
+        },
+        "runs": [
+          {
+            "task_id": "fix-typo",
+            "harness": "fusion-harness",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 7,
+            "actions": [
+              "cat greeting.txt",
+              "sed -i 's/Helo/Hello/' greeting.txt",
+              "sed -i 's/Helo/Hello/' greeting.txt",
+              "sed -i 's/Helo/Hello/' greeting.txt",
+              "printf 'Hello world\\n' > greeting.txt",
+              "cat greeting.txt",
+              "cat greeting.txt"
+            ],
+            "tokens_in": 1802,
+            "tokens_out": 90,
+            "llm_calls": 8,
+            "cache_hits": 0,
+            "wall_s": 117.2327,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 6,
+              "one_step_misses": 0,
+              "minimal_delta": 6,
+              "reference_steps": 1,
+              "executed_steps": 7,
+              "matches": [
+                {
+                  "executed": "sed -i 's/Helo/Hello/' greeting.txt",
+                  "reference": "sed -i 's/Helo/Hello/' greeting.txt",
+                  "similarity": 1.0
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      }
+    },
+    "add-config-key": {
+      "mini-swe": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 1790,
+          "tokens_out_total": 180,
+          "tokens_in_mean": 1790.0,
+          "tokens_out_mean": 180.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 99.885,
+          "wall_s_total": 99.885,
+          "steps_mean": 8.0,
+          "detours_total": 8,
+          "one_step_misses_total": 0
+        },
+        "runs": [
+          {
+            "task_id": "add-config-key",
+            "harness": "mini-swe",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 8,
+            "actions": [
+              "cat config.json",
+              "echo '{\"name': 'demo', 'version': 1}' > config.json",
+              "echo '{\"name\": \"demo\", \"version\": 1}' > config.json",
+              "cat config.json",
+              "cat config.json",
+              "cat config.json",
+              "cat config.json",
+              "cat config.json"
+            ],
+            "tokens_in": 1790,
+            "tokens_out": 180,
+            "llm_calls": 8,
+            "cache_hits": 0,
+            "wall_s": 99.8847,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 8,
+              "one_step_misses": 0,
+              "minimal_delta": 9,
+              "reference_steps": 1,
+              "executed_steps": 8,
+              "matches": []
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      },
+      "fusion-harness": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 1790,
+          "tokens_out_total": 180,
+          "tokens_in_mean": 1790.0,
+          "tokens_out_mean": 180.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 239.728,
+          "wall_s_total": 239.728,
+          "steps_mean": 8.0,
+          "detours_total": 8,
+          "one_step_misses_total": 0
+        },
+        "runs": [
+          {
+            "task_id": "add-config-key",
+            "harness": "fusion-harness",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 8,
+            "actions": [
+              "cat config.json",
+              "echo '{\"name': 'demo', 'version': 1}' > config.json",
+              "echo '{\"name\": \"demo\", \"version\": 1}' > config.json",
+              "cat config.json",
+              "cat config.json",
+              "cat config.json",
+              "cat config.json",
+              "cat config.json"
+            ],
+            "tokens_in": 1790,
+            "tokens_out": 180,
+            "llm_calls": 8,
+            "cache_hits": 0,
+            "wall_s": 239.7277,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 8,
+              "one_step_misses": 0,
+              "minimal_delta": 9,
+              "reference_steps": 1,
+              "executed_steps": 8,
+              "matches": []
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      }
+    },
+    "create-notes": {
+      "mini-swe": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 552,
+          "tokens_out_total": 54,
+          "tokens_in_mean": 552.0,
+          "tokens_out_mean": 54.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 68.903,
+          "wall_s_total": 68.903,
+          "steps_mean": 3.0,
+          "detours_total": 2,
+          "one_step_misses_total": 0
+        },
+        "runs": [
+          {
+            "task_id": "create-notes",
+            "harness": "mini-swe",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 3,
+            "actions": [
+              "echo 'harness bench' > notes.md",
+              "cat notes.md",
+              "cat notes.md"
+            ],
+            "tokens_in": 552,
+            "tokens_out": 54,
+            "llm_calls": 4,
+            "cache_hits": 0,
+            "wall_s": 68.9035,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 2,
+              "one_step_misses": 0,
+              "minimal_delta": 2,
+              "reference_steps": 1,
+              "executed_steps": 3,
+              "matches": [
+                {
+                  "executed": "echo 'harness bench' > notes.md",
+                  "reference": "echo 'harness bench' > notes.md",
+                  "similarity": 1.0
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      },
+      "fusion-harness": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 552,
+          "tokens_out_total": 54,
+          "tokens_in_mean": 552.0,
+          "tokens_out_mean": 54.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 81.408,
+          "wall_s_total": 81.408,
+          "steps_mean": 3.0,
+          "detours_total": 2,
+          "one_step_misses_total": 0
+        },
+        "runs": [
+          {
+            "task_id": "create-notes",
+            "harness": "fusion-harness",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 3,
+            "actions": [
+              "echo 'harness bench' > notes.md",
+              "cat notes.md",
+              "cat notes.md"
+            ],
+            "tokens_in": 552,
+            "tokens_out": 54,
+            "llm_calls": 4,
+            "cache_hits": 0,
+            "wall_s": 81.4079,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 2,
+              "one_step_misses": 0,
+              "minimal_delta": 2,
+              "reference_steps": 1,
+              "executed_steps": 3,
+              "matches": [
+                {
+                  "executed": "echo 'harness bench' > notes.md",
+                  "reference": "echo 'harness bench' > notes.md",
+                  "similarity": 1.0
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      }
+    },
+    "two-step-edit": {
+      "mini-swe": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 434,
+          "tokens_out_total": 35,
+          "tokens_in_mean": 434.0,
+          "tokens_out_mean": 35.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 99.484,
+          "wall_s_total": 99.484,
+          "steps_mean": 2.0,
+          "detours_total": 1,
+          "one_step_misses_total": 1
+        },
+        "runs": [
+          {
+            "task_id": "two-step-edit",
+            "harness": "mini-swe",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 2,
+            "actions": [
+              "echo \"alpha\" > part_a.txt && echo \"beta\" > part_b.txt",
+              "cat part_a.txt part_b.txt"
+            ],
+            "tokens_in": 434,
+            "tokens_out": 35,
+            "llm_calls": 3,
+            "cache_hits": 0,
+            "wall_s": 99.4835,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 1,
+              "one_step_misses": 1,
+              "minimal_delta": 2,
+              "reference_steps": 2,
+              "executed_steps": 2,
+              "matches": [
+                {
+                  "executed": "cat part_a.txt part_b.txt",
+                  "reference": "write beta into part_b.txt",
+                  "similarity": 0.667
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      },
+      "fusion-harness": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 434,
+          "tokens_out_total": 35,
+          "tokens_in_mean": 434.0,
+          "tokens_out_mean": 35.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 32.542,
+          "wall_s_total": 32.542,
+          "steps_mean": 2.0,
+          "detours_total": 1,
+          "one_step_misses_total": 1
+        },
+        "runs": [
+          {
+            "task_id": "two-step-edit",
+            "harness": "fusion-harness",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 2,
+            "actions": [
+              "echo \"alpha\" > part_a.txt && echo \"beta\" > part_b.txt",
+              "cat part_a.txt part_b.txt"
+            ],
+            "tokens_in": 434,
+            "tokens_out": 35,
+            "llm_calls": 3,
+            "cache_hits": 0,
+            "wall_s": 32.5419,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 1,
+              "one_step_misses": 1,
+              "minimal_delta": 2,
+              "reference_steps": 2,
+              "executed_steps": 2,
+              "matches": [
+                {
+                  "executed": "cat part_a.txt part_b.txt",
+                  "reference": "write beta into part_b.txt",
+                  "similarity": 0.667
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      }
+    },
+    "compute-sum": {
+      "mini-swe": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 390,
+          "tokens_out_total": 23,
+          "tokens_in_mean": 390.0,
+          "tokens_out_mean": 23.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 25.675,
+          "wall_s_total": 25.675,
+          "steps_mean": 2.0,
+          "detours_total": 1,
+          "one_step_misses_total": 1
+        },
+        "runs": [
+          {
+            "task_id": "compute-sum",
+            "harness": "mini-swe",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 2,
+            "actions": [
+              "echo \"391\" > sum.txt",
+              "cat sum.txt"
+            ],
+            "tokens_in": 390,
+            "tokens_out": 23,
+            "llm_calls": 3,
+            "cache_hits": 0,
+            "wall_s": 25.6753,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 1,
+              "one_step_misses": 1,
+              "minimal_delta": 1,
+              "reference_steps": 1,
+              "executed_steps": 2,
+              "matches": [
+                {
+                  "executed": "echo \"391\" > sum.txt",
+                  "reference": "echo 391 > sum.txt",
+                  "similarity": 1.0
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      },
+      "fusion-harness": {
+        "metrics": {
+          "runs": 1,
+          "success_rate": 1.0,
+          "tokens_in_total": 390,
+          "tokens_out_total": 23,
+          "tokens_in_mean": 390.0,
+          "tokens_out_mean": 23.0,
+          "cache_hit_rate": 0.0,
+          "wall_s_mean": 135.194,
+          "wall_s_total": 135.194,
+          "steps_mean": 2.0,
+          "detours_total": 1,
+          "one_step_misses_total": 1
+        },
+        "runs": [
+          {
+            "task_id": "compute-sum",
+            "harness": "fusion-harness",
+            "passed": true,
+            "verify_detail": "ok",
+            "steps": 2,
+            "actions": [
+              "echo \"391\" > sum.txt",
+              "cat sum.txt"
+            ],
+            "tokens_in": 390,
+            "tokens_out": 23,
+            "llm_calls": 3,
+            "cache_hits": 0,
+            "wall_s": 135.1936,
+            "error": "",
+            "run": 1,
+            "trajectory": {
+              "detours": 1,
+              "one_step_misses": 1,
+              "minimal_delta": 1,
+              "reference_steps": 1,
+              "executed_steps": 2,
+              "matches": [
+                {
+                  "executed": "echo \"391\" > sum.txt",
+                  "reference": "echo 391 > sum.txt",
+                  "similarity": 1.0
+                }
+              ]
+            },
+            "cost_usd": 0.0
+          }
+        ]
+      }
+    }
+  },
+  "summary": {
+    "mini-swe": {
+      "success_rate": 1.0,
+      "tokens_in_mean": 993.6,
+      "tokens_out_mean": 76.4,
+      "cache_hit_rate": 0.0,
+      "wall_s_mean": 102.176,
+      "steps_mean": 4.4,
+      "detours_total": 18,
+      "one_step_misses_total": 2
+    },
+    "fusion-harness": {
+      "success_rate": 1.0,
+      "tokens_in_mean": 993.6,
+      "tokens_out_mean": 76.4,
+      "cache_hit_rate": 0.0,
+      "wall_s_mean": 121.221,
+      "steps_mean": 4.4,
+      "detours_total": 18,
+      "one_step_misses_total": 2
+    }
+  },
+  "cost_table": [
+    {
+      "task": "fix-typo",
+      "harness": "mini-swe",
+      "run": 1,
+      "tokens_in": 1802,
+      "tokens_out": 90,
+      "llm_calls": 8,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "fix-typo",
+      "harness": "fusion-harness",
+      "run": 1,
+      "tokens_in": 1802,
+      "tokens_out": 90,
+      "llm_calls": 8,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "add-config-key",
+      "harness": "mini-swe",
+      "run": 1,
+      "tokens_in": 1790,
+      "tokens_out": 180,
+      "llm_calls": 8,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "add-config-key",
+      "harness": "fusion-harness",
+      "run": 1,
+      "tokens_in": 1790,
+      "tokens_out": 180,
+      "llm_calls": 8,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "create-notes",
+      "harness": "mini-swe",
+      "run": 1,
+      "tokens_in": 552,
+      "tokens_out": 54,
+      "llm_calls": 4,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "create-notes",
+      "harness": "fusion-harness",
+      "run": 1,
+      "tokens_in": 552,
+      "tokens_out": 54,
+      "llm_calls": 4,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "two-step-edit",
+      "harness": "mini-swe",
+      "run": 1,
+      "tokens_in": 434,
+      "tokens_out": 35,
+      "llm_calls": 3,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "two-step-edit",
+      "harness": "fusion-harness",
+      "run": 1,
+      "tokens_in": 434,
+      "tokens_out": 35,
+      "llm_calls": 3,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "compute-sum",
+      "harness": "mini-swe",
+      "run": 1,
+      "tokens_in": 390,
+      "tokens_out": 23,
+      "llm_calls": 3,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "task": "compute-sum",
+      "harness": "fusion-harness",
+      "run": 1,
+      "tokens_in": 390,
+      "tokens_out": 23,
+      "llm_calls": 3,
+      "cache_hits": 0,
+      "cost_usd": 0.0
+    }
+  ],
+  "errors": [],
+  "cost_total": {
+    "mini-swe": 0.0,
+    "fusion-harness": 0.0
+  }
+}
