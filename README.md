@@ -458,6 +458,9 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.33 (2026-11-18)
+
+- **Feat #48 — same-model harness comparison benchmark (harness-bench genre)**. New `fusion_bench/harness_bench/` + `harness-bench` CLI + `harness_bench` executor: runs the same model through the fusion-harness agent loop and a mini-swe-agent-style baseline on identical task sets, offline via fusion-mlx (`X-Cache: bypass` throughout), scoring DetourBench-style detour metrics (detour rate, one-step miss, completion, tokens/cost) side by side. All 4 acceptance criteria verified live on Qwen3.5-4B (5/5 both harnesses, 0 cache hits).
 ### v0.4.32 (2026-11-18)
 
 - **Feat #47 — dual-metric acceptance + cache-proof bench requests**. Request hygiene: all model-inference HTTP clients go through `engine/bench_http.bench_client`, which sends `X-Cache: bypass` (fusion-mlx force-caches non-streaming T=0 completions on the full request fingerprint — without it a repeated-prompt bench measures the cache; verified live: repeat without header = 0.017s `X-Cache: HIT`, with bypass = full fresh latency both runs). Reporting: `reporter/acceptance.py` derives the elicitation vs expansion acceptance split (arXiv 2610.27889) from baseline/candidate task scores at report time — never blended, regressions separate; surfaced in `compare --baseline` output. 9 new tests (766 collected).
