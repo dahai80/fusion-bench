@@ -156,6 +156,41 @@ def main():
         "--out", default="", help="Output directory (default: benchmarks/results/harness-comparison)"
     )
 
+    # golden (#49) — golden eval set from production traffic + regression gate
+    golden_parser = subparsers.add_parser("golden", help="Golden eval set: ingest / pii-scan / gate / coverage")
+    golden_sub = golden_parser.add_subparsers(dest="golden_command", required=True)
+    g_ingest = golden_sub.add_parser("ingest", help="Ingest a sampled ops export into a versioned golden set")
+    g_ingest.add_argument(
+        "--samples",
+        required=True,
+        help="JSONL export from ops_prompts (category, prompt, expected, desensitized/opted_in, is_failure_case)",
+    )
+    g_ingest.add_argument("--out", required=True, help="Output golden-cases-vN.jsonl path")
+    g_ingest.add_argument("--cap", type=int, default=10, help="Per-category cap for non-failure records")
+    g_ingest.add_argument(
+        "--strict-pii", action="store_true", help="Raise instead of skip when a sample still contains PII"
+    )
+    g_scan = golden_sub.add_parser("scan", help="PII-scan golden files (CI gate; exit 1 on hit)")
+    g_scan.add_argument("--dir", default="benchmarks/golden", help="Directory to scan")
+    g_run = golden_sub.add_parser("run", help="Run the golden regression gate against a model")
+    g_run.add_argument("--golden", default="benchmarks/golden/golden-cases-v1.jsonl", help="Golden cases file")
+    g_run.add_argument("--model", required=True, help="Model name served by fusion-mlx")
+    g_run.add_argument("--threshold", type=float, default=5.0, help="Max allowed pass-rate regression (pct points)")
+    g_run.add_argument(
+        "--update-baseline", action="store_true", help="Overwrite the stored golden baseline with this run"
+    )
+    g_run.add_argument("--max-tokens", type=int, default=256, help="Max tokens per golden completion")
+    g_run.add_argument(
+        "--mlx-url",
+        default="http://127.0.0.1:11434/v1",
+        help="fusion-mlx API URL (default: direct :11434 — the gateway cache would corrupt gate results)",
+    )
+    g_run.add_argument("--output", default="", help="Write the gate report JSON to this path")
+    g_cov = golden_sub.add_parser("coverage", help="Top-10 scenario coverage KPI")
+    g_cov.add_argument("--histogram", required=True, help="JSON file: category -> request count (ops export)")
+    g_cov.add_argument("--golden", default="benchmarks/golden/golden-cases-v1.jsonl", help="Golden cases file")
+    g_cov.add_argument("--top", type=int, default=10, help="Top-N categories in the KPI")
+
     # tune
     tune_parser = subparsers.add_parser("tune", help="Auto-tune model parameters")
     tune_parser.add_argument("--max-combinations", type=int, default=12, help="Max parameter combinations")
@@ -328,6 +363,7 @@ def main():
         "quant": lambda: asyncio.run(cmd_quant(args)),
         "security": lambda: asyncio.run(cmd_security(args)),
         "harness-bench": lambda: asyncio.run(cmd_harness_bench(args)),
+        "golden": lambda: cmd_golden(args),
         "compare": lambda: asyncio.run(cmd_compare(args)),
         "gates": lambda: cmd_gates(args),
         "traces": lambda: cmd_traces(args),
@@ -688,6 +724,71 @@ def _print_retention_diff(all_results, baseline_name, threshold, models):
                     print(f"  ✓ retention OK (threshold {threshold}%)")
     finally:
         store.close()
+
+
+def cmd_golden(args):
+    """Golden eval set operations (#49): ingest / pii-scan / gate / coverage."""
+    import sys
+
+    from .golden.coverage import coverage_from_files
+    from .golden.ingest import ingest_samples
+    from .golden.pii_scan import scan_dir
+
+    if args.golden_command == "ingest":
+        stats = ingest_samples(args.samples, args.out, per_category_cap=args.cap, fail_on_pii=args.strict_pii)
+        print(json.dumps(stats, indent=2, ensure_ascii=False))
+    elif args.golden_command == "scan":
+        hits = scan_dir(args.dir)
+        if hits:
+            for h in hits:
+                print(f"PII HIT {h['kind']} in {h['file']}:{h['line']} (case {h['case_id']}): {h['masked']}")
+            print(f"FAILED: {len(hits)} PII hit(s) — golden files must be desensitized")
+            sys.exit(1)
+        else:
+            print(f"PII scan clean: {args.dir}")
+    elif args.golden_command == "run":
+        import os
+
+        from .golden.gate import run_golden_gate
+
+        async def _run():
+            return await run_golden_gate(
+                args.golden,
+                args.model,
+                mlx_base_url=args.mlx_url,
+                api_key=os.environ.get("FUSION_CLIENT_KEY", ""),
+                threshold_pct=args.threshold,
+                update_baseline=args.update_baseline,
+                max_tokens=args.max_tokens,
+            )
+
+        report = asyncio.run(_run())
+        results = report.pop("results", [])
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        fails = [r for r in results if not r["passed"]]
+        if fails:
+            print(f"\nFailed cases ({len(fails)}):")
+            for r in fails:
+                print(f"  - {r['case_id']} ({r['category']})")
+        if report.get("verdict") == "blocked":
+            print(
+                f"\nGATE BLOCKED: pass-rate dropped {report.get('drop_points')} pts (> {report.get('threshold_pct')})"
+            )
+            sys.exit(1)
+        if report.get("verdict") == "passed":
+            print("\nGATE PASSED")
+        if args.output:
+            Path(args.output).write_text(
+                json.dumps({**report, "results": results}, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            print(f"Report saved to {args.output}")
+    elif args.golden_command == "coverage":
+        kpi = coverage_from_files(args.histogram, args.golden, top_n=args.top)
+        print(json.dumps(kpi, indent=2, ensure_ascii=False))
+        if not kpi["kpi_met"]:
+            print(
+                f"Coverage KPI not met: {kpi['coverage_ratio']:.0%} < {kpi['kpi_target']:.0%} — missing: {', '.join(kpi['missing_top'])}"
+            )
 
 
 async def cmd_harness_bench(args):

@@ -7,8 +7,8 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.33
-updated: 2026-11-18
+version: 0.4.34
+updated: 2026-11-19
 owner: "@dahai"
 source_of_truth:
   - README.md
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.34 (2026-11-19)
+
+- Feat #49: golden eval set from production traffic + regression gate (flywheel Loop B). New `fusion_bench/golden/` package: (1) versioned golden-case JSONL (`benchmarks/golden/golden-cases-v1.jsonl`, schema header, 55 cases / 10 categories incl. 5 failure cases) ingested from ops JSONL exports — never touches the upstream fusion_ops DB; (2) privacy gate at ingest (desensitized OR opted_in, else dropped and counted) + PII regex backstop (cn_mobile/email/cn_id_card/bank_card/ipv4, masked findings), enforced again in CI by a new `pii-scan` job that fails the build on any hit in `benchmarks/golden/`; (3) stratified sampling (per-category cap, failure cases bypass the cap); (4) deterministic per-case scoring with three match modes — `contains` (normalized substring), `keywords` (SQL/code markers), `nontrivial` (open-ended behavioral minimum) — because behavioral expectations like "输出一条可直接执行的 SQL 语句" are not literal substrings; (5) regression gate via BaselineStore (`golden-gate`/L1): pass-rate drop beyond threshold (default 5 pts) → verdict `blocked` + exit 1, `--update-baseline` re-arms; (6) top-10 scenario coverage KPI (target 0.80) from the ops category histogram. CLI: `fusion-bench golden ingest|scan|run|coverage`. Golden runs default to direct fusion-mlx `:11434` — the `:11432` gateway serves cached completions and would corrupt gate results. Verified live on `mlx-community--Qwen3-0.6B-4bit` @ 11434 (cache bypassed): baseline 54/55 = 0.9818 saved; deliberately broken change (`--max-tokens 1`) → 0.0, drop 98.18 pts > 5.0 → GATE BLOCKED, exit 1; coverage KPI 1.0 ≥ 0.80 met. 27 tests in `tests/test_golden.py` (805 collected).
 
 ## v0.4.33 (2026-11-18)
 

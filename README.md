@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-778-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-805-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -458,6 +458,9 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.34 (2026-11-19)
+
+- **Feat #49 — golden eval set from production traffic + regression gate (flywheel Loop B)**. New `fusion_bench/golden/` package: versioned golden-case JSONL (55 cases / 10 categories incl. failure cases) ingested from desensitized ops JSONL exports behind a hard privacy gate + PII regex backstop (CI `pii-scan` job fails the build on any hit); stratified per-category sampling; deterministic scoring (`contains` / `keywords` / `nontrivial` match modes); regression gate on BaselineStore — pass-rate drop > 5 pts → `blocked` + exit 1; top-10 coverage KPI (target 0.80). CLI: `fusion-bench golden ingest|scan|run|coverage`. Verified live on Qwen3-0.6B @ 11434: baseline 0.9818 saved, broken change (`--max-tokens 1`) → drop 98.18 pts → GATE BLOCKED.
 ### v0.4.33 (2026-11-18)
 
 - **Feat #48 — same-model harness comparison benchmark (harness-bench genre)**. New `fusion_bench/harness_bench/` + `harness-bench` CLI + `harness_bench` executor: runs the same model through the fusion-harness agent loop and a mini-swe-agent-style baseline on identical task sets, offline via fusion-mlx (`X-Cache: bypass` throughout), scoring DetourBench-style detour metrics (detour rate, one-step miss, completion, tokens/cost) side by side. All 4 acceptance criteria verified live on Qwen3.5-4B (5/5 both harnesses, 0 cache hits).
