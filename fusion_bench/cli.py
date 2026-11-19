@@ -140,6 +140,21 @@ def main():
     sps_check.add_argument("--profile", required=True, help="Path to sps.json")
     sps_check.add_argument("--prefixes", default="", help="Prefix file to re-digest for workload comparison")
 
+    # dual-control (#51) — agent + simulated user on shared world state
+    dc_parser = subparsers.add_parser("dual-control", help="Dual-control agent eval (tau2-bench method, issue #51)")
+    dc_parser.add_argument("--model", required=True, help="Model name served by fusion-mlx")
+    dc_parser.add_argument("--seeds", default="1,2,3", help="Comma-separated task seeds")
+    dc_parser.add_argument("--n-req", type=int, default=1, help="Requirements per task (1-3)")
+    dc_parser.add_argument("--max-turns", type=int, default=12, help="Max episode turns")
+    dc_parser.add_argument("--llm-user", action="store_true", help="LLM plays the user (scripted user is default)")
+    dc_parser.add_argument(
+        "--mlx-url",
+        default="http://127.0.0.1:11434/v1",
+        help="fusion-mlx API URL (direct; gateway cache corrupts benches)",
+    )
+    dc_parser.add_argument("--output", default="", help="Write the suite report JSON to this path")
+    dc_parser.set_defaults(func=lambda a: None)
+
     # harness-bench (#48) — same-model harness comparison
     hb_parser = subparsers.add_parser(
         "harness-bench", help="Same-model harness comparison (mini-swe vs fusion-harness)"
@@ -363,6 +378,7 @@ def main():
         "quant": lambda: asyncio.run(cmd_quant(args)),
         "security": lambda: asyncio.run(cmd_security(args)),
         "harness-bench": lambda: asyncio.run(cmd_harness_bench(args)),
+        "dual-control": lambda: asyncio.run(cmd_dual_control(args)),
         "golden": lambda: cmd_golden(args),
         "compare": lambda: asyncio.run(cmd_compare(args)),
         "gates": lambda: cmd_gates(args),
@@ -789,6 +805,38 @@ def cmd_golden(args):
             print(
                 f"Coverage KPI not met: {kpi['coverage_ratio']:.0%} < {kpi['kpi_target']:.0%} — missing: {', '.join(kpi['missing_top'])}"
             )
+
+
+async def cmd_dual_control(args):
+    """Dual-control agent eval (issue #51): agent + simulated user, shared world."""
+    from .dual_control.generator import generate_task
+    from .dual_control.runner import run_suite
+    from .harness_bench.model_client import ModelClient
+
+    seeds = [int(x) for x in args.seeds.split(",") if x.strip()]
+    for seed in seeds:
+        generate_task(seed, n_requirements=args.n_req)  # fail fast on bad args
+    client = ModelClient(base_url=args.mlx_url, model=args.model)
+    print(f"Dual-control suite: model={args.model} seeds={seeds} n_req={args.n_req} llm_user={args.llm_user}")
+    report = await run_suite(
+        model=args.model,
+        client=client,
+        seeds=seeds,
+        n_requirements=args.n_req,
+        max_turns=args.max_turns,
+        llm_user=args.llm_user,
+    )
+    for e in report["episodes"]:
+        status = "PASS" if e["success"] else "FAIL"
+        print(f"  [{status}] {e['task_id']}: turns={e['turns']} actions={e['actions']} invalid={e['invalid_actions']}")
+        if e["failures"]:
+            print(f"         failures: {'; '.join(e['failures'])}")
+    print(json.dumps(report["metrics"], indent=2))
+    if args.output:
+        Path(args.output).write_text(json.dumps(report, indent=2), encoding="utf-8")
+        print(f"Report saved to {args.output}")
+    if report["metrics"]["dual_success_rate"] < 1.0:
+        sys.exit(1)
 
 
 async def cmd_harness_bench(args):

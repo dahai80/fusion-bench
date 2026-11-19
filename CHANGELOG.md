@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.34
+version: 0.4.35
 updated: 2026-11-19
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.35 (2026-11-19)
+
+- Feat #51: dual-control agent eval (tau2-bench method, arXiv:2506.07982) — agent AND simulated user acting on a shared deterministic world state. New `fusion_bench/dual_control/`: seedable order-management world (5-action registry + per-actor action ledger), `SimulatedUser` protocol (ScriptedUser finite-state policy default, zero tokens; LLMUser behind `--llm-user` with scripted fallback), seeded compositional task generator (1-3 requirements; the agent must learn the refund amount from the user before the mutation is possible — coordination is the tested axis), and pure end-state checks over final world + ledger (forbidden-mutation detection, no judge model). Runner alternates turns; agent replies are either JSON action blocks (parsed leniently, malformed counted invalid, never applied) or plain text; on agent DONE the user gets the final word — pending undisclosed requirements keep the episode open (two live-run defects found and fixed: anchored DONE regex missed "…complete. DONE", and pending-extras was checked after the user already consumed the disclosure). Executor plugin `dual-control` (L4) + CLI `fusion-bench dual-control`. Design doc: `docs/design-dual-control-51.md`. Integration target: harness team / HumanGate scenarios — the SimulatedUser interface is the HumanGate seat, a deterministic scripted user lets harness changes be regression-tested without an LLM in the loop. Live @ 11434 (cache bypassed): Qwen3.5-4B 3/3 on 1-req and 3/3 on 2-req families (turns ~10-12 on 2-req); Qwen3-0.6B 0/3 with 2.33 invalid actions/episode — the axis discriminates. 26 tests (831 collected).
 
 ## v0.4.34 (2026-11-19)
 

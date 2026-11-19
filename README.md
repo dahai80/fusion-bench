@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-805-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-831-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -458,6 +458,9 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.35 (2026-11-19)
+
+- **Feat #51 — dual-control agent eval (tau2-bench method)**. New `fusion_bench/dual_control/`: the agent AND a simulated user act on a shared deterministic world (seedable, per-actor action ledger); scripted finite-state user by default (zero tokens, regression-stable), LLM user behind `--llm-user`; seeded compositional task generator where the agent must coordinate with the user to learn missing arguments; pure end-state checks (final world + ledger, forbidden-mutation detection). Executor plugin `dual-control` (L4) + CLI `fusion-bench dual-control`; design doc `docs/design-dual-control-51.md`; HumanGate consumer interface = the SimulatedUser seat. Live: Qwen3.5-4B 6/6 across 1-req and 2-req families, Qwen3-0.6B 0/3 — the coordination axis discriminates. 26 new tests (831 collected).
 ### v0.4.34 (2026-11-19)
 
 - **Feat #49 — golden eval set from production traffic + regression gate (flywheel Loop B)**. New `fusion_bench/golden/` package: versioned golden-case JSONL (55 cases / 10 categories incl. failure cases) ingested from desensitized ops JSONL exports behind a hard privacy gate + PII regex backstop (CI `pii-scan` job fails the build on any hit); stratified per-category sampling; deterministic scoring (`contains` / `keywords` / `nontrivial` match modes); regression gate on BaselineStore — pass-rate drop > 5 pts → `blocked` + exit 1; top-10 coverage KPI (target 0.80). CLI: `fusion-bench golden ingest|scan|run|coverage`. Verified live on Qwen3-0.6B @ 11434: baseline 0.9818 saved, broken change (`--max-tokens 1`) → drop 98.18 pts → GATE BLOCKED.
