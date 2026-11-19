@@ -69,6 +69,9 @@ SUBMODULE_IMPORT_RE = re.compile(
     r"from\s+fusion_harness\.(\w+)\s+import\s*\(([^)]*)\)|from\s+fusion_harness\.(\w+)\s+import\s+([^\n(*]+)"
 )
 ATTR_RE_TEMPLATE = r"fusion_harness(?:\.\w+)*\.{name}\b"
+# Kernel-internal composition (tier I): relative from-imports + qualified
+# attribute paths inside fusion_harness modules (root __init__ excluded —
+# it is the re-export list itself, not a usage).
 
 
 def _purge_fusion_harness_modules() -> None:
@@ -211,26 +214,61 @@ def console_consumed(exports: list[str]) -> set[str]:
     return consumed - stale
 
 
+def kernel_integrated(harness_root: str, exports: list[str]) -> set[str]:
+    """Tier I (kernel-integrated, bench #52 three-tier spec): names composed
+    by >=1 OTHER kernel module — transitively delivered to consumers through
+    kernel-composed paths, never false dormancy again. Root __init__ does
+    not count (re-export list, not usage)."""
+    export_set = set(exports)
+    integrated: set[str] = set()
+    root = Path(harness_root).expanduser().resolve()
+    pkg = root / "fusion_harness"
+    for f in sorted(pkg.glob("*.py")):
+        if f.name == "__init__.py":
+            continue
+        try:
+            text = strip_python_comments(f.read_text(encoding="utf-8", errors="replace"))
+        except OSError as e:
+            logger.warning("unreadable kernel file skipped: %s (%s)", f, e)
+            continue
+        named, stars = python_imported_names(text)
+        integrated |= named & export_set
+        for module in stars:
+            integrated |= submodule_public_names(harness_root, module) & export_set
+        for name in export_set - integrated:
+            if re.search(ATTR_RE_TEMPLATE.format(name=re.escape(name)), text):
+                integrated.add(name)
+    logger.info("Kernel-integrated tier I: %d names", len(integrated))
+    return integrated
+
+
 def measure(harness_root: str, consumers: list[tuple[str, str]], console_root: str | None, exports: list[str]) -> dict:
     per_consumer: dict[str, set[str]] = {}
     for repo, label in consumers:
         per_consumer[label] = scan_consumer(repo, label, exports, harness_root)
     if console_root:
         per_consumer[CONSUMER_CONSOLE] = console_consumed(exports)
+    integrated = kernel_integrated(harness_root, exports)
 
     rows = []
     for name in exports:
         used_by = [label for label, names in per_consumer.items() if name in names]
-        rows.append({"name": name, "consumers": used_by, "tier": "A" if used_by else "B"})
+        tier = "A" if used_by else ("I" if name in integrated else "B")
+        rows.append({"name": name, "consumers": used_by, "tier": tier})
     adopted = sum(1 for r in rows if r["tier"] == "A")
+    integrated_n = sum(1 for r in rows if r["tier"] == "I")
     zero = [r["name"] for r in rows if r["tier"] == "B"]
+    delivered = adopted + integrated_n
     return {
         "date": datetime.date.today().isoformat(),
         "total_exports": len(exports),
         "adopted": adopted,
+        "integrated": integrated_n,
+        "delivered": delivered,
         "adoption_rate": round(adopted / len(exports), 4) if exports else 0.0,
+        "delivered_rate": round(delivered / len(exports), 4) if exports else 0.0,
         "target_rate": 0.80,
-        "kpi_met": (adopted / len(exports) >= 0.80) if exports else False,
+        "kpi_met": (delivered / len(exports) >= 0.80) if exports else False,
         "per_consumer": {label: sorted(names) for label, names in per_consumer.items()},
         "rows": rows,
         "zero_consumer_names": zero,
@@ -259,7 +297,7 @@ def render_markdown(report: dict) -> str:
         "",
     ]
     lines += [
-        f"- Exports: {report['total_exports']}  |  Adopted: {report['adopted']}  |  **Rate: {report['adoption_rate']:.1%}** (target {report['target_rate']:.0%}, {'met' if report['kpi_met'] else 'NOT met'})",
+        f"- Exports: {report['total_exports']}  |  Consumer-direct (A): {report['adopted']}  |  Kernel-integrated (I): {report['integrated']}  |  **Delivered rate: {report['delivered_rate']:.1%}** (consumer-direct {report['adoption_rate']:.1%}; target {report['target_rate']:.0%}, {'met' if report['kpi_met'] else 'NOT met'})",
         f"- Zero-consumer names ({len(report['zero_consumer_names'])}): {', '.join(report['zero_consumer_names']) or '(none)'}",
         "",
         "| name | consumers | tier |",
