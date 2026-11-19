@@ -39,15 +39,18 @@ jobs:
           python-version: "3.12"
       - name: PII scan golden set (issue #49 — fail build on hit)
         run: |
-          pip install --no-deps .
-          python -c "
+          python - <<'EOF'
+          import importlib.util
           import sys
-          from fusion_bench.golden.pii_scan import scan_dir
-          hits = scan_dir('benchmarks/golden')
+
+          spec = importlib.util.spec_from_file_location("pii_scan", "fusion_bench/golden/pii_scan.py")
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          hits = mod.scan_dir("benchmarks/golden")
           for h in hits:
-              print(f\"PII HIT {h['kind']} in {h['file']}:{h['line']} (case {h['case_id']}): {h['masked']}\")
+              print(f"PII HIT {h['kind']} in {h['file']}:{h['line']} (case {h['case_id']}): {h['masked']}")
           sys.exit(1 if hits else 0)
-          "
+          EOF
 
   lint:
     runs-on: ubuntu-latest
