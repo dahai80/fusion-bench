@@ -65,6 +65,9 @@ CONSUMER_CONSOLE = "console"
 
 ROOT_IMPORT_RE = re.compile(r"from\s+fusion_harness\s+import\s*\(([^)]*)\)|from\s+fusion_harness\s+import\s+([^\n(]+)")
 SUBMODULE_STAR_RE = re.compile(r"from\s+fusion_harness\.(\w+)\s+import\s+\*")
+# In-kernel composition mostly rides relative imports (`from .xxx import Y`);
+# missing these undercounts tier I (FailureAnalyzer case, 2026-11-19).
+REL_IMPORT_RE = re.compile(r"from\s+\.+(\w*)\s+import\s*\(([^)]*)\)|from\s+\.+(\w*)\s+import\s+([^\n(*]+)")
 SUBMODULE_IMPORT_RE = re.compile(
     r"from\s+fusion_harness\.(\w+)\s+import\s*\(([^)]*)\)|from\s+fusion_harness\.(\w+)\s+import\s+([^\n(*]+)"
 )
@@ -113,14 +116,24 @@ def iter_source_files(repo: str) -> list[Path]:
     return files
 
 
-def python_imported_names(text: str) -> tuple[set[str], set[str]]:
+def python_imported_names(text: str, include_relative: bool = False) -> tuple[set[str], set[str]]:
     """Names imported from fusion_harness (root or submodule), multiline aware.
 
+    include_relative adds `from .xxx import` clauses — kernel-side only;
+    consumer repos use relative imports of their OWN modules, where name
+    collisions would fake tier A (NodeContext case, 2026-11-19).
     Returns (named imports, wildcard submodule names). Wildcard imports are
     resolved to the submodule public surface by the caller.
     """
     found: set[str] = set()
     stars: set[str] = set()
+    if include_relative:
+        for m in REL_IMPORT_RE.finditer(text):
+            clause = m.group(2) or m.group(4) or ""
+            for part in clause.split(","):
+                name = part.strip().split(" as ")[0].strip()
+                if re.fullmatch(r"[A-Za-z_]\w*", name or ""):
+                    found.add(name)
     for m in ROOT_IMPORT_RE.finditer(text):
         clause = m.group(1) or m.group(2) or ""
         for part in clause.split(","):
@@ -231,7 +244,7 @@ def kernel_integrated(harness_root: str, exports: list[str]) -> set[str]:
         except OSError as e:
             logger.warning("unreadable kernel file skipped: %s (%s)", f, e)
             continue
-        named, stars = python_imported_names(text)
+        named, stars = python_imported_names(text, include_relative=True)
         integrated |= named & export_set
         for module in stars:
             integrated |= submodule_public_names(harness_root, module) & export_set
