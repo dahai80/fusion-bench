@@ -30,6 +30,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pii-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: PII scan golden set (issue #49 — fail build on hit)
+        run: |
+          pip install --no-deps .
+          python -c "
+          import sys
+          from fusion_bench.golden.pii_scan import scan_dir
+          hits = scan_dir('benchmarks/golden')
+          for h in hits:
+              print(f\"PII HIT {h['kind']} in {h['file']}:{h['line']} (case {h['case_id']}): {h['masked']}\")
+          sys.exit(1 if hits else 0)
+          "
+
   lint:
     runs-on: ubuntu-latest
     steps:
