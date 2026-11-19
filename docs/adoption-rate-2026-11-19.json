@@ -1,12 +1,17 @@
 {
   "date": "2026-11-19",
-  "total_exports": 186,
-  "adopted": 71,
-  "adoption_rate": 0.3817,
+  "total_exports": 84,
+  "adopted": 72,
+  "integrated": 12,
+  "delivered": 84,
+  "adoption_rate": 0.8571,
+  "delivered_rate": 1.0,
   "target_rate": 0.8,
-  "kpi_met": false,
+  "kpi_met": true,
   "per_consumer": {
     "agent-studio": [
+      "ApprovalGate",
+      "ArtifactQuarantine",
       "ArtifactStore",
       "ArtifactTools",
       "BackgroundPool",
@@ -76,7 +81,9 @@
       "normalize_record",
       "parse_repair",
       "parse_skill",
+      "scan_artifact",
       "score_tool_risk",
+      "stamp_untrusted",
       "validate_brief"
     ],
     "cowork": [
@@ -131,7 +138,6 @@
       "_scope_match",
       "hook",
       "parse_repair",
-      "permissions",
       "scan_artifact"
     ],
     "console": [
@@ -146,18 +152,9 @@
   },
   "rows": [
     {
-      "name": "AdapterHost",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ApprovalDecision",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "ApprovalGate",
       "consumers": [
+        "agent-studio",
         "cowork"
       ],
       "tier": "A"
@@ -165,6 +162,7 @@
     {
       "name": "ArtifactQuarantine",
       "consumers": [
+        "agent-studio",
         "cowork"
       ],
       "tier": "A"
@@ -205,26 +203,11 @@
       "tier": "A"
     },
     {
-      "name": "CODE_MODE_SYSTEM_PROMPT",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "CacheTelemetry",
       "consumers": [
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "CacheWarmingGate",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "CheckpointError",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "CheckpointState",
@@ -241,36 +224,6 @@
         "cowork"
       ],
       "tier": "A"
-    },
-    {
-      "name": "CodeExecutor",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "CodeModeError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "CodeModeMetrics",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "CodeModeTurn",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "CodeModeTurnResult",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "CompactionArchive",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "CompactionConfig",
@@ -298,36 +251,6 @@
       "tier": "A"
     },
     {
-      "name": "DEFAULT_MAX_BYTES_CAP",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "DanglingLinkError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "Deadline",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "DeadlineExceeded",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "Effect",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "EffortTierConfig",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "ExecutionTier",
       "consumers": [
         "agent-studio",
@@ -338,32 +261,12 @@
     {
       "name": "FailureAnalyzer",
       "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "FailureVerdict",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "HIGH_RISK_NODES",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "HandoffVerification",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "HandoffVerifyError",
-      "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "HeuristicTokenCounter",
       "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "HookConfig",
@@ -398,16 +301,6 @@
       "tier": "A"
     },
     {
-      "name": "HumanGateError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "HumanQuestion",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "JSONRepairError",
       "consumers": [
         "agent-studio",
@@ -418,7 +311,7 @@
     {
       "name": "KERNEL_VERSION",
       "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "LLMFunnel",
@@ -430,11 +323,6 @@
       "tier": "A"
     },
     {
-      "name": "LOOP_SURFACES",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "LifecycleBus",
       "consumers": [
         "agent-studio",
@@ -444,29 +332,9 @@
       "tier": "A"
     },
     {
-      "name": "LogSchemaError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "LoopDetector",
       "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "MASTMode",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "MAST_CLUSTERS",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "MEMBER_CONTEXT_CAP_BYTES",
-      "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "MSG_TYPES",
@@ -474,31 +342,6 @@
         "cowork"
       ],
       "tier": "A"
-    },
-    {
-      "name": "MemoryBridge",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "MemorySink",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "MemorySource",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "MonotonicGuard",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "NodeContext",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "NodeRegistry",
@@ -515,16 +358,6 @@
       "tier": "A"
     },
     {
-      "name": "NodeResult",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "NodeStateBinder",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "OutboxStore",
       "consumers": [
         "agent-studio",
@@ -533,22 +366,12 @@
       "tier": "A"
     },
     {
-      "name": "PERMISSIVENESS",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "ParallelTeam",
       "consumers": [
         "agent-studio",
         "cowork"
       ],
       "tier": "A"
-    },
-    {
-      "name": "ParamCoercionError",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "PermissionDecision",
@@ -568,11 +391,6 @@
       "tier": "A"
     },
     {
-      "name": "PermissionLevel",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "PermissionMode",
       "consumers": [
         "agent-studio",
@@ -590,16 +408,6 @@
       "tier": "A"
     },
     {
-      "name": "PipelineBlocked",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "PipelineOutcome",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "Playbook",
       "consumers": [
         "agent-studio"
@@ -614,31 +422,6 @@
       "tier": "A"
     },
     {
-      "name": "PrefixStabilityTracker",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "PrefixTelemetry",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ProviderAdapter",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ProviderSessionEvent",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ProviderSessionState",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "ReceiptCache",
       "consumers": [
         "cowork"
@@ -646,61 +429,11 @@
       "tier": "A"
     },
     {
-      "name": "ReceiptReplayed",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ReconcileReport",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ReplyValidationError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "RetryPolicy",
       "consumers": [
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "RiskIntel",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "RiskIntelClient",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "RuntimeNotReady",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "SCOPED_DECISIONS",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "STATUS_ACTIVE",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "STATUS_ARCHIVED",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "STATUS_CANARY",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "SandboxExecRunner",
@@ -725,14 +458,9 @@
       "tier": "A"
     },
     {
-      "name": "SandboxRunnerUnavailable",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "ScanReport",
       "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "ScopedPermission",
@@ -756,36 +484,11 @@
       "tier": "A"
     },
     {
-      "name": "SegmentBudget",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "SegmentError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "SegmentPolicy",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "SessionEvent",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "SessionEventLog",
       "consumers": [
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "SessionState",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "Skill",
@@ -795,11 +498,6 @@
       "tier": "A"
     },
     {
-      "name": "SkillCase",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "SkillError",
       "consumers": [
         "agent-studio"
@@ -807,26 +505,11 @@
       "tier": "A"
     },
     {
-      "name": "SkillLibrary",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "SkillRegistry",
       "consumers": [
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "SkillScanError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "SkillVersion",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "SpawnBrief",
@@ -843,22 +526,12 @@
       "tier": "A"
     },
     {
-      "name": "SubagentResult",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "SubagentRunner",
       "consumers": [
         "agent-studio",
         "cowork"
       ],
       "tier": "A"
-    },
-    {
-      "name": "SubagentSession",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "SubagentSpec",
@@ -869,36 +542,11 @@
       "tier": "A"
     },
     {
-      "name": "SubprocessSessionRuntime",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "SummaryInjector",
       "consumers": [
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "TEAM_SPEC_CAP_BYTES",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "TOOL_DESTRUCTIVE_TABLE",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "TRAJECTORY_DISCARD_REASONS",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "TRAJECTORY_EVENTS",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "TeamDefError",
@@ -947,11 +595,6 @@
       "tier": "A"
     },
     {
-      "name": "TeamStateError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "TeamTask",
       "consumers": [
         "agent-studio"
@@ -961,17 +604,7 @@
     {
       "name": "TokenCounter",
       "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "TokenLedger",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ToolAvailabilityState",
-      "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "ToolFunnel",
@@ -990,14 +623,14 @@
       "tier": "A"
     },
     {
-      "name": "ToolResult",
+      "name": "TopologyError",
       "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
-      "name": "TrajectoryReader",
+      "name": "TopologySelector",
       "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "TrajectoryRecord",
@@ -1022,31 +655,11 @@
       "tier": "A"
     },
     {
-      "name": "TransientError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "UnknownStubError",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "WarmDecision",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "WorkerDelivery",
       "consumers": [
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "assert_stable_prefix",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "bind_node_state",
@@ -1063,79 +676,24 @@
       "tier": "A"
     },
     {
-      "name": "check_append_only",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "check_runner_conformance",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "cite_link",
       "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "claims_for_transport",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "cluster_of",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "coalesce_retry",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "coerce_params",
-      "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "count_messages",
       "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "default_registry",
-      "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "extract_links",
       "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "idempotency_key",
       "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "inject_code_mode_messages",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "ledger_for_transport",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "map_risk_to_tier",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "mark_discardable",
-      "consumers": [],
-      "tier": "B"
+      "tier": "I"
     },
     {
       "name": "mask_tools",
@@ -1150,11 +708,6 @@
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "parse_code_block",
-      "consumers": [],
-      "tier": "B"
     },
     {
       "name": "parse_repair",
@@ -1172,43 +725,9 @@
       "tier": "A"
     },
     {
-      "name": "read_segment",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "register",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "rehydrate",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "render_segment_result",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "render_stubs",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "run_node",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "run_with_retry",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "scan_artifact",
       "consumers": [
+        "agent-studio",
         "cowork"
       ],
       "tier": "A"
@@ -1221,14 +740,11 @@
       "tier": "A"
     },
     {
-      "name": "segment_header",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
       "name": "stamp_untrusted",
-      "consumers": [],
-      "tier": "B"
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
     },
     {
       "name": "validate_brief",
@@ -1236,138 +752,7 @@
         "agent-studio"
       ],
       "tier": "A"
-    },
-    {
-      "name": "validate_reply",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "verify_handoff",
-      "consumers": [],
-      "tier": "B"
-    },
-    {
-      "name": "verify_spawn_brief",
-      "consumers": [],
-      "tier": "B"
     }
   ],
-  "zero_consumer_names": [
-    "AdapterHost",
-    "ApprovalDecision",
-    "CODE_MODE_SYSTEM_PROMPT",
-    "CacheWarmingGate",
-    "CheckpointError",
-    "CodeExecutor",
-    "CodeModeError",
-    "CodeModeMetrics",
-    "CodeModeTurn",
-    "CodeModeTurnResult",
-    "CompactionArchive",
-    "DEFAULT_MAX_BYTES_CAP",
-    "DanglingLinkError",
-    "Deadline",
-    "DeadlineExceeded",
-    "Effect",
-    "EffortTierConfig",
-    "FailureAnalyzer",
-    "FailureVerdict",
-    "HIGH_RISK_NODES",
-    "HandoffVerification",
-    "HandoffVerifyError",
-    "HeuristicTokenCounter",
-    "HumanGateError",
-    "HumanQuestion",
-    "KERNEL_VERSION",
-    "LOOP_SURFACES",
-    "LogSchemaError",
-    "LoopDetector",
-    "MASTMode",
-    "MAST_CLUSTERS",
-    "MEMBER_CONTEXT_CAP_BYTES",
-    "MemoryBridge",
-    "MemorySink",
-    "MemorySource",
-    "MonotonicGuard",
-    "NodeContext",
-    "NodeResult",
-    "NodeStateBinder",
-    "PERMISSIVENESS",
-    "ParamCoercionError",
-    "PermissionLevel",
-    "PipelineBlocked",
-    "PipelineOutcome",
-    "PrefixStabilityTracker",
-    "PrefixTelemetry",
-    "ProviderAdapter",
-    "ProviderSessionEvent",
-    "ProviderSessionState",
-    "ReceiptReplayed",
-    "ReconcileReport",
-    "ReplyValidationError",
-    "RiskIntel",
-    "RiskIntelClient",
-    "RuntimeNotReady",
-    "SCOPED_DECISIONS",
-    "STATUS_ACTIVE",
-    "STATUS_ARCHIVED",
-    "STATUS_CANARY",
-    "SandboxRunnerUnavailable",
-    "ScanReport",
-    "SegmentBudget",
-    "SegmentError",
-    "SegmentPolicy",
-    "SessionEvent",
-    "SessionState",
-    "SkillCase",
-    "SkillLibrary",
-    "SkillScanError",
-    "SkillVersion",
-    "SubagentResult",
-    "SubagentSession",
-    "SubprocessSessionRuntime",
-    "TEAM_SPEC_CAP_BYTES",
-    "TOOL_DESTRUCTIVE_TABLE",
-    "TRAJECTORY_DISCARD_REASONS",
-    "TRAJECTORY_EVENTS",
-    "TeamStateError",
-    "TokenCounter",
-    "TokenLedger",
-    "ToolAvailabilityState",
-    "ToolResult",
-    "TrajectoryReader",
-    "TransientError",
-    "UnknownStubError",
-    "WarmDecision",
-    "assert_stable_prefix",
-    "check_append_only",
-    "check_runner_conformance",
-    "cite_link",
-    "claims_for_transport",
-    "cluster_of",
-    "coalesce_retry",
-    "coerce_params",
-    "count_messages",
-    "default_registry",
-    "extract_links",
-    "idempotency_key",
-    "inject_code_mode_messages",
-    "ledger_for_transport",
-    "map_risk_to_tier",
-    "mark_discardable",
-    "parse_code_block",
-    "read_segment",
-    "register",
-    "rehydrate",
-    "render_segment_result",
-    "render_stubs",
-    "run_node",
-    "run_with_retry",
-    "segment_header",
-    "stamp_untrusted",
-    "validate_reply",
-    "verify_handoff",
-    "verify_spawn_brief"
-  ]
+  "zero_consumer_names": []
 }
