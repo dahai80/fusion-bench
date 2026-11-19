@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-831-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-845-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -458,6 +458,9 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.36 (2026-11-19)
+
+- **Feat #52 — adoption-rate metric (harness G1 gate)**. `scripts/adoption_rate.py` measures the consumer wiring rate of the fusion-harness public API: root exports vs consumers (agent-studio, cowork grep incl. wildcard-shim resolution and comment-stripped attribution; console via hand-maintained sidecar method→kernel mapping). Tier A/B per the API stability policy; JSON + markdown snapshot committed to `docs/`. First snapshot: **38.2%** (71/186, target 80% not met), zero-consumer list drives the next wiring issue. 14 tests (845 collected).
 ### v0.4.35 (2026-11-19)
 
 - **Feat #51 — dual-control agent eval (tau2-bench method)**. New `fusion_bench/dual_control/`: the agent AND a simulated user act on a shared deterministic world (seedable, per-actor action ledger); scripted finite-state user by default (zero tokens, regression-stable), LLM user behind `--llm-user`; seeded compositional task generator where the agent must coordinate with the user to learn missing arguments; pure end-state checks (final world + ledger, forbidden-mutation detection). Executor plugin `dual-control` (L4) + CLI `fusion-bench dual-control`; design doc `docs/design-dual-control-51.md`; HumanGate consumer interface = the SimulatedUser seat. Live: Qwen3.5-4B 6/6 across 1-req and 2-req families, Qwen3-0.6B 0/3 — the coordination axis discriminates. 26 new tests (831 collected).

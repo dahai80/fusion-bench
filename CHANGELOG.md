@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.35
+version: 0.4.36
 updated: 2026-11-19
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.36 (2026-11-19)
+
+- Feat #52: adoption-rate metric for the fusion-harness public API (G1 gate of the harness v1.0 product definition) — `scripts/adoption_rate.py`. Walks the fusion-harness root `__all__` exports, greps consumer checkouts (agent-studio, cowork) for `fusion_harness` import clauses (multiline root + submodule forms) and attribute refs, resolves indirect consumption via `from fusion_harness.<mod> import *` shims to the submodule public surface, counts the console through a hand-maintained sidecar method→kernel-call mapping table (stale entries dropped with a warning), and strips Python comments via tokenize so doc/comment name mentions never count. Tier A = consumed (per the fusion-insight API stability policy), tier B = zero consumers; output = JSON + markdown snapshot committed to `docs/adoption-rate-YYYY-MM-DD.{json,md}` with the rate, KPI target line (0.80) and the zero-consumer name list that drives the next wiring issue. Tests/mutants dirs excluded from consumer scans; module cache purged between checkouts. First snapshot (2026-11-19, exports 186): rate **38.2%** (71/186, target NOT met), 115 zero-consumer names; mechanism-level dormant = memory_link (3 names), destructive_gate (`TOOL_DESTRUCTIVE_TABLE`), artifact_scan tail (`ScanReport`, `stamp_untrusted`) — json_repair and human_gate show wired (cowork #554 / AS #756 landed after the manual audit). Runtime ~2s (< 1 min). 14 tests (845 collected).
 
 ## v0.4.35 (2026-11-19)
 

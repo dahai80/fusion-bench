@@ -1,0 +1,1373 @@
+{
+  "date": "2026-11-19",
+  "total_exports": 186,
+  "adopted": 71,
+  "adoption_rate": 0.3817,
+  "target_rate": 0.8,
+  "kpi_met": false,
+  "per_consumer": {
+    "agent-studio": [
+      "ArtifactStore",
+      "ArtifactTools",
+      "BackgroundPool",
+      "CJKAwareHeuristicTokenCounter",
+      "CacheTelemetry",
+      "CheckpointState",
+      "CheckpointStore",
+      "CompactionConfig",
+      "Compactor",
+      "ConfirmationPolicy",
+      "ExecutionTier",
+      "FunnelOutcome",
+      "HookConfig",
+      "HookEngine",
+      "HookResult",
+      "HumanGate",
+      "JSONRepairError",
+      "LLMFunnel",
+      "LifecycleBus",
+      "OutboxStore",
+      "ParallelTeam",
+      "PermissionDecision",
+      "PermissionEngine",
+      "PermissionMode",
+      "PermissionRule",
+      "Playbook",
+      "PlaybookOp",
+      "RetryPolicy",
+      "SCHEMA_VERSION",
+      "SandboxPolicy",
+      "SessionEventLog",
+      "Skill",
+      "SkillError",
+      "SkillGrant",
+      "SkillRegistry",
+      "SpawnBrief",
+      "SpawnBriefError",
+      "SubagentRunner",
+      "SubagentSpec",
+      "SummaryInjector",
+      "TeamDefinition",
+      "TeamMember",
+      "TeamMessage",
+      "TeamRuntime",
+      "TeamTask",
+      "ToolFunnel",
+      "ToolPipeline",
+      "TrajectoryRecord",
+      "TrajectorySchemaError",
+      "TrajectoryWriter",
+      "WorkerDelivery",
+      "_DECORATOR_REGISTRY",
+      "_close_truncated",
+      "_drop_incomplete_tail",
+      "_extract_balanced",
+      "_is_truncated",
+      "_map_legacy_event",
+      "_single_to_double_quotes",
+      "_strip_fences",
+      "_strip_trailing_commas",
+      "_take_open",
+      "bind_node_state",
+      "brief_from_event",
+      "default_summarize",
+      "derive_permissions",
+      "mask_tools",
+      "normalize_record",
+      "parse_repair",
+      "parse_skill",
+      "score_tool_risk",
+      "validate_brief"
+    ],
+    "cowork": [
+      "ApprovalGate",
+      "ArtifactQuarantine",
+      "BaseNode",
+      "CheckpointState",
+      "CheckpointStore",
+      "CompactionConfig",
+      "Compactor",
+      "DECISIONS",
+      "EventDomain",
+      "ExecutionTier",
+      "FunnelOutcome",
+      "HOOKS_CONFIG_PATH",
+      "HookConfig",
+      "HookEngine",
+      "HookResult",
+      "HumanGate",
+      "JSONRepairError",
+      "LLMFunnel",
+      "LifecycleBus",
+      "LifecycleEvent",
+      "MSG_TYPES",
+      "NodeRegistry",
+      "NodeRegistryError",
+      "OutboxStore",
+      "ParallelTeam",
+      "PendingApproval",
+      "PermissionDecision",
+      "PermissionEngine",
+      "PermissionMode",
+      "PermissionRule",
+      "ReceiptCache",
+      "RetentionList",
+      "SandboxExecRunner",
+      "SandboxPolicy",
+      "SandboxRunner",
+      "ScopedPermission",
+      "ScopedPermissionEngine",
+      "ScopedPermissionError",
+      "SubagentRunner",
+      "SubagentSpec",
+      "TeamDefError",
+      "TeamDefinition",
+      "TeamMember",
+      "TeamMessage",
+      "TeamMessageError",
+      "TeamRuntime",
+      "ToolFunnel",
+      "TrajectoryRecord",
+      "_scope_match",
+      "hook",
+      "parse_repair",
+      "permissions",
+      "scan_artifact"
+    ],
+    "console": [
+      "CompactionConfig",
+      "Compactor",
+      "LLMFunnel",
+      "LifecycleBus",
+      "PermissionEngine",
+      "PermissionRule",
+      "ToolFunnel"
+    ]
+  },
+  "rows": [
+    {
+      "name": "AdapterHost",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ApprovalDecision",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ApprovalGate",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ArtifactQuarantine",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ArtifactStore",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ArtifactTools",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "BackgroundPool",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "BaseNode",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CJKAwareHeuristicTokenCounter",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CODE_MODE_SYSTEM_PROMPT",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CacheTelemetry",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CacheWarmingGate",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CheckpointError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CheckpointState",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CheckpointStore",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CodeExecutor",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CodeModeError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CodeModeMetrics",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CodeModeTurn",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CodeModeTurnResult",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CompactionArchive",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "CompactionConfig",
+      "consumers": [
+        "agent-studio",
+        "cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "Compactor",
+      "consumers": [
+        "agent-studio",
+        "cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ConfirmationPolicy",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "DEFAULT_MAX_BYTES_CAP",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "DanglingLinkError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "Deadline",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "DeadlineExceeded",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "Effect",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "EffortTierConfig",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ExecutionTier",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "FailureAnalyzer",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "FailureVerdict",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "HIGH_RISK_NODES",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "HandoffVerification",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "HandoffVerifyError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "HeuristicTokenCounter",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "HookConfig",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HookEngine",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HookResult",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HumanGate",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HumanGateError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "HumanQuestion",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "JSONRepairError",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "KERNEL_VERSION",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "LLMFunnel",
+      "consumers": [
+        "agent-studio",
+        "cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "LOOP_SURFACES",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "LifecycleBus",
+      "consumers": [
+        "agent-studio",
+        "cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "LogSchemaError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "LoopDetector",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "MASTMode",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "MAST_CLUSTERS",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "MEMBER_CONTEXT_CAP_BYTES",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "MSG_TYPES",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "MemoryBridge",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "MemorySink",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "MemorySource",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "MonotonicGuard",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "NodeContext",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "NodeRegistry",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "NodeRegistryError",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "NodeResult",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "NodeStateBinder",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "OutboxStore",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PERMISSIVENESS",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ParallelTeam",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ParamCoercionError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "PermissionDecision",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PermissionEngine",
+      "consumers": [
+        "agent-studio",
+        "cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PermissionLevel",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "PermissionMode",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PermissionRule",
+      "consumers": [
+        "agent-studio",
+        "cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PipelineBlocked",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "PipelineOutcome",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "Playbook",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PlaybookOp",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PrefixStabilityTracker",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "PrefixTelemetry",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ProviderAdapter",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ProviderSessionEvent",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ProviderSessionState",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ReceiptCache",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ReceiptReplayed",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ReconcileReport",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ReplyValidationError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "RetryPolicy",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "RiskIntel",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "RiskIntelClient",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "RuntimeNotReady",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SCOPED_DECISIONS",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "STATUS_ACTIVE",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "STATUS_ARCHIVED",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "STATUS_CANARY",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SandboxExecRunner",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SandboxPolicy",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SandboxRunner",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SandboxRunnerUnavailable",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ScanReport",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ScopedPermission",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ScopedPermissionEngine",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ScopedPermissionError",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SegmentBudget",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SegmentError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SegmentPolicy",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SessionEvent",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SessionEventLog",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SessionState",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "Skill",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SkillCase",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SkillError",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SkillLibrary",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SkillRegistry",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SkillScanError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SkillVersion",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SpawnBrief",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SpawnBriefError",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SubagentResult",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SubagentRunner",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SubagentSession",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SubagentSpec",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SubprocessSessionRuntime",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "SummaryInjector",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TEAM_SPEC_CAP_BYTES",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TOOL_DESTRUCTIVE_TABLE",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TRAJECTORY_DISCARD_REASONS",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TRAJECTORY_EVENTS",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TeamDefError",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamDefinition",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamMember",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamMessage",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamMessageError",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamRuntime",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamStateError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TeamTask",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TokenCounter",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TokenLedger",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ToolAvailabilityState",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ToolFunnel",
+      "consumers": [
+        "agent-studio",
+        "cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ToolPipeline",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ToolResult",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TrajectoryReader",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TrajectoryRecord",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TrajectorySchemaError",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TrajectoryWriter",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TransientError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "UnknownStubError",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "WarmDecision",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "WorkerDelivery",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "assert_stable_prefix",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "bind_node_state",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "brief_from_event",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "check_append_only",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "check_runner_conformance",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "cite_link",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "claims_for_transport",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "cluster_of",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "coalesce_retry",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "coerce_params",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "count_messages",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "default_registry",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "extract_links",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "idempotency_key",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "inject_code_mode_messages",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ledger_for_transport",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "map_risk_to_tier",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "mark_discardable",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "mask_tools",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "normalize_record",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "parse_code_block",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "parse_repair",
+      "consumers": [
+        "agent-studio",
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "parse_skill",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "read_segment",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "register",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "rehydrate",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "render_segment_result",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "render_stubs",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "run_node",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "run_with_retry",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "scan_artifact",
+      "consumers": [
+        "cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "score_tool_risk",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "segment_header",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "stamp_untrusted",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "validate_brief",
+      "consumers": [
+        "agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "validate_reply",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "verify_handoff",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "verify_spawn_brief",
+      "consumers": [],
+      "tier": "B"
+    }
+  ],
+  "zero_consumer_names": [
+    "AdapterHost",
+    "ApprovalDecision",
+    "CODE_MODE_SYSTEM_PROMPT",
+    "CacheWarmingGate",
+    "CheckpointError",
+    "CodeExecutor",
+    "CodeModeError",
+    "CodeModeMetrics",
+    "CodeModeTurn",
+    "CodeModeTurnResult",
+    "CompactionArchive",
+    "DEFAULT_MAX_BYTES_CAP",
+    "DanglingLinkError",
+    "Deadline",
+    "DeadlineExceeded",
+    "Effect",
+    "EffortTierConfig",
+    "FailureAnalyzer",
+    "FailureVerdict",
+    "HIGH_RISK_NODES",
+    "HandoffVerification",
+    "HandoffVerifyError",
+    "HeuristicTokenCounter",
+    "HumanGateError",
+    "HumanQuestion",
+    "KERNEL_VERSION",
+    "LOOP_SURFACES",
+    "LogSchemaError",
+    "LoopDetector",
+    "MASTMode",
+    "MAST_CLUSTERS",
+    "MEMBER_CONTEXT_CAP_BYTES",
+    "MemoryBridge",
+    "MemorySink",
+    "MemorySource",
+    "MonotonicGuard",
+    "NodeContext",
+    "NodeResult",
+    "NodeStateBinder",
+    "PERMISSIVENESS",
+    "ParamCoercionError",
+    "PermissionLevel",
+    "PipelineBlocked",
+    "PipelineOutcome",
+    "PrefixStabilityTracker",
+    "PrefixTelemetry",
+    "ProviderAdapter",
+    "ProviderSessionEvent",
+    "ProviderSessionState",
+    "ReceiptReplayed",
+    "ReconcileReport",
+    "ReplyValidationError",
+    "RiskIntel",
+    "RiskIntelClient",
+    "RuntimeNotReady",
+    "SCOPED_DECISIONS",
+    "STATUS_ACTIVE",
+    "STATUS_ARCHIVED",
+    "STATUS_CANARY",
+    "SandboxRunnerUnavailable",
+    "ScanReport",
+    "SegmentBudget",
+    "SegmentError",
+    "SegmentPolicy",
+    "SessionEvent",
+    "SessionState",
+    "SkillCase",
+    "SkillLibrary",
+    "SkillScanError",
+    "SkillVersion",
+    "SubagentResult",
+    "SubagentSession",
+    "SubprocessSessionRuntime",
+    "TEAM_SPEC_CAP_BYTES",
+    "TOOL_DESTRUCTIVE_TABLE",
+    "TRAJECTORY_DISCARD_REASONS",
+    "TRAJECTORY_EVENTS",
+    "TeamStateError",
+    "TokenCounter",
+    "TokenLedger",
+    "ToolAvailabilityState",
+    "ToolResult",
+    "TrajectoryReader",
+    "TransientError",
+    "UnknownStubError",
+    "WarmDecision",
+    "assert_stable_prefix",
+    "check_append_only",
+    "check_runner_conformance",
+    "cite_link",
+    "claims_for_transport",
+    "cluster_of",
+    "coalesce_retry",
+    "coerce_params",
+    "count_messages",
+    "default_registry",
+    "extract_links",
+    "idempotency_key",
+    "inject_code_mode_messages",
+    "ledger_for_transport",
+    "map_risk_to_tier",
+    "mark_discardable",
+    "parse_code_block",
+    "read_segment",
+    "register",
+    "rehydrate",
+    "render_segment_result",
+    "render_stubs",
+    "run_node",
+    "run_with_retry",
+    "segment_header",
+    "stamp_untrusted",
+    "validate_reply",
+    "verify_handoff",
+    "verify_spawn_brief"
+  ]
+}
