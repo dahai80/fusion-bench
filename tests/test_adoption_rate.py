@@ -139,5 +139,6 @@ class TestRender:
         report = ar.measure(str(harness), [(str(repo), "as")], None, exports)
         md = ar.render_markdown(report)
         assert "adoption-rate snapshot" in md
-        assert f"**Rate: {report['adoption_rate']:.1%}**" in md
+        assert f"**Delivered rate: {report['delivered_rate']:.1%}**" in md
+        assert f"(consumer-direct {report['adoption_rate']:.1%}" in md
         assert json.dumps(report)

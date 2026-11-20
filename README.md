@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-845-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-862-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -457,6 +457,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.37 (2026-11-20)
+
+- **Feat #53 — shared-task comparison suite vs agent frameworks (quarterly benchmark, fusion-insight baseline doc section 4)**. New `fusion_bench/compare_suite/` + `fusion-bench compare-suite` CLI (6 selectable metrics, `--smoke`). One deterministic 3-task suite (fixed texts, filesystem verifiers) runs against two arms on the identical pinned model (Qwen3.5-4B @ :11434, `X-Cache: bypass`): ours = `harness_bench.FusionHarnessRunner`, rival = langgraph `create_react_agent` with a minimal `BaseChatModel` over fusion-mlx (native tool_calls, provider-side usage accounting). HITL kill -9 mid-wait → resume: harness `HumanGate` vs langgraph `interrupt()` + `SqliteSaver`, both 1/1 resumed. Post-compaction recall: harness keeps the pinned goal (1.0) vs rival extractive summary (0.5). DAG node-failure recovery: cowork `WorkflowEngine` recovers after 2 injected failures (needs `retry_on_business_failure`); Dify cell reports `unavailable` (never simulated). Simplicity: cowork measured live (11 deps, 178.9 LOC/node, 0.226s cold-start); Dify frozen structural baseline flagged `offline-frozen`. Rival arm hardened with retry/backoff after diagnosing an upstream fusion-mlx 0.10.67 crash (fusion-mlx#1665); completion/tokens cells are **partial** (own arm 2/3, smoke 1/1 both arms) pending the engine fix. Two latent bugs fixed in `adoption_rate.py` (sys.path/module-cache leak, stale render assertion). New optional extra `rival`; report artifacts `benchmarks/results/compare-suite/report.{json,md}`; design doc `docs/design-compare-suite-53.md`. 17 tests (862 collected).
 
 ### v0.4.36 (2026-11-19)
 

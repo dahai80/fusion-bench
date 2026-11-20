@@ -171,6 +171,25 @@ def main():
         "--out", default="", help="Output directory (default: benchmarks/results/harness-comparison)"
     )
 
+    # compare-suite (#53) — shared-task comparison vs agent frameworks
+    cs_parser = subparsers.add_parser(
+        "compare-suite", help="Shared-task comparison vs agent frameworks (langgraph arm; issue #53)"
+    )
+    cs_parser.add_argument(
+        "--metrics",
+        default="completion,tokens,hitl,compaction,dag,simplicity",
+        help="Comma-separated metrics to run",
+    )
+    cs_parser.add_argument("--model", default="mlx-community--Qwen3.5-4B-MLX-4bit", help="Pinned model name")
+    cs_parser.add_argument(
+        "--mlx-url",
+        default="http://127.0.0.1:11434/v1",
+        help="fusion-mlx API URL (direct; gateway cache corrupts benches)",
+    )
+    cs_parser.add_argument("--smoke", action="store_true", help="Smoke subset: 1 task, 1 rival")
+    cs_parser.add_argument("--out", default="", help="Output directory (default: benchmarks/results/compare-suite)")
+    cs_parser.set_defaults(func=lambda a: None)
+
     # golden (#49) — golden eval set from production traffic + regression gate
     golden_parser = subparsers.add_parser("golden", help="Golden eval set: ingest / pii-scan / gate / coverage")
     golden_sub = golden_parser.add_subparsers(dest="golden_command", required=True)
@@ -379,6 +398,7 @@ def main():
         "security": lambda: asyncio.run(cmd_security(args)),
         "harness-bench": lambda: asyncio.run(cmd_harness_bench(args)),
         "dual-control": lambda: asyncio.run(cmd_dual_control(args)),
+        "compare-suite": lambda: cmd_compare_suite(args),
         "golden": lambda: cmd_golden(args),
         "compare": lambda: asyncio.run(cmd_compare(args)),
         "gates": lambda: cmd_gates(args),
@@ -837,6 +857,25 @@ async def cmd_dual_control(args):
         print(f"Report saved to {args.output}")
     if report["metrics"]["dual_success_rate"] < 1.0:
         sys.exit(1)
+
+
+def cmd_compare_suite(args):
+    """Shared-task comparison vs agent frameworks (issue #53)."""
+    from pathlib import Path
+
+    from .compare_suite.compare import ALL_METRICS, run_comparison
+
+    metrics = [m.strip() for m in args.metrics.split(",") if m.strip()]
+    unknown = [m for m in metrics if m not in ALL_METRICS]
+    if unknown:
+        print(f"Unknown metrics: {unknown}. Choose from: {', '.join(ALL_METRICS)}")
+        sys.exit(1)
+    out = Path(args.out) if args.out else None
+    print(f"Compare-suite: metrics={metrics} model={args.model} smoke={args.smoke} mlx={args.mlx_url}")
+    report = run_comparison(metrics=metrics, smoke=args.smoke, mlx_url=args.mlx_url, model=args.model, out_dir=out)
+    print(json.dumps(report["metrics"], indent=2, ensure_ascii=False))
+    out_dir = out or Path("benchmarks/results/compare-suite")
+    print(f"Report saved to {out_dir / 'report.md'}")
 
 
 async def cmd_harness_bench(args):

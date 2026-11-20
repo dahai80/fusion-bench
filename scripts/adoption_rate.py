@@ -91,14 +91,18 @@ def collect_exports(harness_root: str) -> list[str]:
     try:
         importlib.invalidate_caches()
         mod = importlib.import_module("fusion_harness")
+        names = getattr(mod, "__all__", None)
+        if not names:
+            import types
+
+            names = [n for n in dir(mod) if not n.startswith("_") and not isinstance(getattr(mod, n), types.ModuleType)]
+            logger.warning("fusion_harness has no __all__; fell back to public non-module dir() (%d names)", len(names))
     finally:
         sys.path.pop(0)
-    names = getattr(mod, "__all__", None)
-    if not names:
-        import types
-
-        names = [n for n in dir(mod) if not n.startswith("_") and not isinstance(getattr(mod, n), types.ModuleType)]
-        logger.warning("fusion_harness has no __all__; fell back to public non-module dir() (%d names)", len(names))
+        # Do not leave the imported checkout cached: a later importer (another
+        # fixture, the compare suite) must not see this tmp package instead of
+        # the real fusion_harness.
+        _purge_fusion_harness_modules()
     logger.info("Collected %d root exports from %s", len(names), root)
     return sorted(set(names))
 
@@ -175,7 +179,8 @@ def attribute_names(text: str, exports: list[str]) -> set[str]:
 def submodule_public_names(harness_root: str, module: str) -> set[str]:
     """Public surface of a fusion_harness submodule (for wildcard shims)."""
     root = Path(harness_root).expanduser().resolve()
-    if str(root) not in sys.path:
+    inserted = str(root) not in sys.path
+    if inserted:
         sys.path.insert(0, str(root))
     try:
         _purge_fusion_harness_modules()
@@ -187,6 +192,11 @@ def submodule_public_names(harness_root: str, module: str) -> set[str]:
     except Exception as e:
         logger.warning("cannot resolve fusion_harness.%s: %s", module, e)
         return set()
+    finally:
+        if inserted:
+            sys.path.remove(str(root))
+        # Same cache hygiene as collect_exports: no tmp checkout may survive.
+        _purge_fusion_harness_modules()
 
 
 def scan_consumer(repo: str, label: str, exports: list[str], harness_root: str) -> set[str]:

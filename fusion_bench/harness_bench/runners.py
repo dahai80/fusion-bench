@@ -115,9 +115,12 @@ class BaseRunner:
 
     harness = "base"
 
-    def __init__(self, client: ModelClient, max_steps: int = 8):
+    def __init__(self, client: ModelClient, max_steps: int = 8, system_prompt: str = ""):
         self.client = client
         self.max_steps = max_steps
+        # Empty = the canonical #48 protocol prompt; callers may override for
+        # engine-workaround variants (see compare_suite, fusion-mlx#1665).
+        self.system_prompt = system_prompt or SYSTEM_PROMPT
 
     async def _llm(self, messages: list[dict]) -> tuple[str, int, int, bool]:
         turn = await self.client.chat(messages)
@@ -131,7 +134,7 @@ class BaseRunner:
         start = time.monotonic()
         task.materialize(workspace)
         messages: list[dict] = [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": f"Task: {task.instruction}"},
         ]
         try:
@@ -203,8 +206,8 @@ class FusionHarnessRunner(BaseRunner):
 
     harness = "fusion-harness"
 
-    def __init__(self, client: ModelClient, max_steps: int = 8, budget_tokens: int = 100000):
-        super().__init__(client, max_steps)
+    def __init__(self, client: ModelClient, max_steps: int = 8, budget_tokens: int = 100000, system_prompt: str = ""):
+        super().__init__(client, max_steps, system_prompt=system_prompt)
         self.budget_tokens = budget_tokens
         # One runner instance = one run; the hard per-run budget (#A10 funnel
         # semantics) is a harness variable the baseline intentionally lacks.

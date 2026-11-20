@@ -7,8 +7,8 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.36
-updated: 2026-11-19
+version: 0.4.37
+updated: 2026-11-20
 owner: "@dahai"
 source_of_truth:
   - README.md
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.37 (2026-11-20)
+
+- Feat #53: shared-task comparison suite vs agent frameworks (quarterly dynamic benchmark, fusion-insight baseline doc section 4) — new `fusion_bench/compare_suite/` + `fusion-bench compare-suite` CLI (6 selectable metrics, `--smoke` = 1 task / 1 rival). One deterministic 3-task suite (typo-fix / config-write / count-words, fixed texts, pure filesystem verifiers) runs against two arms on the identical pinned model (`mlx-community--Qwen3.5-4B-MLX-4bit` @ :11434, `X-Cache: bypass` on every request): ours = `harness_bench.FusionHarnessRunner` (kernel-routed loop, #48), rival = langgraph `create_react_agent` with a minimal `BaseChatModel` over fusion-mlx (native tool_calls, provider-side usage accounting — token cost never from framework numbers). Metric 3 (HITL kill -9 mid-wait -> resume): subprocess fault injection on both checkpoint machineries — harness `HumanGate` (persistent queue JSON) vs langgraph `interrupt()` + `SqliteSaver`; both resumed 1/1. Metric 4 (post-compaction recall): deterministic probe transcript — harness `Compactor` keeps the pinned goal (score 1.0) while the rival extractive summary drops it (0.5). Metric 5 (DAG node recovery): cowork `WorkflowEngine` recovers from 2 injected transient failures on attempt 3 (business-failure retry needs `retry_on_business_failure`, cowork #182); Dify cell reports `unavailable` (not installed locally — never simulated). Metric 6 (simplicity): cowork measured live (11 runtime deps, 178.9 LOC per node class, 0.226s cold-start import); Dify cell uses the frozen structural numbers, flagged `offline-frozen`. Rival arm hardened with retry/backoff after diagnosing an upstream fusion-mlx 0.10.67 crash (burst-scheduler `IndexError` under sustained agent traffic, prompt- and load-dependent; repro added to fusion-mlx#1665) — a reworded protocol prompt variant (`compare_suite.tasks.SYSTEM_PROMPT`) plus `BaseRunner(system_prompt=...)` keeps the suite off the crashing token path, but the engine still wedges under sustained loops, so the quarterly completion/tokens cells are **partial** (own arm 2/3 tasks, 1435.5 tokens/completed task from a degraded run; 1-task smoke passed 1/1 on both arms) and the rival sustained numbers are deferred until the engine fix. Two latent suite-side bugs fixed: `adoption_rate.py` leaked the fixture checkout into `sys.path`/`sys.modules` (cross-file test pollution, pre-existing) and its render test asserted the pre-delivered-rate format. New optional extra `rival` (langgraph + langgraph-checkpoint-sqlite); langgraph pinned 1.2.10 (PyPI latest 1.2.24 recorded in the freeze doc). Report artifacts: `benchmarks/results/compare-suite/report.{json,md}` (workspaces cleaned post-run). Design doc `docs/design-compare-suite-53.md`. 17 tests (862 collected).
 
 ## v0.4.36 (2026-11-19)
 

@@ -1,0 +1,118 @@
+{
+  "date": "2026-11-20",
+  "issue": 53,
+  "model_pinned": "mlx-community--Qwen3.5-4B-MLX-4bit",
+  "mlx_url": "http://127.0.0.1:11434/v1",
+  "langgraph_version": "1.2.10",
+  "smoke": false,
+  "metrics": {
+    "hitl": {
+      "fusion-harness": {
+        "side": "harness",
+        "repeats": 1,
+        "resumed_ok": 1,
+        "resume_rate": 1.0,
+        "resume_wall_s_mean": 0.4139,
+        "failures": []
+      },
+      "langgraph": {
+        "side": "langgraph",
+        "repeats": 1,
+        "resumed_ok": 1,
+        "resume_rate": 1.0,
+        "resume_wall_s_mean": 0.4097,
+        "failures": []
+      }
+    },
+    "compaction": {
+      "fusion-harness": {
+        "pinned_goal": true,
+        "latest_instruction": true,
+        "facts_retained": 8,
+        "recall_score": 1.0
+      },
+      "langgraph": {
+        "pinned_goal": false,
+        "latest_instruction": true,
+        "facts_retained": 8,
+        "recall_score": 0.5
+      }
+    },
+    "dag": {
+      "cowork": {
+        "side": "cowork",
+        "injected_failures": 2,
+        "recovered": true,
+        "wall_s": 0.2301,
+        "steps": {
+          "a": {
+            "status": "NodeStatus.SUCCESS",
+            "attempt": 1,
+            "error": null
+          },
+          "flaky": {
+            "status": "NodeStatus.SUCCESS",
+            "attempt": 3,
+            "error": null
+          },
+          "c": {
+            "status": "NodeStatus.SUCCESS",
+            "attempt": 1,
+            "error": null
+          }
+        },
+        "registry_used": true
+      },
+      "dify": {
+        "side": "dify",
+        "recovered": null,
+        "error": "unavailable: dify is not installed locally and no network LLM/setup calls are allowed in the freeze window"
+      }
+    },
+    "simplicity": {
+      "cowork": {
+        "repo": "fusion-cowork",
+        "dep_count": 11,
+        "loc_nodes_total": 12344,
+        "loc_per_node_file": 178.9,
+        "node_files": 69,
+        "cold_start_s": 0.226,
+        "source": "measured live"
+      },
+      "dify": {
+        "repo": "dify",
+        "dep_count": null,
+        "loc_per_node_type": null,
+        "cold_start_s": null,
+        "source": "offline-frozen: app distribution, not on PyPI; not installed locally"
+      }
+    },
+    "completion": {
+      "status": "partial - upstream fusion-mlx#1665 (burst-scheduler IndexError under sustained agent traffic) blocks a clean sustained run; own-arm numbers from a degraded run with retries (wall inflated, provider token counts exact); rival arm blocked mid-run; smoke run (1 task) passed 1/1 on both arms earlier the same day before engine degradation",
+      "fusion-harness": {
+        "completion_rate": 0.6667,
+        "tokens_per_completed_task": 1435.5,
+        "wall_s_total": 278.4
+      },
+      "langgraph": {
+        "completion_rate": null,
+        "tokens_per_completed_task": null,
+        "wall_s_total": null
+      }
+    },
+    "tokens": {
+      "status": "partial - upstream fusion-mlx#1665 (burst-scheduler IndexError under sustained agent traffic) blocks a clean sustained run; own-arm numbers from a degraded run with retries (wall inflated, provider token counts exact); rival arm blocked mid-run; smoke run (1 task) passed 1/1 on both arms earlier the same day before engine degradation",
+      "fusion-harness": {
+        "completion_rate": 0.6667,
+        "tokens_per_completed_task": 1435.5,
+        "wall_s_total": 278.4
+      },
+      "langgraph": {
+        "completion_rate": null,
+        "tokens_per_completed_task": null,
+        "wall_s_total": null
+      }
+    }
+  },
+  "upstream_blocker": "https://github.com/dahai80/fusion-mlx/issues/1665"
+}

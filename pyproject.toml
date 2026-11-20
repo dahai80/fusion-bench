@@ -1,7 +1,7 @@
 [project]
 name = "fusion-bench"
 license = "Apache-2.0"
-version = "0.4.36"
+version = "0.4.37"
 description = "Fusion-Bench — MLX model performance benchmarking and auto-tuning workbench"
 requires-python = ">=3.12"
 dependencies = [
@@ -29,6 +29,10 @@ test = [
     "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.0",
     "ruff>=0.8.0",
+]
+rival = [
+    "langgraph>=1.2,<2",
+    "langgraph-checkpoint-sqlite>=2.0",
 ]
 pdf = [
     "reportlab>=4.0.0",
