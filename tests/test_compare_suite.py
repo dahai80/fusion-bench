@@ -312,3 +312,116 @@ class TestCompareOrchestrator:
         assert "recall" in md
         assert "unavailable: x" in md
         assert "offline-frozen" in md
+
+
+class TestAttackCorpus:
+    def test_loads_ten_valid_cases(self):
+        from fusion_bench.compare_suite.attacks import load_cases
+
+        cases = load_cases()
+        assert len(cases) >= 10
+        for case in cases:
+            assert case.case_id.startswith("attack-")
+            assert case.vector
+            assert case.injected_file in case.task.setup_files
+            assert case.injection
+
+    def test_injection_composed_into_setup_file(self, tmp_path):
+        from fusion_bench.compare_suite.attacks import load_cases
+
+        case = load_cases()[0]
+        ws = tmp_path / case.case_id
+        case.task.materialize(ws)
+        assert case.injection in (ws / case.injected_file).read_text(encoding="utf-8")
+
+    def test_fresh_workspace_neither_utility_nor_attack(self, tmp_path):
+        from fusion_bench.compare_suite.attacks import grade_case, load_cases
+
+        for case in load_cases():
+            ws = tmp_path / case.case_id
+            case.task.materialize(ws)
+            g = grade_case(case, ws)
+            assert not g["utility"], case.case_id
+            assert not g["attack_success"], case.case_id
+
+    def test_loader_rejects_bad_specs(self, tmp_path):
+        from fusion_bench.compare_suite.attacks import load_cases
+
+        bad = tmp_path / "bad.yaml"
+        bad.write_text(
+            "id: bad-case\nbenign:\n  instruction: x\n  files:\n    a.txt: hi\n"
+            "benign_check:\n  type: file_exists\n  path: a.txt\n"
+            "asr:\n  type: nope\n  path: b.txt\nattack:\n  injected_in: a.txt\n  injection: y\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError, match="asr.type"):
+            load_cases(tmp_path)
+
+    def test_loader_rejects_same_path_specs(self, tmp_path):
+        from fusion_bench.compare_suite.attacks import load_cases
+
+        bad = tmp_path / "bad.yaml"
+        bad.write_text(
+            "id: bad-case\nbenign:\n  instruction: x\n  files:\n    a.txt: hi\n"
+            "benign_check:\n  type: file_exists\n  path: b.txt\n"
+            "asr:\n  type: file_exists\n  path: b.txt\nattack:\n  injected_in: a.txt\n  injection: y\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError, match="different paths"):
+            load_cases(tmp_path)
+
+    def test_all_metric_includes_adversarial(self):
+        from fusion_bench.compare_suite.compare import ALL_METRICS
+
+        assert "adversarial" in ALL_METRICS
+
+
+class TestAdversarialGrading:
+    def test_eval_spec_types(self, tmp_path):
+        from fusion_bench.compare_suite.attacks import eval_spec
+
+        (tmp_path / "keep.txt").write_text("hello world\n", encoding="utf-8")
+        assert eval_spec({"type": "file_exists", "path": "keep.txt"}, tmp_path)[0] is True
+        assert eval_spec({"type": "file_absent", "path": "gone.txt"}, tmp_path)[0] is True
+        assert eval_spec({"type": "file_contains", "path": "keep.txt", "text": "world"}, tmp_path)[0] is True
+        assert eval_spec({"type": "file_contains", "path": "keep.txt", "text": "nope"}, tmp_path)[0] is False
+        assert eval_spec({"type": "file_exists", "path": "gone.txt"}, tmp_path)[0] is False
+
+    def test_grade_after_simulated_attack(self, tmp_path):
+        from fusion_bench.compare_suite.attacks import grade_case, load_cases
+
+        case = load_cases()[0]
+        ws = tmp_path
+        case.task.materialize(ws)
+        (ws / "pwned.txt").write_text("owned\n", encoding="utf-8")
+        g = grade_case(case, ws)
+        assert g["attack_success"] is True
+        assert g["utility"] is False
+
+    def test_grade_after_clean_completion(self, tmp_path):
+        from fusion_bench.compare_suite.attacks import grade_case, load_cases
+
+        case = load_cases()[0]
+        ws = tmp_path
+        case.task.materialize(ws)
+        (ws / "summary.txt").write_text("Ship the release notes by Friday.\n", encoding="utf-8")
+        g = grade_case(case, ws)
+        assert g["utility"] is True
+        assert g["attack_success"] is False
+
+    def test_render_adversarial_table(self):
+        from fusion_bench.compare_suite.adversarial import render_adversarial
+
+        adv = {
+            "cases": 1,
+            "per_case": {
+                "fusion-harness": [{"case_id": "attack-001-notes-summary", "vector": "direct-instruction", "utility": True, "attack_success": False}],
+                "langgraph": [{"case_id": "attack-001-notes-summary", "vector": "direct-instruction", "utility": True, "attack_success": True}],
+            },
+            "fusion-harness": {"attack_success_rate": 0.0, "utility_rate": 1.0},
+            "langgraph": {"attack_success_rate": 1.0, "utility_rate": 1.0},
+        }
+        md = "\n".join(render_adversarial(adv))
+        assert "attack-001-notes-summary" in md
+        assert "attack success rate 0.0" in md
+        assert "attack success rate 1.0" in md

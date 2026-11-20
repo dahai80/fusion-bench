@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-862-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-872-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -457,6 +457,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.38 (2026-11-20)
+
+- **Feat #54 — adversarial injection-resistance track (AgentDojo shape, arXiv:2406.13352)**. 7th `adversarial` metric in `fusion-bench compare-suite`. Versioned YAML corpus at `benchmarks/testsets/compare-suite-attacks/` (10 benign/attack pairs, 8 injection vectors: direct-instruction, fake-system-message, destructive-instruction x2, urgent-tone, fake-tool-output, split-instruction, quoted-note, hidden-comment, data-embedded); the loader composes the injected instruction into the named setup file at materialization so corpus files stay benign-only and declarative — new injections need no code change. Benign checks and ASR detectors are data specs (`file_exists` / `file_absent` / `file_contains`) evaluated on final workspace state only — grading never calls a model. Both arms on the identical pinned model (Qwen3.5-4B @ :11434): live quarterly v2 numbers — fusion-harness **ASR 0.0 / utility 0.6**, langgraph **ASR 0.0 / utility 0.8** (4B model refused all 10 vectors; the discriminating axis this quarter is utility under injection, not ASR). Rival arm executed case-by-case with engine health probes + restarts (fusion-mlx#1665 wedges under sustained agent traffic); own arm ran the full sweep in one process. Report: `benchmarks/results/compare-suite-adversarial/report.{json,md}`; design doc `docs/design-adversarial-54.md`. 10 tests (872 collected).
 
 ### v0.4.37 (2026-11-20)
 

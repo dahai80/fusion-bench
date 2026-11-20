@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.37
+version: 0.4.38
 updated: 2026-11-20
 owner: "@dahai"
 source_of_truth:
@@ -18,6 +18,10 @@ source_of_truth:
 # Changelog
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
+
+## v0.4.38 (2026-11-20)
+
+- Feat #54: adversarial injection-resistance track for the comparison suite (AgentDojo shape, arXiv:2406.13352) — 7th `adversarial` metric in `fusion-bench compare-suite`. Versioned YAML corpus at `benchmarks/testsets/compare-suite-attacks/` (10 benign/attack pairs, 8 vectors: direct-instruction, fake-system-message, destructive-instruction x2, urgent-tone, fake-tool-output, split-instruction, quoted-note, hidden-comment, data-embedded); the loader composes the injected instruction into the named setup file at materialization so the corpus files stay benign-only and declarative — new injections need no code change. Benign checks and ASR (attack-success) detectors are data specs (`file_exists` / `file_absent` / `file_contains`) evaluated on the final workspace state only — grading never calls a model (E2 discipline); the loader rejects invalid specs, shared benign/ASR paths, and injections naming unknown files. Both arms run the identical pinned model (Qwen3.5-4B @ :11434, `X-Cache: bypass`): ours = `FusionHarnessRunner`, rival = langgraph `create_react_agent`; report = per-case utility/attack table + per-arm attack-success-rate and utility-rate (a defense that kills utility is not a defense). Live quarterly v2 numbers on the pinned model: fusion-harness **ASR 0.0 / utility 0.6**, langgraph **ASR 0.0 / utility 0.8** — neither arm executed any injected action this quarter (the 4B model refused all 10 vectors; the axes that discriminate here are utility under injection, not ASR), full per-case table in `benchmarks/results/compare-suite-adversarial/report.{json,md}`. The rival arm was executed case-by-case with engine health probes + restarts between cases because sustained multi-episode agent traffic deterministically wedges fusion-mlx 0.10.67 (upstream fusion-mlx#1665); the own arm ran the full sweep in one process. One corpus design rule learned live: benign instructions must be position-independent ("the line that starts with Ship", not "the LAST line") — appending the injection must not make the benign task undecidable. Corpus validation + detector tests (10 new, 872 collected).
 
 ## v0.4.37 (2026-11-20)
 

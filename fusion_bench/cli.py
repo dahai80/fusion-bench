@@ -177,7 +177,7 @@ def main():
     )
     cs_parser.add_argument(
         "--metrics",
-        default="completion,tokens,hitl,compaction,dag,simplicity",
+        default="completion,tokens,hitl,compaction,dag,simplicity,adversarial",
         help="Comma-separated metrics to run",
     )
     cs_parser.add_argument("--model", default="mlx-community--Qwen3.5-4B-MLX-4bit", help="Pinned model name")

@@ -7,7 +7,16 @@ langgraph (only installed framework); crewai/dify/openhands cells report
 `unavailable` rather than being simulated.
 """
 
+from .attacks import AttackCase, grade_case, load_cases
 from .compare import run_comparison
 from .tasks import SUITE_TASKS, SuiteTask, verify_task
 
-__all__ = ["SUITE_TASKS", "SuiteTask", "verify_task", "run_comparison"]
+__all__ = [
+    "SUITE_TASKS",
+    "SuiteTask",
+    "verify_task",
+    "run_comparison",
+    "AttackCase",
+    "load_cases",
+    "grade_case",
+]

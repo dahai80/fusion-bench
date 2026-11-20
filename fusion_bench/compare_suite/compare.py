@@ -16,7 +16,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-ALL_METRICS = ("completion", "tokens", "hitl", "compaction", "dag", "simplicity")
+ALL_METRICS = ("completion", "tokens", "hitl", "compaction", "dag", "simplicity", "adversarial")
 MODEL_PINNED = "mlx-community--Qwen3.5-4B-MLX-4bit"
 RESULT_DIR = Path("benchmarks/results/compare-suite")
 
@@ -154,6 +154,10 @@ def run_comparison(
         from .simplicity import measure
 
         report["metrics"]["simplicity"] = measure()
+    if "adversarial" in selected:
+        from .adversarial import run_adversarial
+
+        report["metrics"]["adversarial"] = asyncio.run(run_adversarial(mlx_url, model, smoke, out))
 
     json_path = out / "report.json"
     json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -226,4 +230,8 @@ def render_markdown(report: dict) -> str:
                 f"| {repo} | {r['dep_count']} | {r.get('loc_per_node_type') or r.get('loc_per_node_file')} | {r['cold_start_s']} | {r['source']} |"
             )
         lines.append("")
+    if "adversarial" in m:
+        from .adversarial import render_adversarial
+
+        lines.extend(render_adversarial(m["adversarial"]))
     return "\n".join(lines) + "\n"
