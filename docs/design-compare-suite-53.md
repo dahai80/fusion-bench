@@ -4,7 +4,7 @@ product: fusion-bench
 class: platform
 entry: service
 audience: engineer
-status: accepted
+status: draft
 version: 0.4.37
 updated: 2026-11-20
 owner: "@dahai"
