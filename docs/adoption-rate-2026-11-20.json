@@ -1,11 +1,11 @@
 {
   "date": "2026-11-20",
-  "total_exports": 91,
+  "total_exports": 95,
   "adopted": 74,
-  "integrated": 11,
-  "delivered": 85,
-  "adoption_rate": 0.8132,
-  "delivered_rate": 0.9341,
+  "integrated": 12,
+  "delivered": 86,
+  "adoption_rate": 0.7789,
+  "delivered_rate": 0.9053,
   "target_rate": 0.8,
   "kpi_met": true,
   "per_consumer": {
@@ -361,6 +361,11 @@
       "tier": "I"
     },
     {
+      "name": "MODEL_TIERS",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
       "name": "MSG_TYPES",
       "consumers": [
         "fusion-cowork"
@@ -578,6 +583,11 @@
       "tier": "A"
     },
     {
+      "name": "TIER_POLICY",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
       "name": "TOKEN_MULTIPLIER_WARNING",
       "consumers": [],
       "tier": "B"
@@ -689,6 +699,11 @@
       "tier": "A"
     },
     {
+      "name": "VALID_MODEL_TIERS",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
       "name": "WorkerDelivery",
       "consumers": [
         "fusion-agent-studio"
@@ -766,6 +781,11 @@
       "tier": "A"
     },
     {
+      "name": "recommend_tier",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
       "name": "scan_artifact",
       "consumers": [
         "fusion-agent-studio",
@@ -800,7 +820,10 @@
     "FANOUT_COMPLEX_MAX",
     "FANOUT_HARD_MAX",
     "FANOUT_SIMPLE_MAX",
+    "MODEL_TIERS",
     "MULTI_AGENT_TOKEN_MULTIPLIER",
-    "TOKEN_MULTIPLIER_WARNING"
+    "TIER_POLICY",
+    "TOKEN_MULTIPLIER_WARNING",
+    "VALID_MODEL_TIERS"
   ]
 }

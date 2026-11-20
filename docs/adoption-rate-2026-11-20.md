@@ -16,8 +16,8 @@ source_of_truth:
 
 # fusion-harness adoption-rate snapshot (2026-11-20)
 
-- Exports: 91  |  Consumer-direct (A): 74  |  Kernel-integrated (I): 11  |  **Delivered rate: 93.4%** (consumer-direct 81.3%; target 80%, met)
-- Zero-consumer names (6): AWAITING_HUMAN_MARKER, FANOUT_COMPLEX_MAX, FANOUT_HARD_MAX, FANOUT_SIMPLE_MAX, MULTI_AGENT_TOKEN_MULTIPLIER, TOKEN_MULTIPLIER_WARNING
+- Exports: 95  |  Consumer-direct (A): 74  |  Kernel-integrated (I): 12  |  **Delivered rate: 90.5%** (consumer-direct 77.9%; target 80%, met)
+- Zero-consumer names (9): AWAITING_HUMAN_MARKER, FANOUT_COMPLEX_MAX, FANOUT_HARD_MAX, FANOUT_SIMPLE_MAX, MODEL_TIERS, MULTI_AGENT_TOKEN_MULTIPLIER, TIER_POLICY, TOKEN_MULTIPLIER_WARNING, VALID_MODEL_TIERS
 
 | name | consumers | tier |
 |---|---|---|
@@ -50,6 +50,7 @@ source_of_truth:
 | LLMFunnel | fusion-agent-studio, fusion-cowork, console | A |
 | LifecycleBus | fusion-agent-studio, fusion-cowork, console | A |
 | LoopDetector | - | I |
+| MODEL_TIERS | - | B |
 | MSG_TYPES | fusion-cowork | A |
 | MULTI_AGENT_TOKEN_MULTIPLIER | - | B |
 | NodeRegistry | fusion-cowork | A |
@@ -80,6 +81,7 @@ source_of_truth:
 | SubagentRunner | fusion-agent-studio, fusion-cowork | A |
 | SubagentSpec | fusion-agent-studio, fusion-cowork | A |
 | SummaryInjector | fusion-agent-studio | A |
+| TIER_POLICY | - | B |
 | TOKEN_MULTIPLIER_WARNING | - | B |
 | TeamDefError | fusion-cowork | A |
 | TeamDefinition | fusion-agent-studio, fusion-cowork | A |
@@ -96,6 +98,7 @@ source_of_truth:
 | TrajectoryRecord | fusion-agent-studio, fusion-cowork | A |
 | TrajectorySchemaError | fusion-agent-studio | A |
 | TrajectoryWriter | fusion-agent-studio | A |
+| VALID_MODEL_TIERS | - | B |
 | WorkerDelivery | fusion-agent-studio | A |
 | bind_node_state | fusion-agent-studio | A |
 | brief_from_event | fusion-agent-studio | A |
@@ -108,6 +111,7 @@ source_of_truth:
 | normalize_record | fusion-agent-studio | A |
 | parse_repair | fusion-agent-studio, fusion-cowork | A |
 | parse_skill | fusion-agent-studio | A |
+| recommend_tier | - | I |
 | scan_artifact | fusion-agent-studio, fusion-cowork | A |
 | score_tool_risk | fusion-agent-studio | A |
 | stamp_untrusted | fusion-agent-studio | A |
