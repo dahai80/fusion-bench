@@ -1,0 +1,806 @@
+{
+  "date": "2026-11-20",
+  "total_exports": 91,
+  "adopted": 74,
+  "integrated": 11,
+  "delivered": 85,
+  "adoption_rate": 0.8132,
+  "delivered_rate": 0.9341,
+  "target_rate": 0.8,
+  "kpi_met": true,
+  "per_consumer": {
+    "fusion-agent-studio": [
+      "ApprovalGate",
+      "ArtifactQuarantine",
+      "ArtifactStore",
+      "ArtifactTools",
+      "BackgroundPool",
+      "CJKAwareHeuristicTokenCounter",
+      "CacheTelemetry",
+      "CheckpointState",
+      "CheckpointStore",
+      "CompactionConfig",
+      "Compactor",
+      "ConfirmationPolicy",
+      "ExecutionTier",
+      "FunnelOutcome",
+      "HookConfig",
+      "HookEngine",
+      "HookResult",
+      "HumanGate",
+      "JSONRepairError",
+      "LLMFunnel",
+      "LifecycleBus",
+      "OutboxStore",
+      "ParallelTeam",
+      "PermissionDecision",
+      "PermissionEngine",
+      "PermissionMode",
+      "PermissionRule",
+      "Playbook",
+      "PlaybookOp",
+      "RetryPolicy",
+      "SCHEMA_VERSION",
+      "SandboxPolicy",
+      "SessionEventLog",
+      "Skill",
+      "SkillError",
+      "SkillGrant",
+      "SkillRegistry",
+      "SpawnBrief",
+      "SpawnBriefError",
+      "SubagentRunner",
+      "SubagentSpec",
+      "SummaryInjector",
+      "TeamDefinition",
+      "TeamMember",
+      "TeamMessage",
+      "TeamRuntime",
+      "TeamTask",
+      "ToolFunnel",
+      "ToolPipeline",
+      "TrajectoryRecord",
+      "TrajectorySchemaError",
+      "TrajectoryWriter",
+      "WorkerDelivery",
+      "_DECORATOR_REGISTRY",
+      "_close_truncated",
+      "_drop_incomplete_tail",
+      "_extract_balanced",
+      "_is_truncated",
+      "_map_legacy_event",
+      "_single_to_double_quotes",
+      "_strip_fences",
+      "_strip_trailing_commas",
+      "_take_open",
+      "bind_node_state",
+      "brief_from_event",
+      "default_summarize",
+      "derive_permissions",
+      "mask_tools",
+      "normalize_record",
+      "parse_repair",
+      "parse_skill",
+      "scan_artifact",
+      "score_tool_risk",
+      "stamp_untrusted",
+      "validate_brief"
+    ],
+    "fusion-cowork": [
+      "ApprovalGate",
+      "ArtifactQuarantine",
+      "BaseNode",
+      "CheckpointState",
+      "CheckpointStore",
+      "CompactionConfig",
+      "Compactor",
+      "DECISIONS",
+      "EventDomain",
+      "ExecutionTier",
+      "FailureAnalyzer",
+      "FunnelOutcome",
+      "HOOKS_CONFIG_PATH",
+      "HookConfig",
+      "HookEngine",
+      "HookResult",
+      "HumanGate",
+      "JSONRepairError",
+      "LLMFunnel",
+      "LifecycleBus",
+      "LifecycleEvent",
+      "MSG_TYPES",
+      "NodeRegistry",
+      "NodeRegistryError",
+      "OutboxStore",
+      "ParallelTeam",
+      "PendingApproval",
+      "PermissionDecision",
+      "PermissionEngine",
+      "PermissionMode",
+      "PermissionRule",
+      "ReceiptCache",
+      "RetentionList",
+      "SandboxExecRunner",
+      "SandboxPolicy",
+      "SandboxRunner",
+      "ScopedPermission",
+      "ScopedPermissionEngine",
+      "ScopedPermissionError",
+      "SubagentRunner",
+      "SubagentSpec",
+      "TeamDefError",
+      "TeamDefinition",
+      "TeamMember",
+      "TeamMessage",
+      "TeamMessageError",
+      "TeamRuntime",
+      "ToolFunnel",
+      "TrajectoryRecord",
+      "_scope_match",
+      "fanout_warnings",
+      "hook",
+      "parse_repair",
+      "scan_artifact"
+    ],
+    "console": [
+      "CompactionConfig",
+      "Compactor",
+      "LLMFunnel",
+      "LifecycleBus",
+      "PermissionEngine",
+      "PermissionRule",
+      "ToolFunnel"
+    ]
+  },
+  "rows": [
+    {
+      "name": "AWAITING_HUMAN_MARKER",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "ApprovalGate",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ArtifactQuarantine",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ArtifactStore",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ArtifactTools",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "BackgroundPool",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "BaseNode",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CJKAwareHeuristicTokenCounter",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CacheTelemetry",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CheckpointState",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CheckpointStore",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "CompactionConfig",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "Compactor",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ConfirmationPolicy",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ExecutionTier",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "FANOUT_COMPLEX_MAX",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "FANOUT_HARD_MAX",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "FANOUT_SIMPLE_MAX",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "FailureAnalyzer",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HeuristicTokenCounter",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "HookConfig",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HookEngine",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HookResult",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "HumanGate",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "JSONRepairError",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "KERNEL_VERSION",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "LLMFunnel",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "LifecycleBus",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "LoopDetector",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "MSG_TYPES",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "MULTI_AGENT_TOKEN_MULTIPLIER",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "NodeRegistry",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "NodeRegistryError",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "OutboxStore",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ParallelTeam",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PermissionDecision",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PermissionEngine",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PermissionMode",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PermissionRule",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "Playbook",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "PlaybookOp",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ReceiptCache",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "RetryPolicy",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SandboxExecRunner",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SandboxPolicy",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SandboxRunner",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ScanReport",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "ScopedPermission",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ScopedPermissionEngine",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ScopedPermissionError",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SessionEventLog",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "Skill",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SkillError",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SkillRegistry",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SpawnBrief",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SpawnBriefError",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SubagentRunner",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SubagentSpec",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "SummaryInjector",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TOKEN_MULTIPLIER_WARNING",
+      "consumers": [],
+      "tier": "B"
+    },
+    {
+      "name": "TeamDefError",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamDefinition",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamMember",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamMessage",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamMessageError",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamRuntime",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TeamTask",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TokenCounter",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "ToolFunnel",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork",
+        "console"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "ToolPipeline",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TopologyError",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "TopologySelector",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "TrajectoryRecord",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TrajectorySchemaError",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "TrajectoryWriter",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "WorkerDelivery",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "bind_node_state",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "brief_from_event",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "cite_link",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "count_messages",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "extract_links",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "fanout_warnings",
+      "consumers": [
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "idempotency_key",
+      "consumers": [],
+      "tier": "I"
+    },
+    {
+      "name": "mask_tools",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "normalize_record",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "parse_repair",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "parse_skill",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "scan_artifact",
+      "consumers": [
+        "fusion-agent-studio",
+        "fusion-cowork"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "score_tool_risk",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "stamp_untrusted",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    },
+    {
+      "name": "validate_brief",
+      "consumers": [
+        "fusion-agent-studio"
+      ],
+      "tier": "A"
+    }
+  ],
+  "zero_consumer_names": [
+    "AWAITING_HUMAN_MARKER",
+    "FANOUT_COMPLEX_MAX",
+    "FANOUT_HARD_MAX",
+    "FANOUT_SIMPLE_MAX",
+    "MULTI_AGENT_TOKEN_MULTIPLIER",
+    "TOKEN_MULTIPLIER_WARNING"
+  ]
+}
