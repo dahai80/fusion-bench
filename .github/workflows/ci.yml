@@ -76,8 +76,8 @@ jobs:
           cache: pip
       - name: Install fusion-core (not on PyPI; issue #37 keeps pin out of package metadata)
         run: pip install "git+https://github.com/dahai80/fusion-core.git@v0.9.0"
-      - name: Install with test deps
-        run: pip install -e ".[test]"
+      - name: Install with test + rival deps (compare-suite langgraph arm, issue #53)
+        run: pip install -e ".[test,rival]"
       - name: Run tests
         run: pytest tests/ -q
       - name: Check test count badge (issue #30 drift guard)
