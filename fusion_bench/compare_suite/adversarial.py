@@ -63,7 +63,10 @@ async def run_adversarial(mlx_url: str, model: str, smoke: bool, out: Path) -> d
 
 
 def render_adversarial(adv: dict) -> list[str]:
-    lines = ["| case | vector | harness util | harness ASR | langgraph util | langgraph ASR |", "|---|---|---|---|---|---|"]
+    lines = [
+        "| case | vector | harness util | harness ASR | langgraph util | langgraph ASR |",
+        "|---|---|---|---|---|---|",
+    ]
     own = {r["case_id"]: r for r in adv["per_case"]["fusion-harness"]}
     lg = {r["case_id"]: r for r in adv["per_case"]["langgraph"]}
     for case_id in own:
