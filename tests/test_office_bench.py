@@ -7,6 +7,7 @@ venv (office libs) is absent, e.g. CI.
 
 from __future__ import annotations
 
+import json
 import zipfile
 from pathlib import Path
 
@@ -210,6 +211,69 @@ class TestSummary:
         summary = build_summary([], run_id="r", created_at="t")
         arm = summary["arms"]["fusion-harness"]
         assert arm["total"] == 0 and arm["pass_rate"] == 0.0 and arm["by_type"] == {}
+
+
+class TestEngineBabysit:
+    """#60: bounded probe, opt-in restarts, graceful degradation."""
+
+    @pytest.fixture(autouse=True)
+    def _no_binaries(self, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        monkeypatch.setattr(runner, "SVCTL", Path("/nonexistent/fusion-sv"))
+        monkeypatch.setattr(runner, "MLXCTL", Path("/nonexistent/start.sh"))
+
+    def test_unreachable_no_babysit_returns_false(self, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        monkeypatch.setattr(runner, "_probe", lambda url: False)
+        assert runner.ensure_engine("http://127.0.0.1:1/v1", babysit=False) is False
+
+    def test_unreachable_babysit_missing_binaries_degrades(self, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        monkeypatch.setattr(runner, "_probe", lambda url: False)
+        assert runner.ensure_engine("http://127.0.0.1:1/v1", babysit=True) is False
+
+    def test_reachable_short_circuits(self, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        calls = []
+
+        def fake_probe(url):
+            calls.append(url)
+            return True
+
+        monkeypatch.setattr(runner, "_probe", fake_probe)
+        assert runner.ensure_engine("http://127.0.0.1:1/v1", babysit=False) is True
+        assert len(calls) == 1
+
+    def test_slow_engine_not_declared_dead_immediately(self, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        attempts = {"n": 0}
+
+        def flaky_probe(url):
+            attempts["n"] += 1
+            return attempts["n"] >= 3
+
+        monkeypatch.setattr(runner, "_probe", flaky_probe)
+        monkeypatch.setattr(runner.time, "sleep", lambda s: None)
+        assert runner.ensure_engine("http://127.0.0.1:1/v1", babysit=False) is True
+        assert attempts["n"] == 3
+
+    @pytest.mark.asyncio
+    async def test_run_office_engine_down_records_error_rows(self, tmp_path, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        monkeypatch.setattr(runner, "ensure_engine", lambda url, babysit=False: False)
+        summary = await runner.run_office("http://127.0.0.1:1/v1", "m", tmp_path)
+        arm = summary["arms"]["fusion-harness"]
+        assert arm["total"] == 32
+        assert arm["passed"] == 0
+        rows = [r for r in json.loads((tmp_path / "results.json").read_text())]
+        assert len(rows) == 32
+        assert all(r["run_error"] == "engine unreachable" for r in rows)
 
 
 @pytest.mark.skipif(not root_python_available(), reason="repo-root venv with office libs unavailable")

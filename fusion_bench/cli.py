@@ -197,8 +197,18 @@ def main():
     ob_parser.add_argument("--model", default="mlx-community--Qwen3.5-4B-MLX-4bit", help="Pinned model name")
     ob_parser.add_argument(
         "--mlx-url",
-        default="http://127.0.0.1:11434/v1",
-        help="fusion-mlx API URL (direct; gateway cache corrupts benches)",
+        default="",
+        help="Override model API URL (takes precedence over --direct-engine)",
+    )
+    ob_parser.add_argument(
+        "--direct-engine",
+        action="store_true",
+        help="Run against the fusion-mlx engine directly (:11434) instead of the gateway (:11432, default; #59)",
+    )
+    ob_parser.add_argument(
+        "--babysit-engine",
+        action="store_true",
+        help="Allow the runner to restart fusion-mlx on probe failure (opt-in; never touches a shared engine by default; #60)",
     )
     ob_parser.add_argument("--out", default="", help="Output directory (default: benchmarks/results/office-bench)")
     ob_parser.set_defaults(func=lambda a: None)
@@ -896,9 +906,12 @@ async def cmd_office_bench(args):
     """FusionOffice-Bench office-domain eval (issue #56)."""
     from .office_bench.runner import run_office
 
+    # Single-entry rule (#59): gateway :11432 by default; direct engine is
+    # an explicit opt-in for isolated benchmarking.
+    mlx_url = args.mlx_url or ("http://127.0.0.1:11434/v1" if args.direct_engine else "http://127.0.0.1:11432/v1")
     out = Path(args.out) if args.out else Path("benchmarks") / "results" / "office-bench"
-    print(f"Office-bench: model={args.model} mlx={args.mlx_url} out={out}")
-    summary = await run_office(mlx_url=args.mlx_url, model=args.model, out_dir=out)
+    print(f"Office-bench: model={args.model} mlx={mlx_url} babysit={args.babysit_engine} out={out}")
+    summary = await run_office(mlx_url=mlx_url, model=args.model, out_dir=out, babysit=args.babysit_engine)
     arm = summary["arms"]["fusion-harness"]
     print(
         json.dumps(

@@ -33,49 +33,62 @@ SVCTL = Path.home() / "fusion" / "fusion-supervisor" / "target" / "release" / "f
 MLXCTL = Path.home() / "fusion" / "fusion-mlx" / "start.sh"
 
 
-def ensure_engine(mlx_url: str, restarts: int = 2) -> bool:
-    """Per-task engine babysit (upstream fusion-mlx#1665 wedges under
-    sustained agent traffic): probe /models; on failure restart fusion-mlx
-    via fusion-sv (authoritative lifecycle owner) and wait for readiness +
-    warmup before the next task."""
-    for attempt in range(1, restarts + 2):
-        try:
-            status = httpx.get(f"{mlx_url}/models", timeout=10.0).status_code
-            if status in (200, 401):
+def _probe(mlx_url: str) -> bool:
+    try:
+        return httpx.get(f"{mlx_url}/models", timeout=10.0).status_code in (200, 401)
+    except httpx.HTTPError as exc:
+        logger.warning("engine probe %s failed: %s", mlx_url, exc)
+        return False
+
+
+def _wait_ready(mlx_url: str, deadline_s: float) -> bool:
+    deadline = time.monotonic() + deadline_s
+    while time.monotonic() < deadline:
+        time.sleep(10)
+        if _probe(mlx_url):
+            time.sleep(20)
+            return True
+    return False
+
+
+def ensure_engine(mlx_url: str, babysit: bool = False) -> bool:
+    """Bounded engine probe; restarts only with explicit opt-in (#60).
+
+    Default: probe up to 3x (a slow engine under co-tenant load is not a
+    dead engine) and report reachability — never restart anything. With
+    babysit=True (issue #56 original behavior, now opt-in): restart via
+    fusion-sv, fall back to start.sh; a missing lifecycle binary degrades
+    to a warning + False, never a crash. A benchmark harness must never
+    unilaterally restart a shared engine.
+    """
+    for attempt in range(1, 4):
+        if _probe(mlx_url):
+            return True
+        logger.warning("engine probe %s unreachable (attempt %d/3)", mlx_url, attempt)
+        if attempt < 3:
+            time.sleep(5)
+    if not babysit:
+        logger.warning("engine unreachable and babysit disabled (--babysit-engine) — continuing without restart")
+        return False
+    for attempt in range(1, 3):
+        if SVCTL.is_file():
+            logger.warning("babysit: restarting fusion-mlx via fusion-sv (attempt %d)", attempt)
+            subprocess.run([str(SVCTL), "restart", "fusion-mlx"], capture_output=True, text=True, timeout=300)
+            if _wait_ready(mlx_url, 180):
+                logger.info("engine back after fusion-sv restart (attempt %d)", attempt)
                 return True
-            logger.warning("engine probe %s returned %d (attempt %d)", mlx_url, status, attempt)
-        except httpx.HTTPError as exc:
-            logger.warning("engine probe %s failed (attempt %d): %s", mlx_url, attempt, exc)
-        if attempt > restarts:
-            break
-        logger.warning("restarting fusion-mlx via fusion-sv")
-        subprocess.run([str(SVCTL), "restart", "fusion-mlx"], capture_output=True, text=True, timeout=300)
-        deadline = time.monotonic() + 180
-        while time.monotonic() < deadline:
-            time.sleep(10)
-            try:
-                if httpx.get(f"{mlx_url}/models", timeout=10.0).status_code in (200, 401):
-                    time.sleep(20)
-                    logger.info("engine back after restart (attempt %d)", attempt)
-                    break
-            except httpx.HTTPError:
-                continue
         else:
-            # fusion-sv may have the service in a stopped/unmanaged state —
-            # fall back to the project's own start.sh lifecycle.
-            logger.warning("fusion-sv restart did not revive engine — falling back to start.sh")
+            logger.warning("babysit: fusion-sv binary missing at %s — skipping supervisor restart", SVCTL)
+        if MLXCTL.is_file():
+            logger.warning("babysit: falling back to start.sh lifecycle (attempt %d)", attempt)
             subprocess.run([str(MLXCTL), "stop"], capture_output=True, text=True, timeout=120)
             subprocess.run([str(MLXCTL), "start"], capture_output=True, text=True, timeout=300)
-            deadline = time.monotonic() + 180
-            while time.monotonic() < deadline:
-                time.sleep(10)
-                try:
-                    if httpx.get(f"{mlx_url}/models", timeout=10.0).status_code in (200, 401):
-                        time.sleep(20)
-                        logger.info("engine back after start.sh fallback (attempt %d)", attempt)
-                        break
-                except httpx.HTTPError:
-                    continue
+            if _wait_ready(mlx_url, 180):
+                logger.info("engine back after start.sh fallback (attempt %d)", attempt)
+                return True
+        else:
+            logger.warning("babysit: start.sh missing at %s — no lifecycle binary available", MLXCTL)
+    logger.warning("babysit exhausted restart attempts — engine stays unreachable")
     return False
 
 
@@ -122,28 +135,51 @@ def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
     }
 
 
-async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8) -> dict:
+async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8, babysit: bool = False) -> dict:
     client = ModelClient(base_url=mlx_url, model=model)
     out_dir.mkdir(parents=True, exist_ok=True)
     run_id = f"office-{uuid.uuid4().hex[:8]}"
     results: list[dict] = []
     for idx, task in enumerate(OFFICE_TASKS, start=1):
-        ensure_engine(mlx_url)
+        engine_ok = ensure_engine(mlx_url, babysit=babysit)
+        if not engine_ok:
+            logger.error("task %s skipped: engine unreachable, no babysit (#60)", task.task_id)
+            results.append(
+                {
+                    "task_id": task.task_id,
+                    "task_type": task.task_type,
+                    "app": task.app,
+                    "steps": task.steps,
+                    "passed": False,
+                    "score": 0.0,
+                    "verify_detail": "engine unreachable, no babysit binary/opt-in",
+                    "run_error": "engine unreachable",
+                    "tokens_in": 0,
+                    "tokens_out": 0,
+                    "wall_s": 0.0,
+                    "model": model,
+                }
+            )
+            (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+            continue
         workspace = out_dir / "workspaces" / task.task_id
         task.materialize(workspace)
         runner = FusionHarnessRunner(RetryingClient(client), max_steps=max_steps, system_prompt=SYSTEM_PROMPT)
         result = await runner.run(to_harness_task(task), workspace)
         # Engine can die mid-task (connection-refused flaps) and the retry
         # window is shorter than a fusion-mlx cold start — re-run the task
-        # once after ensure_engine recovery instead of recording a dead cell.
+        # once after engine recovery instead of recording a dead cell. The
+        # re-run (and any recovery restart) only happens when the engine is
+        # reachable again or babysit is explicitly enabled (#60).
         if result.llm_calls == 0 or result.error:
             logger.warning(
-                "task %s produced no LLM traffic (%s) — recovering engine and re-running",
+                "task %s produced no LLM traffic (%s) — re-probing engine before re-run",
                 task.task_id,
                 result.error or "0 calls",
             )
-            ensure_engine(mlx_url)
-            result = await runner.run(to_harness_task(task), workspace)
+            engine_ok = ensure_engine(mlx_url, babysit=babysit)
+            if engine_ok:
+                result = await runner.run(to_harness_task(task), workspace)
         score, detail = task.grade(workspace)
         results.append(
             {

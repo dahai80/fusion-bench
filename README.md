@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-892-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-897-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -457,6 +457,11 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.40 (2026-11-26)
+
+- **Fix #59 — office-bench defaults to the gateway (`:11432`)**. Gateway is the single entry for downstream model traffic; `--direct-engine` (:11434) opt-in, explicit `--mlx-url` takes precedence. Eval-safe on the gateway path: bench requests carry `X-Cache: bypass`.
+- **Fix #60 — engine babysit opt-in + bounded (`--babysit-engine`)**. No unilateral engine restarts by default: bounded 3-probe check, warning, harness-error rows with per-task checkpointing; restarts (fusion-sv, then `start.sh` fallback) only with the flag; missing lifecycle binaries degrade to a warning. Re-run-after-recovery only when the engine is reachable again. 25 office tests (897 collected).
 
 ### v0.4.39 (2026-11-26)
 

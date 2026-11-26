@@ -7,8 +7,8 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.39
-updated: 2026-11-25
+version: 0.4.40
+updated: 2026-11-26
 owner: "@dahai"
 source_of_truth:
   - README.md
@@ -16,6 +16,11 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.40 (2026-11-26)
+
+- **Fix #59 — office-bench defaults to the gateway (`:11432`)**. Gateway is the single entry for downstream model traffic; `--direct-engine` (:11434) is opt-in for evals that need it, explicit `--mlx-url` still takes precedence. Safe on the gateway path: bench requests already carry `X-Cache: bypass` (v0.4.32).
+- **Fix #60 — engine babysit is opt-in + bounded (`--babysit-engine`)**. `run_office` no longer restarts a shared engine by default: unreachable engine = bounded 3-probe check (a slow engine under co-tenant load is not a dead engine), warning, and harness-error rows (`run_error: "engine unreachable"`) with per-task checkpointing — the run completes and reports honestly instead of unilateral `fusion-sv restart`. Restarting (supervisor first, `start.sh` fallback) only with the flag; missing lifecycle binaries degrade to a warning, never a crash. Re-run-after-recovery only fires when the engine is actually reachable again. 25 office tests (897 collected).
 
 ### v0.4.39 (2026-11-26)
 
