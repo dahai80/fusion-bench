@@ -7,8 +7,8 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.38
-updated: 2026-11-20
+version: 0.4.39
+updated: 2026-11-25
 owner: "@dahai"
 source_of_truth:
   - README.md
@@ -16,6 +16,11 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.39 (2026-11-26)
+
+- **Feat #56 — FusionOffice-Bench office-domain eval (flywheel gate)**. New `fusion_bench/office_bench/` + `fusion-bench office-bench` CLI: 32 file-level office tasks across `office_xlsx` / `office_docx` / `office_pptx` (apps x steps difficulty axis, steps 1-3), graded by deterministic structural validators vendored from fusion-trainer#90 (`validators.py`, pure-stdlib zipfile + ElementTree over OOXML: xlsx openable-zip + required sheets + formula policy require/strict with openpyxl absolute-`/xl/` rels handling; docx required-section substrings; pptx min-slides + required titles — grading never calls a model). Seed files are generated deterministically by executing per-task python snippets under the repo-root venv (`seedgen.py`; office libs live there, CI without it skips seed-dependent tests). Runner = `harness_bench.FusionHarnessRunner` + `RetryingClient` + office SYSTEM_PROMPT variant reworded off the fusion-mlx#1665 crash path, per-task engine babysit (probe → `fusion-sv restart` → `start.sh` fallback) with no-LLM-traffic task re-run and per-task result checkpointing — survives the engine death flaps observed under fusion-lsa RULER co-tenancy. Summary emitted in the fusion-eval layout and ingested unchanged by `ft flywheel record`. Live baseline on the pinned model (Qwen3.5-4B @ :11434, direct, engine-keyed): **20/32 = 0.625** — office_xlsx 8/12 (0.667), office_docx 7/10 (0.700), office_pptx 5/10 (0.500); recorded as `office-baseline` in the fusion-trainer flywheel registry (`ft flywheel status` now shows all three office by_type axes; first non-code-repair domain in the registry). Report: `benchmarks/results/office-bench/{summary,results}.json`; design doc `docs/design-office-bench-56.md`. 20 tests (892 collected).
+
 
 zh — 版本号以 `pyproject.toml` 为单一事实源，由 `scripts/release.sh` 保持 git tag、GitHub Release 与代码内版本一致。此处保留近期条目，完整历史见 [README.md](README.md) 的 Changelog 一节。en — the version in `pyproject.toml` is the single source of truth, kept aligned with the git tag, the GitHub Release and in-code versions by `scripts/release.sh`. This file keeps recent entries; the full history lives in the Changelog section of [README.md](README.md).
 
