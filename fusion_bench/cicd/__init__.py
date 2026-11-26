@@ -3,5 +3,5 @@
 Importers/callers: external CI pipelines (optional; no in-repo workflow).
 Affected API: no new REST endpoints; wraps SDK client.
 Data schema: none.
-User instruction: "对比PRD、架构、计划文档，查看是否还存在遗留、defer的任务" (P2-09 CI/CD FEAT-030).
+User instruction: "compare PRD, architecture, and plan docs for remaining or deferred tasks" (P2-09 CI/CD FEAT-030).
 """

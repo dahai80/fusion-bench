@@ -2,8 +2,9 @@
 Importers/callers: developer running `python scripts/ecosystem_benchmark.py`.
 Affected API: fusion-mlx /v1/*, bench-site /api/benchmarks.
 Data schemas: BenchSiteRecord (chip_name, model_name, pp_tps, tg_tps, …).
-User instruction: "fusion-bench能力均已经具备是不是对~/fusion/fusion-code的软件能力，
-~/claude-home/fusion-mlx，~/fusion-security能力首先出一个benchmark评测，上传到bench.dpdns.org"
+User instruction: "fusion-bench capabilities are all in place — benchmark the software
+capabilities of ~/fusion/fusion-code, ~/claude-home/fusion-mlx, and ~/fusion-security
+first and upload the results to bench.dpdns.org"
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 # #35: fusion-core single-point client-key resolution (alias chain + profile semantics)
 CLIENT_KEY = client_key()
 if not CLIENT_KEY:
-    logger.error("API key 未设置，拒绝启动 (fail visibly)。请 export FUSION_CLIENT_KEY=<key>")
+    logger.error("API key not set, refusing to start (fail visibly). Please export FUSION_CLIENT_KEY=<key>")
     sys.exit(1)
 MLX_BASE_URL = os.environ.get("FUSION_MLX_BASE_URL", "http://localhost:11432/v1")
 logger.info("MLX_BASE_URL=%s, API_KEY=set", MLX_BASE_URL)

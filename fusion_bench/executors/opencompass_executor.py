@@ -23,6 +23,7 @@ from ..core.plugin_base import (
 logger = logging.getLogger(__name__)
 
 _CHINESE_TASKS = {
+    # i18n: user-facing (Chinese benchmark prompt templates consumed by the evaluated models)
     "ceval": {
         "dataset_path": "ceval/ceval-exam",
         "dataset_name": "all",
@@ -262,6 +263,7 @@ class OpenCompassExecutor(ExecutorPlugin):
     @staticmethod
     def _extract_answer(text: str) -> str:
         text = text.strip().upper()
+        # i18n: functional (matches Chinese answer markers emitted by the model)
         for letter in ["A", "B", "C", "D"]:
             if text.startswith(letter) or f"答案{letter}" in text or f"选项{letter}" in text:
                 return letter

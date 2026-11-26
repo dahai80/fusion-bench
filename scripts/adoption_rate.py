@@ -311,6 +311,7 @@ def render_markdown(report: dict) -> str:
         f"updated: {report['date']}",
         'owner: "@dahai"',
         "doc_type: architecture",
+        # i18n: user-facing
         'title: { zh: "fusion-harness 采用率快照", en: "fusion-harness adoption-rate snapshot" }',
         "source_of_truth:",
         "  - docs/adoption-rate-2026-11-19.json",

@@ -3,7 +3,7 @@
 Importers/callers: orchestrator/pipeline.py can optionally inject a TaskDistributor.
 Affected API: TaskDistributor ABC (dispatch/collect/status/cancel/list_nodes); no REST endpoints added.
 Data schema: DistributedTask (task_id, node_id, status, result, error); NodeInfo (node_id, address, capacity, load, healthy).
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P1-2 distributed execution interface).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P1-2 distributed execution interface).
 """
 
 from __future__ import annotations

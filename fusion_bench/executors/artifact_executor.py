@@ -3,7 +3,7 @@
 Importers/callers: executors/__init__.py register_all() imports and registers ArtifactExecutor.
 Affected API: calls POST /chat/completions on fusion-mlx; no new public API surface.
 Data schemas: ArtifactCriteria dataclass (name, description, weight, auto_check); ArtifactTestCase (test_id, artifact_type, prompt, criteria, min_length); EvalResult from plugin_base.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-11).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P2-11).
 """
 
 from __future__ import annotations

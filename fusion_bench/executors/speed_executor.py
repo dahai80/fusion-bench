@@ -25,8 +25,8 @@ class SpeedExecutor(ExecutorPlugin):
     executor_type = ExecutorType.SPEED
 
     def __init__(self, mlx_base_url: str | None = None):
-        # issue #23 E2E: api_key 之前硬编码 "local", 经 gateway/直连 mlx 均 401。
-        # 与 bnup/laya executor 对齐 — FUSION_MLX_URL env；api_key 走 #35 fusion-core 单点解析。
+        # issue #23 E2E: api_key used to be hardcoded to "local", which 401-ed via both the gateway and direct mlx.
+        # Aligned with the bnup/laya executors — FUSION_MLX_URL env; api_key goes through the #35 fusion-core single-point resolution.
         self.mlx_base_url = mlx_base_url or os.environ.get("FUSION_MLX_URL", "http://localhost:11432/v1")
         self.api_key = client_key()
 

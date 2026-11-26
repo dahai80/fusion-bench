@@ -3,7 +3,7 @@
 Importers/callers: api/app.py /approvals endpoints; gate_engine.py production tier.
 Affected API: /approvals CRUD endpoints; GateResult.approve() integration.
 Data schema: ApprovalRequest (request_id, gate_id, gate_name, metric_name, metric_value, threshold, requester, status, approver, reason); approvals table (request_id PK).
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P3-19 approval workflow).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P3-19 approval workflow).
 """
 
 from __future__ import annotations

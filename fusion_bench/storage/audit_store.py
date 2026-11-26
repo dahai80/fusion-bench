@@ -2,7 +2,7 @@
 
 Records all API actions (create task, modify gate, approve, etc.)
 Imported by API middleware in api/app.py. Schema: audit_logs table.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-13).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P2-13).
 """
 
 from __future__ import annotations

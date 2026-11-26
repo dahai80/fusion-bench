@@ -3,7 +3,7 @@
 Imported by executors/__init__.py register_all(). Uses ExecutorPlugin ABC from core/plugin_base.
 Data schema: AgentScenario (scenario_id, instruction, expected_behavior, eval_criteria), EvalResult.
 API: calls /chat/completions on fusion-mlx. No new public API added.
-User instruction: "关闭#10作为无效单，继续修复其他issue，issue全部修复完成" (#11 multi-turn sandbox).
+User instruction: "close #10 as invalid and keep fixing the other issues until all are resolved" (#11 multi-turn sandbox).
 """
 
 from __future__ import annotations

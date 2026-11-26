@@ -638,8 +638,8 @@ async def list_suite_cases(suite_id: str, page: int = Query(1, ge=1), page_size:
 # ── Results & Analysis ──────────────────────────────────────────────
 
 
-# issue #23: trend 必须注册在 /results/{task_id} 之前 — FastAPI 按注册顺序
-# 匹配, 否则字面量 "trend" 被当作 task_id 吞掉 (404 Result for 'trend' not found)。
+# issue #23: the trend route must be registered before /results/{task_id} — FastAPI matches
+# routes in registration order, otherwise the literal "trend" is swallowed as a task_id (404 Result for 'trend' not found).
 @app.get("/api/v1/results/trend", response_model=list[TrendPoint])
 async def get_trend(
     model: str | None = None,

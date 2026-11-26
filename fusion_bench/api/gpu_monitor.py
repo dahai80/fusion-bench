@@ -3,7 +3,7 @@
 Importers/callers: api/app.py /system/gpu endpoint; engine/metal_monitor.py can use this.
 Affected API: adds /system/gpu GET endpoint; no schema changes.
 Data schema: GPUStats dataclass (utilization_pct, memory_used_gb, memory_total_gb, temperature_c, gpu_type, timestamp).
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (Enhancement F real-time GPU monitoring).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (Enhancement F real-time GPU monitoring).
 """
 
 from __future__ import annotations

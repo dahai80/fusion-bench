@@ -3,7 +3,7 @@
 Importers/callers: reporter/report.py calls to_pdf()/to_excel()/radar_chart()/trend_chart().
 Affected API: extends ReportGenerator with PDF/Excel export; no new REST endpoints.
 Data schema: reuses existing EvalResult.to_dict()/SuiteResult dict; no schema changes.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P1-4 report export + Enhancement C visualization).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P1-4 report export + Enhancement C visualization).
 """
 
 from __future__ import annotations

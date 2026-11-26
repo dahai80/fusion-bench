@@ -2,7 +2,7 @@
 
 Imported by CLI cmd_schedule and API /schedules endpoints.
 Schema: SchedulerConfig with cron expression + TaskCreateRequest params.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P1-5).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P1-5).
 """
 
 from __future__ import annotations

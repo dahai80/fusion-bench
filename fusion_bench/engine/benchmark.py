@@ -97,7 +97,7 @@ class BenchmarkRunner:
         api_key: str = "",
         timeout: float = 300.0,
     ):
-        # 与 executors 对齐：默认走 fusion-core 单点解析（#35，含 gateway 401 修复语义）
+        # Aligned with the executors: default to fusion-core single-point resolution (#35, includes the gateway 401 fix semantics)
         if not api_key:
             api_key = client_key()
         self.mlx_base_url = mlx_base_url.rstrip("/")

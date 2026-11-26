@@ -3,7 +3,7 @@
 Importers/callers: api/app.py /system/backup endpoint; cli.py cmd_backup subcommand.
 Affected API: /system/backup POST endpoint; no data schema changes.
 Data schema: reads .db files from ~/.fusion-bench/, copies to ~/.fusion-bench/backups/<label>/.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-17 data multi-copy backup).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P2-17 data multi-copy backup).
 """
 
 from __future__ import annotations
