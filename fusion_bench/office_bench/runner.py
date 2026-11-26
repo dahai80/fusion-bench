@@ -130,6 +130,7 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
     for idx, task in enumerate(OFFICE_TASKS, start=1):
         ensure_engine(mlx_url)
         workspace = out_dir / "workspaces" / task.task_id
+        task.materialize(workspace)
         runner = FusionHarnessRunner(RetryingClient(client), max_steps=max_steps, system_prompt=SYSTEM_PROMPT)
         result = await runner.run(to_harness_task(task), workspace)
         # Engine can die mid-task (connection-refused flaps) and the retry
