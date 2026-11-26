@@ -3,7 +3,7 @@
 Importers/callers: api/app.py /datasets endpoints; cli.py cmd_dataset.
 Affected API: /datasets CRUD endpoints (GET/POST/PUT/DELETE).
 Data schema: datasets table (dataset_id PK, name, description, format, items JSON, item_count, created_at, updated_at).
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-15 custom dataset upload).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P2-15 custom dataset upload).
 """
 
 from __future__ import annotations

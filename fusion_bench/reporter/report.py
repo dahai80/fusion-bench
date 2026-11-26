@@ -3,7 +3,7 @@
 Importers/callers: cli.py export commands, api/app.py /results/{id}/export endpoint.
 Affected API: adds pdf/xlsx format options to export endpoint.
 Data schema: reuses BenchmarkResult; PDF uses reportlab, Excel uses openpyxl.
-User instruction: "对比PRD、架构、计划文档，查看是否还存在遗留、defer的任务" (P2-05/P2-06 PDF+Excel export).
+User instruction: "compare PRD, architecture, and plan docs for remaining or deferred tasks" (P2-05/P2-06 PDF+Excel export).
 """
 
 from __future__ import annotations

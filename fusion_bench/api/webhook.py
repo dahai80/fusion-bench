@@ -3,7 +3,7 @@
 Importers/callers: orchestrator/gate_engine.py calls notify_webhook() on gate block.
 Affected API: no new REST endpoints; outbound HTTP POST to configured webhook_url.
 Data schema: WebhookConfig (url, secret, events, enabled, timeout_seconds); WebhookPayload (event, suite_id, model, gate_name, gate_passed, metric_value, threshold, timestamp, detail).
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (Enhancement B gate block webhook).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (Enhancement B gate block webhook).
 """
 
 from __future__ import annotations

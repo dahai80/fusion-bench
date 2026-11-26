@@ -3,7 +3,7 @@
 Importers/callers: executors/__init__.py register_all(); api/app.py /tasks endpoint.
 Affected API: new executor "garak"; no REST schema changes.
 Data schema: GarakProbeResult (probe_name, passed, severity, detail); inherits EvalResult.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (Enhancement A Garak deep integration).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (Enhancement A Garak deep integration).
 """
 
 from __future__ import annotations

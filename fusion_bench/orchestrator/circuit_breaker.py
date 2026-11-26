@@ -3,7 +3,7 @@
 Opens after N consecutive failures for a given executor_key,
 preventing new tasks from running. Auto-recovers after cooldown.
 Imported by Pipeline in orchestrator/pipeline.py. Schema: _circuits dict keyed by executor_key.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-18).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P2-18).
 """
 
 from __future__ import annotations

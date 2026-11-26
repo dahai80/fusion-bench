@@ -1,7 +1,7 @@
 # Importers/callers: orchestrator/pipeline.py calls analyze() after task failure; api/app.py can expose /tasks/{id}/root-cause.
 # Affected API: adds RootCauseReport dataclass; no REST endpoint schema change (report embedded in task result).
 # Data schemas: RootCauseReport (failure_category, root_cause, suggestions, confidence, related_errors).
-# User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" — P2-07 root cause analysis (FR-018).
+# User instruction: "kick off and close everything unfinished, not yet started, or falling short" — P2-07 root cause analysis (FR-018).
 
 from __future__ import annotations
 

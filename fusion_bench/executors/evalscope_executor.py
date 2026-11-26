@@ -3,7 +3,7 @@
 Importers/callers: executors/__init__.py register_all() imports and registers EvalScopeExecutor.
 Affected API: calls POST /chat/completions on fusion-mlx HTTP; no new REST endpoint exposed.
 Data schemas: EvalScopeConfig dataclass (task_name, subset, metric_keys, num_fewshot); EvalResult/CaseResult from core/plugin_base.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P1-9 EvalScope integration).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P1-9 EvalScope integration).
 """
 
 from __future__ import annotations

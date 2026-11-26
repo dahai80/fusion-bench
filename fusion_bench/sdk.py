@@ -3,7 +3,7 @@
 Importers/callers: external Python scripts, CI/CD integrations, fusion_bench/cicd/github_action.py.
 Affected API: wraps all /api/v1/* endpoints; no new REST endpoints.
 Data schema: mirrors API request/response pydantic models.
-User instruction: "对比PRD、架构、计划文档，查看是否还存在遗留、defer的任务" (P2-08 SDK FEAT-029).
+User instruction: "compare PRD, architecture, and plan docs for remaining or deferred tasks" (P2-08 SDK FEAT-029).
 """
 
 from __future__ import annotations

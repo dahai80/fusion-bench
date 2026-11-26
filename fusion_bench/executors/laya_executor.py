@@ -1,4 +1,4 @@
-"""Laya-MLX integration benchmark executor (#22, spec §五).
+"""Laya-MLX integration benchmark executor (#22, spec §5).
 
 Benchmarks the fusion-mlx laya decision endpoint (/v1/laya/decide) across 6
 dimensions:
@@ -89,7 +89,7 @@ _DOMAIN_TO_TOOL = {
     "chitchat": "none",
 }
 
-# Original spec targets (architecture/laya-mlx-2-fusion-mlx-1010.md §五)
+# Original spec targets (architecture/laya-mlx-2-fusion-mlx-1010.md §5)
 # NOT lowered — report FAIL honestly where laya can't meet them.
 _SPEC_TARGETS = {
     "latency_p50_ms": 15.0,
@@ -347,7 +347,7 @@ class LayaBenchmarkExecutor(ExecutorPlugin):
         return {"overall": overall_prf1, "per_dimension": dim_prf1, "sample_count": len(testset)}
 
     async def _bench_tools(self, testset: list[dict]) -> dict[str, Any]:
-        # Spec §五: "tool calling success rate 99.9% (no malformed output)".
+        # Spec §5: "tool calling success rate 99.9% (no malformed output)".
         # Two metrics:
         # 1. structural_success_rate: % of calls returning valid structured response
         #    (parseable answers with domain.choice). Target 99.9% — laya returns

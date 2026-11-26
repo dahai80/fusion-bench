@@ -4,7 +4,7 @@ Importers/callers: executors/__init__.py register_all() imports and registers Co
 Affected API: calls POST /chat/completions on fusion-mlx; no new public API surface.
 Data schemas: CodeTestCase dataclass (test_id, prompt, language, expected_patterns, forbidden_patterns); EvalResult from plugin_base.
 Constraint: never uses exec()/eval() - only regex pattern matching on generated code.
-User instruction: "把所有没完全做完，没启动做，有差距的全部启动补齐" (P2-10).
+User instruction: "kick off and close everything unfinished, not yet started, or falling short" (P2-10).
 """
 
 from __future__ import annotations
