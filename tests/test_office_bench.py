@@ -299,6 +299,8 @@ class TestEngineBabysit:
         monkeypatch.setattr(runner, "RetryingClient", lambda *a, **kw: object())
         monkeypatch.setattr(runner, "FusionHarnessRunner", FakeFusionHarnessRunner)
         monkeypatch.setattr(runner, "ensure_engine", lambda url, babysit=False: True)
+        # CI has no repo-root venv: seed materialization needs office libs
+        monkeypatch.setattr(runner.OfficeTask, "materialize", lambda self, ws: None)
 
     @pytest.mark.asyncio
     async def test_zero_token_task_classified_harness_error(self, tmp_path, monkeypatch):
