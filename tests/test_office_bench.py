@@ -271,9 +271,58 @@ class TestEngineBabysit:
         arm = summary["arms"]["fusion-harness"]
         assert arm["total"] == 32
         assert arm["passed"] == 0
+        assert arm["harness_errors"] == 32
         rows = [r for r in json.loads((tmp_path / "results.json").read_text())]
         assert len(rows) == 32
         assert all(r["run_error"] == "engine unreachable" for r in rows)
+
+    @staticmethod
+    def _patch_saturated_runner(monkeypatch, tokens_in: int = 0, tokens_out: int = 0):
+        from fusion_bench.office_bench import runner
+
+        class FakeResult:
+            error = None
+            llm_calls = 1
+            wall_s = 1.0
+
+        FakeResult.tokens_in = tokens_in
+        FakeResult.tokens_out = tokens_out
+
+        class FakeFusionHarnessRunner:
+            def __init__(self, *a, **kw):
+                pass
+
+            async def run(self, task, workspace):
+                return FakeResult()
+
+        monkeypatch.setattr(runner, "ModelClient", lambda **kw: object())
+        monkeypatch.setattr(runner, "RetryingClient", lambda *a, **kw: object())
+        monkeypatch.setattr(runner, "FusionHarnessRunner", FakeFusionHarnessRunner)
+        monkeypatch.setattr(runner, "ensure_engine", lambda url, babysit=False: True)
+
+    @pytest.mark.asyncio
+    async def test_zero_token_task_classified_harness_error(self, tmp_path, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        self._patch_saturated_runner(monkeypatch)
+        summary = await runner.run_office("http://engine/v1", "m", tmp_path)
+        arm = summary["arms"]["fusion-harness"]
+        assert arm["harness_errors"] == 32
+        assert arm["passed"] == 0
+        rows = json.loads((tmp_path / "results.json").read_text())
+        assert all(r["harness_error"] is True for r in rows)
+        assert all("harness-error" in r["verify_detail"] for r in rows)
+
+    @pytest.mark.asyncio
+    async def test_tokened_task_not_harness_error(self, tmp_path, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        self._patch_saturated_runner(monkeypatch, tokens_in=100, tokens_out=10)
+        summary = await runner.run_office("http://engine/v1", "m", tmp_path)
+        arm = summary["arms"]["fusion-harness"]
+        assert arm["harness_errors"] == 0
+        rows = json.loads((tmp_path / "results.json").read_text())
+        assert all(r["harness_error"] is False for r in rows)
 
 
 @pytest.mark.skipif(not root_python_available(), reason="repo-root venv with office libs unavailable")

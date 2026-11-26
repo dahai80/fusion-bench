@@ -120,6 +120,7 @@ def _by_type(results: list[dict]) -> dict[str, dict]:
 def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
     passed = sum(1 for row in results if row["passed"])
     total = len(results)
+    harness_errors = sum(1 for row in results if row.get("harness_error"))
     return {
         "run_id": run_id,
         "created_at": created_at,
@@ -129,6 +130,7 @@ def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
                 "total": total,
                 "passed": passed,
                 "pass_rate": round(passed / total, 4) if total else 0.0,
+                "harness_errors": harness_errors,
                 "by_type": _by_type(results),
             }
         },
@@ -154,6 +156,7 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
                     "score": 0.0,
                     "verify_detail": "engine unreachable, no babysit binary/opt-in",
                     "run_error": "engine unreachable",
+                    "harness_error": True,
                     "tokens_in": 0,
                     "tokens_out": 0,
                     "wall_s": 0.0,
@@ -181,6 +184,18 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
             if engine_ok:
                 result = await runner.run(to_harness_task(task), workspace)
         score, detail = task.grade(workspace)
+        # #61: zero tokens in AND out with no error means the model was never
+        # consulted (per-task HTTP starved in the engine queue under
+        # co-tenant saturation). Score the attempt as a harness-error, not a
+        # model failure — validator output against an empty attempt is a
+        # queueing artifact, not a capability signal.
+        harness_error = not result.error and result.tokens_in == 0 and result.tokens_out == 0
+        if harness_error:
+            logger.warning(
+                "task %s classified harness-error: model never responded (tokens_in=0, tokens_out=0)",
+                task.task_id,
+            )
+            score, detail = 0.0, "harness-error: model never responded (tokens_in=0, tokens_out=0)"
         results.append(
             {
                 "task_id": task.task_id,
@@ -191,6 +206,7 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
                 "score": score,
                 "verify_detail": detail,
                 "run_error": result.error or "",
+                "harness_error": harness_error,
                 "tokens_in": result.tokens_in,
                 "tokens_out": result.tokens_out,
                 "wall_s": round(result.wall_s, 2),

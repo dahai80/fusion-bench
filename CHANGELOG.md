@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.40
+version: 0.4.41
 updated: 2026-11-26
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.41 (2026-11-26)
+
+- **Fix #61 — zero-token tasks classified as harness-error, not model failure**. A task where the model was never consulted (`tokens_in == 0 and tokens_out == 0`, no error — per-task HTTP starved in the engine queue under co-tenant saturation) is now scored `harness-error: model never responded` instead of running validators against an empty attempt (a queueing artifact reads as a capability signal, silently invalidating baselines). Per-task rows carry `harness_error: true`; `summary.json` arms report a `harness_errors` count so engine-saturation runs are detectable at a glance. Applies to both the initial attempt and the post-recovery re-run. 27 office tests (899 collected).
 
 ### v0.4.40 (2026-11-26)
 

@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-897-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-899-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -457,6 +457,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.41 (2026-11-26)
+
+- **Fix #61 — zero-token tasks classified as harness-error, not model failure**. Model never consulted (`tokens_in == 0 and tokens_out == 0`, no error — engine-queue starvation under co-tenant saturation) → scored `harness-error: model never responded` instead of grading an empty attempt; rows carry `harness_error: true`, summary arms report `harness_errors` count. 27 office tests (899 collected).
 
 ### v0.4.40 (2026-11-26)
 
