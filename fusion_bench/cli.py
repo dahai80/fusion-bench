@@ -190,6 +190,19 @@ def main():
     cs_parser.add_argument("--out", default="", help="Output directory (default: benchmarks/results/compare-suite)")
     cs_parser.set_defaults(func=lambda a: None)
 
+    # office-bench (#56) — FusionOffice-Bench office-domain eval (flywheel gate)
+    ob_parser = subparsers.add_parser(
+        "office-bench", help="Office-domain eval testset: xlsx/docx/pptx tasks (issue #56)"
+    )
+    ob_parser.add_argument("--model", default="mlx-community--Qwen3.5-4B-MLX-4bit", help="Pinned model name")
+    ob_parser.add_argument(
+        "--mlx-url",
+        default="http://127.0.0.1:11434/v1",
+        help="fusion-mlx API URL (direct; gateway cache corrupts benches)",
+    )
+    ob_parser.add_argument("--out", default="", help="Output directory (default: benchmarks/results/office-bench)")
+    ob_parser.set_defaults(func=lambda a: None)
+
     # golden (#49) — golden eval set from production traffic + regression gate
     golden_parser = subparsers.add_parser("golden", help="Golden eval set: ingest / pii-scan / gate / coverage")
     golden_sub = golden_parser.add_subparsers(dest="golden_command", required=True)
@@ -399,6 +412,7 @@ def main():
         "harness-bench": lambda: asyncio.run(cmd_harness_bench(args)),
         "dual-control": lambda: asyncio.run(cmd_dual_control(args)),
         "compare-suite": lambda: cmd_compare_suite(args),
+        "office-bench": lambda: asyncio.run(cmd_office_bench(args)),
         "golden": lambda: cmd_golden(args),
         "compare": lambda: asyncio.run(cmd_compare(args)),
         "gates": lambda: cmd_gates(args),
@@ -876,6 +890,24 @@ def cmd_compare_suite(args):
     print(json.dumps(report["metrics"], indent=2, ensure_ascii=False))
     out_dir = out or Path("benchmarks/results/compare-suite")
     print(f"Report saved to {out_dir / 'report.md'}")
+
+
+async def cmd_office_bench(args):
+    """FusionOffice-Bench office-domain eval (issue #56)."""
+    from .office_bench.runner import run_office
+
+    out = Path(args.out) if args.out else Path("benchmarks") / "results" / "office-bench"
+    print(f"Office-bench: model={args.model} mlx={args.mlx_url} out={out}")
+    summary = await run_office(mlx_url=args.mlx_url, model=args.model, out_dir=out)
+    arm = summary["arms"]["fusion-harness"]
+    print(
+        json.dumps(
+            {"total": arm["total"], "passed": arm["passed"], "pass_rate": arm["pass_rate"], "by_type": arm["by_type"]},
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+    print(f"Summary saved to {out / 'summary.json'}")
 
 
 async def cmd_harness_bench(args):
