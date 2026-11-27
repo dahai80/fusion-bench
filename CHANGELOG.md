@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.41
+version: 0.4.42
 updated: 2026-11-26
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.42 (2026-11-27)
+
+- **Feat — public watermark reference layer (PR #62)**. `fusion_bench/watermarks.py`: curated `WATERMARKS` table anchoring internal benchmark numbers to public state of the art — benchmark, optional model filter, score (fraction), source URL, publication date, note. Entries added only with a public source; per-model rows only for an exact model+benchmark pair (never estimated). Seeded: SWE-bench Verified frontier-agentic ~85% (swebench.com, 2026-02), Terminal-Bench 2.0 top-agents 60% (tbench.ai, 2026-01, arXiv 2505.16054), Claude Haiku 4.5 61.4% (vendor claim, 2025-10, upper band). `lookup()` keeps benchmark-level rows alongside matching model rows with name normalization; `compare()` returns the delta vs the best matching watermark with band verdicts (ahead / parity ≤5 pts / gap ≤20 pts / far-gap / no-watermark). CLI: `fusion-bench watermark [benchmark] [--score X] [--model M]`; `__main__` guard moved to the true end of `cli.py` so late-defined commands resolve. 10 tests (909 collected).
 
 ### v0.4.41 (2026-11-26)
 
