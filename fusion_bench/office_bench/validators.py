@@ -37,6 +37,15 @@ def _normalize(parts: list[tuple[str, bool, str]]) -> tuple[float, str]:
     return (1.0, "ok") if not failed else (0.0, "; ".join(failed))
 
 
+# issue #64: negative probes. A positive-only validator fails open — it can
+# credit a run whose only merit is keyword/artifact presence, including
+# over-trigger (unsolicited edits the task never asked for, the small-model
+# failure mode documented in arXiv 2610.02142). The forbidden_* args below
+# let a task assert absence: the artifact must NOT contain the listed
+# sheet/section/title. Combined with no-op probe tasks they gate
+# over-trigger and keyword false positives.
+
+
 def _sheet_target(zf: zipfile.ZipFile, sheet_name: str, sheets: dict[str, str]) -> str | None:
     rid = sheets.get(sheet_name, "")
     for rel in ET.fromstring(zf.read("xl/_rels/workbook.xml.rels")).iter(f"{{{_NS_PKG_REL}}}Relationship"):
@@ -74,6 +83,8 @@ def _validate_xlsx(path: Path, args: dict) -> tuple[float, str]:
             }
             for name in required:
                 checks.append((f"sheet:{name}", name in sheets, f"sheets={sorted(sheets)}"))
+            for name in [str(s) for s in (args.get("forbidden_sheets") or [])]:
+                checks.append((f"!sheet:{name}", name not in sheets, f"forbidden sheet {name!r} present"))
             policy = str(args.get("formula_policy", "") or "")
             if policy and required:
                 target = _sheet_target(zf, required[0], sheets)
@@ -103,6 +114,10 @@ def _validate_docx(path: Path, args: dict) -> tuple[float, str]:
             )
             for sec in required:
                 checks.append((f"section:{sec}", sec.lower() in text.lower(), f"{sec!r} not found in document text"))
+            for sec in [str(s) for s in (args.get("forbidden_sections") or [])]:
+                checks.append(
+                    (f"!section:{sec}", sec.lower() not in text.lower(), f"forbidden section {sec!r} present")
+                )
     except (zipfile.BadZipFile, KeyError, OSError) as exc:
         checks.append(("open", False, f"not a readable docx: {exc}"))
     score, detail = _normalize(checks)
@@ -128,6 +143,8 @@ def _validate_pptx(path: Path, args: dict) -> tuple[float, str]:
             )
             for title in required_titles:
                 checks.append((f"title:{title}", title.lower() in joined, f"{title!r} not found on any slide"))
+            for title in [str(t) for t in (args.get("forbidden_titles") or [])]:
+                checks.append((f"!title:{title}", title.lower() not in joined, f"forbidden title {title!r} present"))
     except (zipfile.BadZipFile, KeyError, OSError) as exc:
         checks.append(("open", False, f"not a readable pptx: {exc}"))
     score, detail = _normalize(checks)

@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.43
+version: 0.4.44
 updated: 2026-11-26
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.44 (2026-11-27)
+
+- **Feat #64 — over-trigger suppression probes + fail-closed validator args (arXiv 2610.02142)**. Two additions guarding against keyword-fitting / over-trigger scoring in office-bench. (1) Negative probes: `NEGATIVE_PROBES` (two tasks, `noop-read-only-query` / `noop-no-op-request`) whose correct behavior is NOT to mutate the workspace — grading is a byte-level workspace snapshot before vs after the episode (created/removed/modified file = `over-trigger` score 0; byte-identical = `suppressed` 1.0; reading documents via tools is legitimate). Rows carry `negative_probe: true` and stay out of the 32-task core stats; summary arms report `negative_probes.{total,suppressed,suppression_rate}` for the pair-control rule (near-identical tool-use scores only count as real skill when both arms suppress). (2) `forbidden_*` validator args (`forbidden_sheets` / `forbidden_sections` / `forbidden_titles`) — fail-closed checks on unsolicited content, task defs opt in. Full per-check fail-open audit: `docs/validator-fail-open-audit-64.md`. Boundary report excludes negative-probe rows from capability inference. 48 office tests (930 collected).
 
 ### v0.4.43 (2026-11-27)
 

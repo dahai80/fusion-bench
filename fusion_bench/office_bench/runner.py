@@ -24,11 +24,42 @@ from ..harness_bench.model_client import ModelClient
 from ..harness_bench.runners import FusionHarnessRunner
 from ..harness_bench.tasks import HarnessTask
 from .boundary import write_boundary
-from .tasks import OFFICE_TASKS, SYSTEM_PROMPT, OfficeTask
+from .tasks import NEGATIVE_PROBES, OFFICE_TASKS, SYSTEM_PROMPT, OfficeTask
 
 logger = logging.getLogger(__name__)
 
 ARM = "fusion-harness"
+
+
+def _snapshot(workspace: Path) -> dict[str, str]:
+    import hashlib
+
+    snap: dict[str, str] = {}
+    if not workspace.is_dir():
+        return snap
+    for p in sorted(workspace.rglob("*")):
+        if p.is_file():
+            snap[str(p.relative_to(workspace))] = hashlib.sha256(p.read_bytes()).hexdigest()
+    return snap
+
+
+def grade_negative(before: dict[str, str], workspace: Path) -> tuple[float, str]:
+    """#64: pass iff the workspace is byte-identical after the episode."""
+    after = _snapshot(workspace)
+    created = sorted(set(after) - set(before))
+    removed = sorted(set(before) - set(after))
+    modified = sorted(k for k in set(after) & set(before) if after[k] != before[k])
+    if created or removed or modified:
+        bits = []
+        if created:
+            bits.append(f"created={created}")
+        if removed:
+            bits.append(f"removed={removed}")
+        if modified:
+            bits.append(f"modified={modified}")
+        return 0.0, "over-trigger: " + "; ".join(bits)
+    return 1.0, "suppressed (workspace unchanged)"
+
 
 SVCTL = Path.home() / "fusion" / "fusion-supervisor" / "target" / "release" / "fusion-sv"
 MLXCTL = Path.home() / "fusion" / "fusion-mlx" / "start.sh"
@@ -93,10 +124,12 @@ def ensure_engine(mlx_url: str, babysit: bool = False) -> bool:
     return False
 
 
-def to_harness_task(task: OfficeTask) -> HarnessTask:
-    def verifier(workspace: Path) -> tuple[bool, str]:
-        score, detail = task.grade(workspace)
-        return score >= 1.0, detail
+def to_harness_task(task: OfficeTask, verifier=None) -> HarnessTask:
+    if verifier is None:
+
+        def verifier(workspace: Path) -> tuple[bool, str]:
+            score, detail = task.grade(workspace)
+            return score >= 1.0, detail
 
     return HarnessTask(
         task_id=task.task_id,
@@ -119,20 +152,28 @@ def _by_type(results: list[dict]) -> dict[str, dict]:
 
 
 def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
-    passed = sum(1 for row in results if row["passed"])
-    total = len(results)
-    harness_errors = sum(1 for row in results if row.get("harness_error"))
+    core = [row for row in results if not row.get("negative_probe")]
+    neg = [row for row in results if row.get("negative_probe")]
+    passed = sum(1 for row in core if row["passed"])
+    total = len(core)
+    harness_errors = sum(1 for row in core if row.get("harness_error"))
+    suppressed = sum(1 for row in neg if row["passed"])
     return {
         "run_id": run_id,
         "created_at": created_at,
-        "models": {ARM: results[0].get("model", "") if results else ""},
+        "models": {ARM: core[0].get("model", "") if core else ""},
         "arms": {
             ARM: {
                 "total": total,
                 "passed": passed,
                 "pass_rate": round(passed / total, 4) if total else 0.0,
                 "harness_errors": harness_errors,
-                "by_type": _by_type(results),
+                "by_type": _by_type(core),
+                "negative_probes": {
+                    "total": len(neg),
+                    "suppressed": suppressed,
+                    "suppression_rate": round(suppressed / len(neg), 4) if neg else 0.0,
+                },
             }
         },
     }
@@ -223,6 +264,67 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
             detail,
         )
         (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+    # Negative probes (#64): correct behavior is NOT mutating the workspace.
+    # Reading via tools is fine — only byte-level mutations fail suppression.
+    for task in NEGATIVE_PROBES:
+        engine_ok = ensure_engine(mlx_url, babysit=babysit)
+        if not engine_ok:
+            logger.error("negative probe %s skipped: engine unreachable", task.task_id)
+            results.append(
+                {
+                    "task_id": task.task_id,
+                    "task_type": task.task_type,
+                    "app": task.app,
+                    "steps": task.steps,
+                    "passed": False,
+                    "score": 0.0,
+                    "verify_detail": "engine unreachable, no babysit binary/opt-in",
+                    "run_error": "engine unreachable",
+                    "harness_error": True,
+                    "negative_probe": True,
+                    "tokens_in": 0,
+                    "tokens_out": 0,
+                    "wall_s": 0.0,
+                    "model": model,
+                }
+            )
+            continue
+        workspace = out_dir / "workspaces" / task.task_id
+        task.materialize(workspace)
+        before = _snapshot(workspace)
+        runner = FusionHarnessRunner(RetryingClient(client), max_steps=max_steps, system_prompt=SYSTEM_PROMPT)
+        result = await runner.run(to_harness_task(task, verifier=lambda ws, b=before: grade_negative(b, ws)), workspace)
+        if result.llm_calls == 0 or result.error:
+            engine_ok = ensure_engine(mlx_url, babysit=babysit)
+            if engine_ok:
+                result = await runner.run(
+                    to_harness_task(task, verifier=lambda ws, b=before: grade_negative(b, ws)), workspace
+                )
+        score, detail = grade_negative(before, workspace)
+        results.append(
+            {
+                "task_id": task.task_id,
+                "task_type": task.task_type,
+                "app": task.app,
+                "steps": task.steps,
+                "passed": score >= 1.0,
+                "score": score,
+                "verify_detail": detail,
+                "run_error": result.error or "",
+                "harness_error": False,
+                "negative_probe": True,
+                "tokens_in": result.tokens_in,
+                "tokens_out": result.tokens_out,
+                "wall_s": round(result.wall_s, 2),
+                "model": model,
+            }
+        )
+        logger.info(
+            "negative probe %s suppressed=%s detail=%s",
+            task.task_id,
+            results[-1]["passed"],
+            detail,
+        )
     summary = build_summary(results, run_id, datetime.now(UTC).isoformat())
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")

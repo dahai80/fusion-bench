@@ -354,6 +354,125 @@ class TestValidatorAdversarial:
         assert score == 1.0 and detail == "ok"
 
 
+class TestOverTriggerProbes:
+    """#64: over-trigger suppression — correct behavior is NOT mutating."""
+
+    def test_two_negative_probes_defined(self):
+        from fusion_bench.office_bench.tasks import NEGATIVE_PROBES
+
+        assert [t.task_id for t in NEGATIVE_PROBES] == ["noop-read-only-query", "noop-no-op-request"]
+        assert all(t.result_file == "" and t.task_type == "office_noop" for t in NEGATIVE_PROBES)
+        assert all(t.seed_files for t in NEGATIVE_PROBES)
+
+    def test_grade_negative_suppressed(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import _snapshot, grade_negative
+        from fusion_bench.office_bench.tasks import NEGATIVE_PROBES
+
+        task = NEGATIVE_PROBES[0]
+        task.materialize(tmp_path)
+        before = _snapshot(tmp_path)
+        assert before, "seed materialized"
+        score, detail = grade_negative(before, tmp_path)
+        assert (score, detail) == (1.0, "suppressed (workspace unchanged)")
+
+    def test_grade_negative_modified_seed(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import _snapshot, grade_negative
+        from fusion_bench.office_bench.tasks import NEGATIVE_PROBES
+
+        task = NEGATIVE_PROBES[0]
+        task.materialize(tmp_path)
+        before = _snapshot(tmp_path)
+        (tmp_path / "sales.xlsx").write_bytes(b"mutated")
+        score, detail = grade_negative(before, tmp_path)
+        assert score == 0.0
+        assert "modified=['sales.xlsx']" in detail
+
+    def test_grade_negative_created_file(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import _snapshot, grade_negative
+        from fusion_bench.office_bench.tasks import NEGATIVE_PROBES
+
+        task = NEGATIVE_PROBES[0]
+        task.materialize(tmp_path)
+        before = _snapshot(tmp_path)
+        (tmp_path / "extra.txt").write_text("x")
+        score, detail = grade_negative(before, tmp_path)
+        assert score == 0.0
+        assert "created=['extra.txt']" in detail
+
+    def test_build_summary_separates_negative_track(self):
+        from fusion_bench.office_bench.runner import build_summary
+
+        results = [
+            {
+                "task_id": "a",
+                "task_type": "office_xlsx",
+                "steps": 1,
+                "passed": True,
+                "model": "m",
+                "harness_error": False,
+            },
+            {
+                "task_id": "noop-1",
+                "task_type": "office_noop",
+                "steps": 1,
+                "passed": True,
+                "model": "m",
+                "harness_error": False,
+                "negative_probe": True,
+            },
+            {
+                "task_id": "noop-2",
+                "task_type": "office_noop",
+                "steps": 1,
+                "passed": False,
+                "model": "m",
+                "harness_error": False,
+                "negative_probe": True,
+            },
+        ]
+        summary = build_summary(results, "r", "t")
+        arm = summary["arms"]["fusion-harness"]
+        assert arm["total"] == 1 and arm["passed"] == 1
+        assert arm["negative_probes"] == {"total": 2, "suppressed": 1, "suppression_rate": 0.5}
+
+    def test_boundary_excludes_negative_rows(self):
+        from fusion_bench.office_bench.boundary import boundary_report
+
+        results = [
+            {
+                "task_id": "a",
+                "task_type": "office_xlsx",
+                "steps": 1,
+                "passed": True,
+                "harness_error": False,
+                "run_error": "",
+            },
+            {
+                "task_id": "noop-1",
+                "task_type": "office_noop",
+                "steps": 1,
+                "passed": False,
+                "harness_error": False,
+                "run_error": "",
+                "negative_probe": True,
+            },
+        ]
+        report = boundary_report(results)
+        assert list(report["cells"]) == ["office_xlsx#steps=1"]
+        assert report["excluded_tasks"] == [{"task_id": "noop-1", "reason": "negative-probe track (#64)"}]
+
+    @pytest.mark.asyncio
+    async def test_run_office_probes_engine_down(self, tmp_path, monkeypatch):
+        from fusion_bench.office_bench import runner
+
+        monkeypatch.setattr(runner, "ensure_engine", lambda url, babysit=False: False)
+        summary = await runner.run_office("http://127.0.0.1:1/v1", "m", tmp_path)
+        arm = summary["arms"]["fusion-harness"]
+        assert arm["total"] == 32
+        assert arm["negative_probes"]["total"] == 2
+        assert arm["negative_probes"]["suppressed"] == 0
+
+
 class TestEngineBabysit:
     """#60: bounded probe, opt-in restarts, graceful degradation."""
 
@@ -414,7 +533,7 @@ class TestEngineBabysit:
         assert arm["passed"] == 0
         assert arm["harness_errors"] == 32
         rows = [r for r in json.loads((tmp_path / "results.json").read_text())]
-        assert len(rows) == 32
+        assert len(rows) == 34
         assert all(r["run_error"] == "engine unreachable" for r in rows)
 
     @staticmethod
@@ -453,8 +572,10 @@ class TestEngineBabysit:
         assert arm["harness_errors"] == 32
         assert arm["passed"] == 0
         rows = json.loads((tmp_path / "results.json").read_text())
-        assert all(r["harness_error"] is True for r in rows)
-        assert all("harness-error" in r["verify_detail"] for r in rows)
+        core = [r for r in rows if not r.get("negative_probe")]
+        assert len(core) == 32
+        assert all(r["harness_error"] is True for r in core)
+        assert all("harness-error" in r["verify_detail"] for r in core)
 
     @pytest.mark.asyncio
     async def test_tokened_task_not_harness_error(self, tmp_path, monkeypatch):
@@ -504,3 +625,56 @@ class TestSeedAndGrade:
         assert proc.returncode == 0, proc.stderr
         score, detail = task.grade(tmp_path)
         assert (score, detail) == (1.0, "ok")
+
+
+class TestNegativeProbes:
+    """issue #64: forbidden_* args let validators fail closed on unsolicited content."""
+
+    def test_xlsx_forbidden_sheet_absent_passes(self, tmp_path: Path):
+        p = tmp_path / "a.xlsx"
+        p.write_bytes(_xlsx_bytes({"Sales": "rId1"}))
+        score, detail = validate("office_xlsx", p, {"forbidden_sheets": ["AI_Summary"]})
+        assert (score, detail) == (1.0, "ok")
+
+    def test_xlsx_forbidden_sheet_present_fails(self, tmp_path: Path):
+        p = tmp_path / "a.xlsx"
+        p.write_bytes(_xlsx_bytes({"Sales": "rId1", "AI_Summary": "rId2"}))
+        score, detail = validate("office_xlsx", p, {"forbidden_sheets": ["AI_Summary"]})
+        assert score == 0.0
+        assert "forbidden sheet 'AI_Summary' present" in detail
+
+    def test_docx_forbidden_section_present_fails(self, tmp_path: Path):
+        p = tmp_path / "a.docx"
+        p.write_bytes(_docx_bytes(["Report", "Unsolicited Analysis"]))
+        score, detail = validate("office_docx", p, {"forbidden_sections": ["Unsolicited Analysis"]})
+        assert score == 0.0
+        assert "forbidden section" in detail
+
+    def test_docx_forbidden_section_absent_passes(self, tmp_path: Path):
+        p = tmp_path / "a.docx"
+        p.write_bytes(_docx_bytes(["Report"]))
+        score, detail = validate("office_docx", p, {"forbidden_sections": ["Unsolicited Analysis"]})
+        assert (score, detail) == (1.0, "ok")
+
+    def test_pptx_forbidden_title_present_fails(self, tmp_path: Path):
+        p = tmp_path / "a.pptx"
+        p.write_bytes(_pptx_bytes([["Q3 Plan"], ["Extra Conclusions"]]))
+        score, detail = validate("office_pptx", p, {"forbidden_titles": ["Extra Conclusions"]})
+        assert score == 0.0
+        assert "forbidden title" in detail
+
+    def test_pptx_forbidden_title_absent_passes(self, tmp_path: Path):
+        p = tmp_path / "a.pptx"
+        p.write_bytes(_pptx_bytes([["Q3 Plan"]]))
+        score, detail = validate("office_pptx", p, {"forbidden_titles": ["Extra Conclusions"]})
+        assert (score, detail) == (1.0, "ok")
+
+    def test_noop_probe_over_trigger_scored_zero(self, tmp_path: Path):
+        """No-op probe task: artifact must keep required sheet but must NOT
+        grow an unsolicited summary sheet (over-trigger, arXiv 2610.02142)."""
+        p = tmp_path / "sales.xlsx"
+        p.write_bytes(_xlsx_bytes({"Sales": "rId1", "Summary": "rId2"}))
+        args = {"required_sheets": ["Sales"], "forbidden_sheets": ["Summary"]}
+        score, detail = validate("office_xlsx", p, args)
+        assert score == 0.0
+        assert "sheet:Sales" not in detail

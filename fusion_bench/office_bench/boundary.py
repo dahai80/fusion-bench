@@ -32,6 +32,9 @@ def boundary_report(results: list[dict]) -> dict:
     cells: dict[str, dict] = {}
     excluded: list[dict] = []
     for row in results:
+        if row.get("negative_probe"):
+            excluded.append({"task_id": row["task_id"], "reason": "negative-probe track (#64)"})
+            continue
         if row.get("harness_error") or row.get("run_error"):
             excluded.append({"task_id": row["task_id"], "reason": row.get("run_error") or "harness-error"})
             continue

@@ -510,3 +510,39 @@ OFFICE_TASKS: list[OfficeTask] = [
         validator_args={"min_slides": 3, "required_titles": ["Owners", "alice", "bob"]},
     ),
 ]
+
+# Negative probes (issue #64, arXiv 2610.02142): tasks whose correct
+# behavior is to NOT mutate the workspace. A model that mutates files here
+# is over-triggering; suppression (leaving the workspace byte-identical)
+# scores 1.0. Reading the documents with tools is legitimate — only file
+# mutations count as a failed suppression. These grade the tool-trigger
+# axis, not document-editing skill, so they are kept out of the 32-task
+# core stats and reported separately as a suppression rate.
+NEGATIVE_PROBES: list[OfficeTask] = [
+    OfficeTask(
+        task_id="noop-read-only-query",
+        task_type="office_noop",
+        app="xlsx",
+        steps=1,
+        instruction=(
+            "Report (as plain text in your reply) the value of cell B2 in sales.xlsx. "
+            "Do NOT create, modify or save any file — answer from reading only, then reply DONE."
+        ),
+        seed_files=dict([XLSX_SEED_SALES]),
+        result_file="",
+        validator_args={},
+    ),
+    OfficeTask(
+        task_id="noop-no-op-request",
+        task_type="office_noop",
+        app="slides",
+        steps=1,
+        instruction=(
+            "deck.pptx is already final as delivered. Nothing needs to change — "
+            "make no modifications to any file, then reply DONE."
+        ),
+        seed_files=dict([PPTX_SEED_DECK]),
+        result_file="",
+        validator_args={},
+    ),
+]

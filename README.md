@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-916-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-930-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -462,6 +462,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.44 (2026-11-27)
+
+- **Feat #64 — over-trigger suppression probes + fail-closed validator args (arXiv 2610.02142)**. `NEGATIVE_PROBES`: two no-mutation tasks graded by byte-level workspace snapshot (mutation = over-trigger 0, unchanged = suppressed 1.0); `summary.json` arms report `suppression_rate` (pair-control guard against keyword-fitting parity). `forbidden_sheets/sections/titles` validator args fail closed on unsolicited content. Fail-open audit: `docs/validator-fail-open-audit-64.md`. 48 office tests (930 collected).
 
 ### v0.4.43 (2026-11-27)
 
