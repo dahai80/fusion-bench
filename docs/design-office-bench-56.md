@@ -5,7 +5,8 @@ class: platform
 entry: service
 audience: engineer
 status: draft
-doc_type: design
+doc_type: architecture
+version: "1.0"
 title: { zh: "FusionOffice-Bench（#56）", en: "FusionOffice-Bench (#56)" }
 updated: 2026-11-25
 owner: "@dahai"

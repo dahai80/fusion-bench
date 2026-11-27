@@ -1544,7 +1544,6 @@ async def _cmd_judge_sxs(args):
         store.close()
 
 
-
 def cmd_watermark(args):
     """Show public benchmark watermarks and optional comparison."""
     from .watermarks import compare, markdown_table

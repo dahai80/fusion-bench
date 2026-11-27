@@ -5,7 +5,8 @@ class: platform
 entry: service
 audience: engineer
 status: draft
-doc_type: design
+doc_type: architecture
+version: "1.0"
 title: { zh: "对抗注入评测轨道（#54）", en: "Adversarial injection-resistance track (#54)" }
 updated: 2026-11-20
 owner: "@dahai"
