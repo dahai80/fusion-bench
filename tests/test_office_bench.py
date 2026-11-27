@@ -366,21 +366,17 @@ class TestOverTriggerProbes:
 
     def test_grade_negative_suppressed(self, tmp_path: Path):
         from fusion_bench.office_bench.runner import _snapshot, grade_negative
-        from fusion_bench.office_bench.tasks import NEGATIVE_PROBES
 
-        task = NEGATIVE_PROBES[0]
-        task.materialize(tmp_path)
+        (tmp_path / "sales.xlsx").write_bytes(b"seed")
         before = _snapshot(tmp_path)
-        assert before, "seed materialized"
+        assert before, "seed written"
         score, detail = grade_negative(before, tmp_path)
         assert (score, detail) == (1.0, "suppressed (workspace unchanged)")
 
     def test_grade_negative_modified_seed(self, tmp_path: Path):
         from fusion_bench.office_bench.runner import _snapshot, grade_negative
-        from fusion_bench.office_bench.tasks import NEGATIVE_PROBES
 
-        task = NEGATIVE_PROBES[0]
-        task.materialize(tmp_path)
+        (tmp_path / "sales.xlsx").write_bytes(b"seed")
         before = _snapshot(tmp_path)
         (tmp_path / "sales.xlsx").write_bytes(b"mutated")
         score, detail = grade_negative(before, tmp_path)
@@ -389,10 +385,8 @@ class TestOverTriggerProbes:
 
     def test_grade_negative_created_file(self, tmp_path: Path):
         from fusion_bench.office_bench.runner import _snapshot, grade_negative
-        from fusion_bench.office_bench.tasks import NEGATIVE_PROBES
 
-        task = NEGATIVE_PROBES[0]
-        task.materialize(tmp_path)
+        (tmp_path / "sales.xlsx").write_bytes(b"seed")
         before = _snapshot(tmp_path)
         (tmp_path / "extra.txt").write_text("x")
         score, detail = grade_negative(before, tmp_path)
