@@ -566,14 +566,16 @@ ROBUSTNESS_PROBES: list[OfficeTask] = [
             "Open fy25.xlsx. In sheet 'FY25_Rev', put a SUM formula in cell B6 that "
             "adds B2:B5 (do not type the number directly, use a real formula). Save in place."
         ),
-        seed_files=dict([
-            _xlsx(
-                "fy25.xlsx",
-                "wb = openpyxl.Workbook()\nws = wb.active\nws.title = 'FY25_Rev'\n"
-                "rows = [('item', 'units'), ('pen', 120), ('book', 300), ('bag', 80), ('cup', 150)]\n"
-                "[ws.append(r) for r in rows]",
-            )
-        ]),
+        seed_files=dict(
+            [
+                _xlsx(
+                    "fy25.xlsx",
+                    "wb = openpyxl.Workbook()\nws = wb.active\nws.title = 'FY25_Rev'\n"
+                    "rows = [('item', 'units'), ('pen', 120), ('book', 300), ('bag', 80), ('cup', 150)]\n"
+                    "[ws.append(r) for r in rows]",
+                )
+            ]
+        ),
         result_file="fy25.xlsx",
         validator_args={"required_sheets": ["FY25_Rev"], "formula_policy": "require"},
     ),
@@ -586,14 +588,16 @@ ROBUSTNESS_PROBES: list[OfficeTask] = [
             "Open regions.xlsx and rename its sheet 'Regions' to 'Territory_Data'. "
             "Keep all cell content unchanged. Save in place."
         ),
-        seed_files=dict([
-            _xlsx(
-                "regions.xlsx",
-                "wb = openpyxl.Workbook()\nws = wb.active\nws.title = 'Regions'\n"
-                "rows = [('region', 'amount'), ('north', 75), ('west', 250), ('east', 100)]\n"
-                "[ws.append(r) for r in rows]",
-            )
-        ]),
+        seed_files=dict(
+            [
+                _xlsx(
+                    "regions.xlsx",
+                    "wb = openpyxl.Workbook()\nws = wb.active\nws.title = 'Regions'\n"
+                    "rows = [('region', 'amount'), ('north', 75), ('west', 250), ('east', 100)]\n"
+                    "[ws.append(r) for r in rows]",
+                )
+            ]
+        ),
         result_file="regions.xlsx",
         validator_args={"required_sheets": ["Territory_Data"]},
     ),

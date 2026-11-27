@@ -369,9 +369,7 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
         ("robustness", ROBUSTNESS_PROBES, "validator"),
     ]
     for family, probe_tasks, grader_kind in probe_batches:
-        await _run_probe_family(
-            probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results
-        )
+        await _run_probe_family(probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results)
     summary = build_summary(results, run_id, datetime.now(UTC).isoformat())
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
