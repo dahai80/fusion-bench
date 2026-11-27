@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-909-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-916-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -462,6 +462,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.43 (2026-11-27)
+
+- **Feat #63 — capability-boundary report (CUA-SEE goal-2 lite)**. `boundary.py` aggregates each run onto the (type, steps) grid, marks mixed cells as the capability boundary, and emits probe targets (fully-passed cell adjacent to a mixed cell + its failing task ids) to `boundary.{json,md}`; harness-error rows excluded from inference. Verified on the 0.7188 rerun baseline: boundary at docx steps=2, xlsx/pptx steps=3. Adversarial validator tests pin known reward-hack floors (goal 3 lite). 34 office tests (916 collected).
 
 ### v0.4.42 (2026-11-27)
 

@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.42
+version: 0.4.43
 updated: 2026-11-26
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.43 (2026-11-27)
+
+- **Feat #63 — capability-boundary report for office-bench runs (CUA-SEE goal-2 lite)**. New `fusion_bench/office_bench/boundary.py`: after each run, `write_boundary` aggregates results.json onto the (task_type, steps) difficulty grid, marks mixed cells (0 < passed < total) as the capability boundary, and derives probe targets — fully-passed cells adjacent to a mixed cell, with the failing task ids inside them as the next probe set. Deterministic aggregation, no model in the loop; harness-error / engine-unreachable rows excluded from capability inference (#60/#61 hygiene) and listed separately. Artifacts: `boundary.json` + `boundary.md` next to summary.json. Verified on the real rerun baseline (office-943d4ccd, 23/32 = 0.7188, committed bb407ba): boundary sits at docx steps=2 (2/4), xlsx steps=3 and pptx steps=3 — exactly the "where is the 4B agent's boundary" answer issue #63 asked for. Verifier-evolution (goal 3) started as adversarial tests pinning what the structural validators can and cannot be tricked into passing (formula-in-other-sheet rejected; formula-presence-without-correctness and title-only-section documented as known floors). Waves (goal 1) deliberately deferred. 34 office tests (916 collected).
 
 ### v0.4.42 (2026-11-27)
 

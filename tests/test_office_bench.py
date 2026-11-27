@@ -213,6 +213,147 @@ class TestSummary:
         assert arm["total"] == 0 and arm["pass_rate"] == 0.0 and arm["by_type"] == {}
 
 
+class TestBoundaryReport:
+    """#63 goal-2 lite: capability boundary on the (type, steps) grid."""
+
+    @staticmethod
+    def _row(task_id: str, task_type: str, steps: int, passed: bool, **kw) -> dict:
+        row = {
+            "task_id": task_id,
+            "task_type": task_type,
+            "steps": steps,
+            "passed": passed,
+            "harness_error": False,
+            "run_error": "",
+        }
+        row.update(kw)
+        return row
+
+    def test_boundary_cell_and_probe(self):
+        from fusion_bench.office_bench.boundary import boundary_report
+
+        results = [
+            self._row("a1", "office_xlsx", 1, True),
+            self._row("a2", "office_xlsx", 2, True),
+            self._row("a3", "office_xlsx", 2, False),
+            self._row("a4", "office_xlsx", 3, False),
+        ]
+        report = boundary_report(results)
+        cells = report["cells"]
+        assert cells["office_xlsx#steps=1"]["boundary"] is False
+        assert cells["office_xlsx#steps=2"]["boundary"] is True
+        assert cells["office_xlsx#steps=2"]["fail_tasks"] == ["a3"]
+        assert cells["office_xlsx#steps=3"]["boundary"] is False
+        # probe: fully-passed steps=1 adjacent to mixed steps=2
+        assert len(report["boundary_probes"]) == 1
+        probe = report["boundary_probes"][0]
+        assert probe["probe"] == "office_xlsx steps=2"
+        assert probe["fail_tasks"] == ["a3"]
+
+    def test_no_probe_when_lower_cell_not_full(self):
+        from fusion_bench.office_bench.boundary import boundary_report
+
+        results = [
+            self._row("a1", "office_docx", 1, True),
+            self._row("a2", "office_docx", 1, False),
+            self._row("a3", "office_docx", 2, False),
+        ]
+        report = boundary_report(results)
+        assert report["boundary_probes"] == []
+
+    def test_harness_error_rows_excluded(self):
+        from fusion_bench.office_bench.boundary import boundary_report
+
+        results = [
+            self._row("a1", "office_pptx", 1, True),
+            self._row("bad", "office_pptx", 2, False, harness_error=True),
+            self._row("down", "office_pptx", 2, False, run_error="engine unreachable"),
+        ]
+        report = boundary_report(results)
+        assert all("bad" not in str(c) for c in report["cells"].values())
+        assert len(report["excluded_tasks"]) == 2
+
+    def test_write_boundary_artifacts(self, tmp_path):
+        import json as j
+
+        from fusion_bench.office_bench.boundary import write_boundary
+
+        results = [self._row("a1", "office_xlsx", 1, True), self._row("a2", "office_xlsx", 2, False)]
+        report = write_boundary(tmp_path, results)
+        on_disk = j.loads((tmp_path / "boundary.json").read_text())
+        assert on_disk == report
+        md = (tmp_path / "boundary.md").read_text()
+        assert "office_xlsx#steps=2" in md
+        assert "Probe targets" in md
+
+
+class TestValidatorAdversarial:
+    """#63 goal-3 lite: reward-hack resistance of the structural validators."""
+
+    def test_xlsx_formula_in_other_sheet_does_not_count(self, tmp_path: Path):
+        # Shortcut: put the formula in a sheet other than the required one
+        buf = __import__("io").BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr(
+                "xl/workbook.xml",
+                f'<workbook xmlns="{NS_MAIN}" xmlns:r="{NS_REL_DOC}"><sheets>'
+                '<sheet name="Cover" sheetId="1" r:id="rId1"/>'
+                '<sheet name="Sales" sheetId="2" r:id="rId2"/></sheets></workbook>',
+            )
+            zf.writestr(
+                "xl/_rels/workbook.xml.rels",
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                '<Relationship Id="rId1" Type="t" Target="worksheets/sheet1.xml"/>'
+                '<Relationship Id="rId2" Type="t" Target="worksheets/sheet2.xml"/></Relationships>',
+            )
+            zf.writestr(
+                "xl/worksheets/sheet1.xml",
+                f'<worksheet xmlns="{NS_MAIN}"><sheetData>'
+                '<c r="B6"><f>SUM(B2:B5)</f><v>10</v></c></sheetData></worksheet>',
+            )
+            zf.writestr("xl/worksheets/sheet2.xml", f'<worksheet xmlns="{NS_MAIN}"><sheetData/></worksheet>')
+        p = tmp_path / "a.xlsx"
+        p.write_bytes(buf.getvalue())
+        score, detail = validate("office_xlsx", p, {"required_sheets": ["Sales"], "formula_policy": "require"})
+        assert score == 0.0
+        assert "formula_cells=0" in detail
+
+    def test_xlsx_formula_with_wrong_cached_value_still_passes(self, tmp_path: Path):
+        # Known floor: structural validators check <f> presence, not math
+        # correctness of the cached <v>. Documented limitation — semantic
+        # grading needs an executor (out of scope for the vendored plugin).
+        buf = __import__("io").BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr(
+                "xl/workbook.xml",
+                f'<workbook xmlns="{NS_MAIN}" xmlns:r="{NS_REL_DOC}"><sheets>'
+                '<sheet name="Sales" sheetId="1" r:id="rId1"/></sheets></workbook>',
+            )
+            zf.writestr(
+                "xl/_rels/workbook.xml.rels",
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                '<Relationship Id="rId1" Type="t" Target="worksheets/sheet1.xml"/></Relationships>',
+            )
+            zf.writestr(
+                "xl/worksheets/sheet1.xml",
+                f'<worksheet xmlns="{NS_MAIN}"><sheetData>'
+                '<c r="B6"><f>SUM(B2:B5)</f><v>999999</v></c></sheetData></worksheet>',
+            )
+        p = tmp_path / "a.xlsx"
+        p.write_bytes(buf.getvalue())
+        score, detail = validate("office_xlsx", p, {"required_sheets": ["Sales"], "formula_policy": "require"})
+        assert score == 1.0 and detail == "ok"
+
+    def test_docx_title_only_section_is_accepted(self, tmp_path: Path):
+        # Known floor: substring presence cannot tell an empty section from
+        # a written one. Documented limitation, adversarially pinned here so
+        # a future verifier upgrade that fixes it flips this test loudly.
+        p = tmp_path / "a.docx"
+        p.write_bytes(_docx_bytes(["Draft Report", "Conclusion"]))
+        score, detail = validate("office_docx", p, {"required_sections": ["conclusion"]})
+        assert score == 1.0 and detail == "ok"
+
+
 class TestEngineBabysit:
     """#60: bounded probe, opt-in restarts, graceful degradation."""
 

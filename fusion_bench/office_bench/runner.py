@@ -23,6 +23,7 @@ from ..compare_suite.own_runner import RetryingClient
 from ..harness_bench.model_client import ModelClient
 from ..harness_bench.runners import FusionHarnessRunner
 from ..harness_bench.tasks import HarnessTask
+from .boundary import write_boundary
 from .tasks import OFFICE_TASKS, SYSTEM_PROMPT, OfficeTask
 
 logger = logging.getLogger(__name__)
@@ -225,6 +226,7 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
     summary = build_summary(results, run_id, datetime.now(UTC).isoformat())
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+    write_boundary(out_dir, results)
     arm = summary["arms"][ARM]
     logger.info(
         "office run done: %s total=%d passed=%d pass_rate=%.2f",
