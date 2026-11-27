@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-899-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-909-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -104,6 +104,11 @@ fusion-bench compare --models qwen3.5-9b,deepseek-v4 --tasks mmlu,gsm8k
 
 # Compare quantization levels
 fusion-bench quant --model qwen3.5-9b
+
+# Public watermark comparison: list curated public scores,
+# or compare an internal score against the watermark
+fusion-bench watermark
+fusion-bench watermark terminal-bench-2 --score 0.42
 ```
 
 ### Submit Results to bench.dpdns.org
