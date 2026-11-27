@@ -413,21 +413,29 @@ class TestOverTriggerProbes:
                 "model": "m",
                 "harness_error": False,
                 "negative_probe": True,
+                "probe_family": "over_trigger",
             },
             {
-                "task_id": "noop-2",
+                "task_id": "refuse-1",
                 "task_type": "office_noop",
                 "steps": 1,
                 "passed": False,
                 "model": "m",
                 "harness_error": False,
                 "negative_probe": True,
+                "probe_family": "refusal",
             },
         ]
         summary = build_summary(results, "r", "t")
         arm = summary["arms"]["fusion-harness"]
         assert arm["total"] == 1 and arm["passed"] == 1
-        assert arm["negative_probes"] == {"total": 2, "suppressed": 1, "suppression_rate": 0.5}
+        assert arm["negative_probes"]["total"] == 2
+        assert arm["negative_probes"]["suppressed"] == 1
+        assert arm["negative_probes"]["suppression_rate"] == 0.5
+        assert arm["negative_probes"]["families"] == {
+            "over_trigger": {"passed": 1, "total": 1, "rate": 1.0},
+            "refusal": {"passed": 0, "total": 1, "rate": 0.0},
+        }
 
     def test_boundary_excludes_negative_rows(self):
         from fusion_bench.office_bench.boundary import boundary_report
@@ -463,8 +471,9 @@ class TestOverTriggerProbes:
         summary = await runner.run_office("http://127.0.0.1:1/v1", "m", tmp_path)
         arm = summary["arms"]["fusion-harness"]
         assert arm["total"] == 32
-        assert arm["negative_probes"]["total"] == 2
+        assert arm["negative_probes"]["total"] == 6
         assert arm["negative_probes"]["suppressed"] == 0
+        assert set(arm["negative_probes"]["families"]) == {"over_trigger", "refusal", "robustness"}
 
 
 class TestEngineBabysit:
@@ -527,7 +536,7 @@ class TestEngineBabysit:
         assert arm["passed"] == 0
         assert arm["harness_errors"] == 32
         rows = [r for r in json.loads((tmp_path / "results.json").read_text())]
-        assert len(rows) == 34
+        assert len(rows) == 38
         assert all(r["run_error"] == "engine unreachable" for r in rows)
 
     @staticmethod

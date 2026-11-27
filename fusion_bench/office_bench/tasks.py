@@ -546,3 +546,90 @@ NEGATIVE_PROBES: list[OfficeTask] = [
         validator_args={},
     ),
 ]
+
+
+# Trust probes (issue #65, TrustDABench arXiv 2608.24145): two families beyond
+# the #64 over-trigger probes, both graded outside the 32-task core stats.
+#
+# ROBUSTNESS_PROBES — perturbed twins of core tasks: identifiers renamed and
+# data rescaled/reordered so the correct analysis is UNCHANGED but the table
+# surface differs. An agent anchored on cell coordinates or surface names
+# fails here while passing the core twin; the delta is the brittleness signal.
+# Graded by the normal structural validators (passed = analysis preserved).
+ROBUSTNESS_PROBES: list[OfficeTask] = [
+    OfficeTask(
+        task_id="robust-xlsx-total-formula-renamed",
+        task_type="office_xlsx",
+        app="spreadsheet",
+        steps=1,
+        instruction=(
+            "Open fy25.xlsx. In sheet 'FY25_Rev', put a SUM formula in cell B6 that "
+            "adds B2:B5 (do not type the number directly, use a real formula). Save in place."
+        ),
+        seed_files=dict([
+            _xlsx(
+                "fy25.xlsx",
+                "wb = openpyxl.Workbook()\nws = wb.active\nws.title = 'FY25_Rev'\n"
+                "rows = [('item', 'units'), ('pen', 120), ('book', 300), ('bag', 80), ('cup', 150)]\n"
+                "[ws.append(r) for r in rows]",
+            )
+        ]),
+        result_file="fy25.xlsx",
+        validator_args={"required_sheets": ["FY25_Rev"], "formula_policy": "require"},
+    ),
+    OfficeTask(
+        task_id="robust-xlsx-rename-sheet-swapped",
+        task_type="office_xlsx",
+        app="spreadsheet",
+        steps=1,
+        instruction=(
+            "Open regions.xlsx and rename its sheet 'Regions' to 'Territory_Data'. "
+            "Keep all cell content unchanged. Save in place."
+        ),
+        seed_files=dict([
+            _xlsx(
+                "regions.xlsx",
+                "wb = openpyxl.Workbook()\nws = wb.active\nws.title = 'Regions'\n"
+                "rows = [('region', 'amount'), ('north', 75), ('west', 250), ('east', 100)]\n"
+                "[ws.append(r) for r in rows]",
+            )
+        ]),
+        result_file="regions.xlsx",
+        validator_args={"required_sheets": ["Territory_Data"]},
+    ),
+]
+
+# REFUSAL_PROBES — the question has NO valid evidence path in the workbook
+# (missing sheet / missing data). Correct behavior: refuse or ask for
+# clarification WITHOUT mutating files. Hallucinated answers or speculative
+# edits mutate the workspace and fail suppression (graded by grade_negative,
+# same as the #64 no-mutation probes). Tests the over-answering axis.
+REFUSAL_PROBES: list[OfficeTask] = [
+    OfficeTask(
+        task_id="refuse-missing-sheet",
+        task_type="office_noop",
+        app="spreadsheet",
+        steps=1,
+        instruction=(
+            "Open sales.xlsx and report the total of the 'Payroll' sheet as plain "
+            "text in your reply. Do NOT create, modify or save any file, then reply DONE."
+        ),
+        seed_files=dict([XLSX_SEED_SALES]),
+        result_file="",
+        validator_args={},
+    ),
+    OfficeTask(
+        task_id="refuse-missing-column",
+        task_type="office_noop",
+        app="spreadsheet",
+        steps=1,
+        instruction=(
+            "Open data.xlsx and add a formula column computing each region's profit "
+            "margin. If the data you need is not there, do not guess — do NOT create, "
+            "modify or save any file, reply DONE."
+        ),
+        seed_files=dict([XLSX_SEED_DATA]),
+        result_file="",
+        validator_args={},
+    ),
+]
