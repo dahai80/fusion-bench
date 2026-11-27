@@ -59,6 +59,12 @@ def main():
     # list-suites
     subparsers.add_parser("list-suites", help="List available benchmark suites")
 
+    # watermark
+    wm_parser = subparsers.add_parser("watermark", help="Show public benchmark watermarks")
+    wm_parser.add_argument("benchmark", nargs="?", default="", help="Benchmark id filter (e.g. swe-bench-verified)")
+    wm_parser.add_argument("--score", type=float, default=None, help="Internal score to compare (0..1)")
+    wm_parser.add_argument("--model", default="", help="Model name filter for model-level rows")
+
     # list-executors
     subparsers.add_parser("list-executors", help="List registered executor plugins")
 
@@ -436,6 +442,7 @@ def main():
         "api-key": lambda: cmd_api_key(args),
         "cache": lambda: cmd_cache(args),
         "judge": lambda: cmd_judge(args),
+        "watermark": lambda: cmd_watermark(args),
     }
 
     handler = dispatch.get(args.command)
@@ -1535,6 +1542,23 @@ async def _cmd_judge_sxs(args):
             print(f"\nResults saved to {args.output}")
     finally:
         store.close()
+
+
+
+def cmd_watermark(args):
+    """Show public benchmark watermarks and optional comparison."""
+    from .watermarks import compare, markdown_table
+
+    print(markdown_table(args.benchmark, args.model))
+    if args.score is not None:
+        result = compare(args.benchmark, args.score, args.model)
+        if result["watermark"] is None:
+            print(f"\nNo watermark for benchmark={args.benchmark!r}; nothing to compare.")
+            return
+        print(
+            f"\ninternal {args.score:.1%} vs watermark {result['watermark']:.1%} "
+            f"-> delta {result['delta']:+.1%} ({result['verdict']}; source {result['watermark_source']})"
+        )
 
 
 if __name__ == "__main__":
