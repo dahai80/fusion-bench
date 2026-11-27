@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.44
+version: 0.4.45
 updated: 2026-11-26
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.45 (2026-11-27)
+
+- **Feat #65 — trust-probe families: robustness twins + refusal probes (TrustDABench operators, arXiv 2608.24145; PR #66)**. Two new probe families extending the #64 negative-probe track, all excluded from the 32-task core stats and reported per-family in `summary.negative_probes.families`. (1) Robustness probes (`ROBUSTNESS_PROBES`, graded by the normal structural validators): perturbed twins of existing xlsx tasks — renamed sheet, renamed columns with x10 values, row reordering — where the correct analysis is unchanged but the table form differs; catches brittle agents anchored on cell coordinates or surface names, and keyword-overfit validators. (2) Refusal probes (`REFUSAL_PROBES`, graded by no-mutation `grade_negative`): the question has NO valid evidence path in the workbook (missing sheet / missing column); correct behavior = refuse or ask for clarification without mutating files; hallucinated answers or speculative edits fail suppression — the over-answering axis complementing #64's over-trigger axis. Probe families factored into `_run_probe_family` with per-family grader kind (`suppression` / `validator`); all rows tagged `negative_probe=True` + `probe_family`; every family fails closed on engine unreachability. Deterministic probe construction, no model in the loop. 48 office tests (930 collected).
 
 ### v0.4.44 (2026-11-27)
 

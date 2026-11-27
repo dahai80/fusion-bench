@@ -463,6 +463,10 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.45 (2026-11-27)
+
+- **Feat #65 — trust-probe families (TrustDABench operators, arXiv 2608.24145; PR #66)**. Robustness probes: perturbed twins of xlsx tasks (renamed sheet / renamed columns + x10 values / row reorder) graded by the normal validators — the analysis must survive surface changes. Refusal probes: no-evidence-path questions graded by no-mutation suppression — refuse, never guess. Per-family stats in `summary.negative_probes.families`; all probes outside the 32-task core stats, fail closed on engine unreachability. 48 office tests (930 collected).
+
 ### v0.4.44 (2026-11-27)
 
 - **Feat #64 — over-trigger suppression probes + fail-closed validator args (arXiv 2610.02142)**. `NEGATIVE_PROBES`: two no-mutation tasks graded by byte-level workspace snapshot (mutation = over-trigger 0, unchanged = suppressed 1.0); `summary.json` arms report `suppression_rate` (pair-control guard against keyword-fitting parity). `forbidden_sheets/sections/titles` validator args fail closed on unsolicited content. Fail-open audit: `docs/validator-fail-open-audit-64.md`. 48 office tests (930 collected).
