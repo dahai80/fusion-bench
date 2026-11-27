@@ -24,7 +24,7 @@ from ..harness_bench.model_client import ModelClient
 from ..harness_bench.runners import FusionHarnessRunner
 from ..harness_bench.tasks import HarnessTask
 from .boundary import write_boundary
-from .tasks import NEGATIVE_PROBES, OFFICE_TASKS, SYSTEM_PROMPT, OfficeTask
+from .tasks import NEGATIVE_PROBES, OFFICE_TASKS, REFUSAL_PROBES, ROBUSTNESS_PROBES, SYSTEM_PROMPT, OfficeTask
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +158,13 @@ def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
     total = len(core)
     harness_errors = sum(1 for row in core if row.get("harness_error"))
     suppressed = sum(1 for row in neg if row["passed"])
+    families: dict[str, dict] = {}
+    for row in neg:
+        bucket = families.setdefault(row.get("probe_family", "unknown"), {"passed": 0, "total": 0})
+        bucket["total"] += 1
+        bucket["passed"] += 1 if row["passed"] else 0
+    for stats in families.values():
+        stats["rate"] = round(stats["passed"] / stats["total"], 4) if stats["total"] else 0.0
     return {
         "run_id": run_id,
         "created_at": created_at,
@@ -173,10 +180,99 @@ def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
                     "total": len(neg),
                     "suppressed": suppressed,
                     "suppression_rate": round(suppressed / len(neg), 4) if neg else 0.0,
+                    "families": families,
                 },
             }
         },
     }
+
+
+async def _run_probe_family(
+    probe_tasks: list[OfficeTask],
+    family: str,
+    grader_kind: str,
+    client: ModelClient,
+    mlx_url: str,
+    babysit: bool,
+    max_steps: int,
+    out_dir: Path,
+    results: list[dict],
+) -> None:
+    """Run one trust-probe family (#64/#65), appending tagged rows to results.
+
+    grader_kind 'suppression' = no-mutation grading (grade_negative over a
+    byte-level workspace snapshot; reading via tools is fine, any file
+    mutation fails). 'validator' = the task's normal structural validator
+    (robustness twins must PRESERVE the analysis, not avoid it). All rows are
+    tagged negative_probe=True + probe_family so build_summary keeps them out
+    of core stats; per-family rates land in summary.negative_probes.families.
+    """
+    for task in probe_tasks:
+        engine_ok = ensure_engine(mlx_url, babysit=babysit)
+        if not engine_ok:
+            logger.error("%s probe %s skipped: engine unreachable", family, task.task_id)
+            results.append(
+                {
+                    "task_id": task.task_id,
+                    "task_type": task.task_type,
+                    "app": task.app,
+                    "steps": task.steps,
+                    "passed": False,
+                    "score": 0.0,
+                    "verify_detail": "engine unreachable, no babysit binary/opt-in",
+                    "run_error": "engine unreachable",
+                    "harness_error": True,
+                    "negative_probe": True,
+                    "probe_family": family,
+                    "tokens_in": 0,
+                    "tokens_out": 0,
+                    "wall_s": 0.0,
+                    "model": getattr(client, "model", ""),
+                }
+            )
+            continue
+        workspace = out_dir / "workspaces" / task.task_id
+        task.materialize(workspace)
+        runner = FusionHarnessRunner(RetryingClient(client), max_steps=max_steps, system_prompt=SYSTEM_PROMPT)
+        if grader_kind == "suppression":
+            before = _snapshot(workspace)
+            verifier = lambda ws, b=before: grade_negative(b, ws)  # noqa: E731
+        else:
+            before = None
+            verifier = None
+        result = await runner.run(to_harness_task(task, verifier=verifier), workspace)
+        if (result.llm_calls == 0 or result.error) and ensure_engine(mlx_url, babysit=babysit):
+            result = await runner.run(to_harness_task(task, verifier=verifier), workspace)
+        if grader_kind == "suppression":
+            score, detail = grade_negative(before, workspace)
+        else:
+            score, detail = task.grade(workspace)
+        results.append(
+            {
+                "task_id": task.task_id,
+                "task_type": task.task_type,
+                "app": task.app,
+                "steps": task.steps,
+                "passed": score >= 1.0,
+                "score": score,
+                "verify_detail": detail,
+                "run_error": result.error or "",
+                "harness_error": False,
+                "negative_probe": True,
+                "probe_family": family,
+                "tokens_in": result.tokens_in,
+                "tokens_out": result.tokens_out,
+                "wall_s": round(result.wall_s, 2),
+                "model": getattr(client, "model", ""),
+            }
+        )
+        logger.info(
+            "%s probe %s passed=%s detail=%s",
+            family,
+            task.task_id,
+            results[-1]["passed"],
+            detail,
+        )
 
 
 async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8, babysit: bool = False) -> dict:
@@ -264,67 +360,16 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
             detail,
         )
         (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
-    # Negative probes (#64): correct behavior is NOT mutating the workspace.
-    # Reading via tools is fine — only byte-level mutations fail suppression.
-    for task in NEGATIVE_PROBES:
-        engine_ok = ensure_engine(mlx_url, babysit=babysit)
-        if not engine_ok:
-            logger.error("negative probe %s skipped: engine unreachable", task.task_id)
-            results.append(
-                {
-                    "task_id": task.task_id,
-                    "task_type": task.task_type,
-                    "app": task.app,
-                    "steps": task.steps,
-                    "passed": False,
-                    "score": 0.0,
-                    "verify_detail": "engine unreachable, no babysit binary/opt-in",
-                    "run_error": "engine unreachable",
-                    "harness_error": True,
-                    "negative_probe": True,
-                    "tokens_in": 0,
-                    "tokens_out": 0,
-                    "wall_s": 0.0,
-                    "model": model,
-                }
-            )
-            continue
-        workspace = out_dir / "workspaces" / task.task_id
-        task.materialize(workspace)
-        before = _snapshot(workspace)
-        runner = FusionHarnessRunner(RetryingClient(client), max_steps=max_steps, system_prompt=SYSTEM_PROMPT)
-        result = await runner.run(to_harness_task(task, verifier=lambda ws, b=before: grade_negative(b, ws)), workspace)
-        if result.llm_calls == 0 or result.error:
-            engine_ok = ensure_engine(mlx_url, babysit=babysit)
-            if engine_ok:
-                result = await runner.run(
-                    to_harness_task(task, verifier=lambda ws, b=before: grade_negative(b, ws)), workspace
-                )
-        score, detail = grade_negative(before, workspace)
-        results.append(
-            {
-                "task_id": task.task_id,
-                "task_type": task.task_type,
-                "app": task.app,
-                "steps": task.steps,
-                "passed": score >= 1.0,
-                "score": score,
-                "verify_detail": detail,
-                "run_error": result.error or "",
-                "harness_error": False,
-                "negative_probe": True,
-                "tokens_in": result.tokens_in,
-                "tokens_out": result.tokens_out,
-                "wall_s": round(result.wall_s, 2),
-                "model": model,
-            }
-        )
-        logger.info(
-            "negative probe %s suppressed=%s detail=%s",
-            task.task_id,
-            results[-1]["passed"],
-            detail,
-        )
+    # Trust probe families (#64 over-trigger, #65 refusal + robustness), each
+    # tagged with probe_family and excluded from core stats; build_summary
+    # reports a per-family breakdown. All fail closed on engine unreachability.
+    probe_batches: list[tuple[str, list[OfficeTask], str]] = [
+        ("over_trigger", NEGATIVE_PROBES, "suppression"),
+        ("refusal", REFUSAL_PROBES, "suppression"),
+        ("robustness", ROBUSTNESS_PROBES, "validator"),
+    ]
+    for family, probe_tasks, grader_kind in probe_batches:
+        await _run_probe_family(probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results)
     summary = build_summary(results, run_id, datetime.now(UTC).isoformat())
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
