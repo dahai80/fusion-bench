@@ -25,11 +25,35 @@ _NS_PKG_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
 def validate(task_type: str, path: Path, args: dict) -> tuple[float, str]:
     if task_type == "office_xlsx":
         return _validate_xlsx(path, args)
-    if task_type == "office_docx":
+    if task_type in ("office_docx", "office_docx_infer"):
+        # office_docx_infer (#67): same structural checks, reported as a
+        # separate task_type so inferential vs descriptive pass rates compare.
         return _validate_docx(path, args)
     if task_type == "office_pptx":
         return _validate_pptx(path, args)
     return 0.0, f"unknown task_type: {task_type}"
+
+
+def extract_text(task_type: str, path: Path) -> str:
+    """All text content of an OOXML part (#67 fidelity anchors). docx/pptx only."""
+    if task_type in ("office_docx", "office_docx_infer"):
+        with zipfile.ZipFile(path) as zf:
+            doc = ET.fromstring(zf.read("word/document.xml"))
+            return "\n".join(
+                "".join(t.text or "" for t in p.iter(f"{{{_NS_WML}}}t")) for p in doc.iter(f"{{{_NS_WML}}}p")
+            )
+    if task_type == "office_pptx":
+        with zipfile.ZipFile(path) as zf:
+            slides = sorted(n for n in zf.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", n))
+            return "\n".join(
+                " ".join(
+                    el.text or ""
+                    for el in ET.fromstring(zf.read(name)).iter()
+                    if isinstance(el.tag, str) and el.tag.endswith("}t")
+                )
+                for name in slides
+            )
+    raise ValueError(f"extract_text: unsupported task_type {task_type}")
 
 
 def _normalize(parts: list[tuple[str, bool, str]]) -> tuple[float, str]:
@@ -118,6 +142,24 @@ def _validate_docx(path: Path, args: dict) -> tuple[float, str]:
                 checks.append(
                     (f"!section:{sec}", sec.lower() not in text.lower(), f"forbidden section {sec!r} present")
                 )
+            # issue #67 (WordInferBench, arXiv 2611.15189): inferential
+            # attributes — a section must exist AND match a formatting
+            # attribute (currently bold) recoverable from an in-document
+            # exemplar. Deterministic structural check over run properties.
+            paras: list[tuple[str, bool]] = []
+            for p in doc.iter(f"{{{_NS_WML}}}p"):
+                ptext = "".join(t.text or "" for t in p.iter(f"{{{_NS_WML}}}t"))
+                has_bold = any(
+                    (r.find(f"{{{_NS_WML}}}rPr/{{{_NS_WML}}}b") is not None)
+                    and (r.find(f"{{{_NS_WML}}}rPr/{{{_NS_WML}}}b").get(f"{{{_NS_WML}}}val", "1") not in ("0", "false"))
+                    for r in p.iter(f"{{{_NS_WML}}}r")
+                )
+                paras.append((ptext, has_bold))
+            for spec in args.get("styled_sections") or []:
+                sec_text = str(spec.get("text", ""))
+                want_bold = bool(spec.get("bold", False))
+                hit = any(sec_text.lower() in ptext.lower() and bold == want_bold for ptext, bold in paras)
+                checks.append((f"styled:{sec_text}", hit, f"text={sec_text!r} bold={want_bold} not matched"))
     except (zipfile.BadZipFile, KeyError, OSError) as exc:
         checks.append(("open", False, f"not a readable docx: {exc}"))
     score, detail = _normalize(checks)

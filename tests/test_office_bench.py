@@ -471,9 +471,195 @@ class TestOverTriggerProbes:
         summary = await runner.run_office("http://127.0.0.1:1/v1", "m", tmp_path)
         arm = summary["arms"]["fusion-harness"]
         assert arm["total"] == 32
-        assert arm["negative_probes"]["total"] == 6
+        assert arm["negative_probes"]["total"] == 10
         assert arm["negative_probes"]["suppressed"] == 0
-        assert set(arm["negative_probes"]["families"]) == {"over_trigger", "refusal", "robustness"}
+        assert set(arm["negative_probes"]["families"]) == {
+            "over_trigger",
+            "refusal",
+            "robustness",
+            "fidelity",
+            "inferential",
+        }
+
+
+def _docx_bytes_styled(paragraphs: list[tuple[str, bool]]) -> bytes:
+    """(text, bold) paragraphs — for #67 inferential attribute checks."""
+    buf = __import__("io").BytesIO()
+    ns_w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    body = "".join(
+        f"<w:p><w:r>{'<w:rPr><w:b/></w:rPr>' if bold else ''}<w:t>{text}</w:t></w:r></w:p>" for text, bold in paragraphs
+    )
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("word/document.xml", f'<w:document xmlns:w="{ns_w}"><w:body>{body}</w:body></w:document>')
+    return buf.getvalue()
+
+
+class TestFidelityProbes:
+    """#67: task must succeed AND out-of-scope content must survive."""
+
+    def test_defs(self):
+        from fusion_bench.office_bench.tasks import FIDELITY_PROBES
+
+        assert [t.task_id for t in FIDELITY_PROBES] == ["fidelity-docx-add-section", "fidelity-pptx-insert-slide"]
+        assert all(t.validator_args.get("fidelity_anchors") for t in FIDELITY_PROBES)
+        assert all(t.result_file for t in FIDELITY_PROBES)
+
+    def _before(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import _snapshot
+        from fusion_bench.office_bench.tasks import FIDELITY_PROBES
+
+        task = FIDELITY_PROBES[0]
+        # hand-written seed (never task.materialize — CI has no office venv)
+        (tmp_path / task.result_file).write_bytes(_docx_bytes(["Seed report."]))
+        return task, _snapshot(tmp_path)
+
+    def test_grade_fidelity_pass(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import grade_fidelity
+
+        task, before = self._before(tmp_path)
+        (tmp_path / task.result_file).write_bytes(
+            _docx_bytes(
+                [
+                    "Q3 review of the platform rollout.",
+                    "CONFIDENTIAL — internal distribution only.",
+                    "Prepared by the platform team.",
+                    "Next steps: ship the pilot.",
+                ]
+            )
+        )
+        score, detail = grade_fidelity(task, before, tmp_path)
+        assert (score, detail) == (1.0, "ok (task passed, out-of-scope content intact)")
+
+    def test_grade_fidelity_anchor_damaged(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import grade_fidelity
+
+        task, before = self._before(tmp_path)
+        (tmp_path / task.result_file).write_bytes(
+            _docx_bytes(
+                [
+                    "Q3 review of the platform rollout.",
+                    "Prepared by the platform team.",
+                    "Next steps: ship the pilot.",
+                ]
+            )
+        )
+        score, detail = grade_fidelity(task, before, tmp_path)
+        assert score == 0.0
+        assert "out-of-scope content damaged" in detail
+        assert "CONFIDENTIAL" in detail
+
+    def test_grade_fidelity_task_validator_failed(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import grade_fidelity
+
+        task, before = self._before(tmp_path)
+        (tmp_path / task.result_file).write_bytes(_docx_bytes(["unrelated"]))
+        score, detail = grade_fidelity(task, before, tmp_path)
+        assert score == 0.0
+        assert "task validator failed" in detail
+
+    def test_grade_fidelity_other_file_modified(self, tmp_path: Path):
+        from fusion_bench.office_bench.runner import grade_fidelity
+
+        task, before = self._before(tmp_path)
+        (tmp_path / task.result_file).write_bytes(
+            _docx_bytes(
+                [
+                    "Q3 review of the platform rollout.",
+                    "CONFIDENTIAL — internal distribution only.",
+                    "Prepared by the platform team.",
+                    "Next steps: ship the pilot.",
+                ]
+            )
+        )
+        (tmp_path / "notes.tmp").write_text("side effect")
+        score, detail = grade_fidelity(task, before, tmp_path)
+        assert score == 0.0
+        assert "files outside task target modified" in detail
+
+
+class TestInferentialProbes:
+    """#67 (WordInferBench): attributes inferred from an in-document exemplar."""
+
+    def test_defs(self):
+        from fusion_bench.office_bench.tasks import INFERENTIAL_PROBES
+
+        assert [t.task_id for t in INFERENTIAL_PROBES] == [
+            "infer-docx-consistent-section",
+            "infer-docx-consistent-closing",
+        ]
+        assert all(t.task_type == "office_docx_infer" for t in INFERENTIAL_PROBES)
+        assert all(t.validator_args.get("styled_sections") for t in INFERENTIAL_PROBES)
+
+    def test_validate_accepts_infer_type(self, tmp_path: Path):
+        p = tmp_path / "a.docx"
+        p.write_bytes(_docx_bytes_styled([("Risks", True), ("Cache eviction may regress.", False)]))
+        score, detail = validate(
+            "office_docx_infer",
+            p,
+            {"required_sections": ["Risks"], "styled_sections": [{"text": "Risks", "bold": True}]},
+        )
+        assert (score, detail) == (1.0, "ok")
+
+    def test_styled_section_bold_required(self, tmp_path: Path):
+        p = tmp_path / "a.docx"
+        p.write_bytes(_docx_bytes_styled([("Risks", False), ("Cache eviction may regress.", False)]))
+        score, detail = validate(
+            "office_docx_infer",
+            p,
+            {"required_sections": ["Risks"], "styled_sections": [{"text": "Risks", "bold": True}]},
+        )
+        assert score == 0.0
+        assert "styled:Risks" in detail
+
+    def test_styled_section_absent(self, tmp_path: Path):
+        p = tmp_path / "a.docx"
+        p.write_bytes(_docx_bytes_styled([("Findings", True)]))
+        score, detail = validate("office_docx_infer", p, {"styled_sections": [{"text": "Risks", "bold": True}]})
+        assert score == 0.0
+        assert "styled:Risks" in detail
+
+    def test_summary_families_breakdown(self):
+        from fusion_bench.office_bench.runner import build_summary
+
+        results = [
+            {
+                "task_id": "n1",
+                "task_type": "office_noop",
+                "steps": 1,
+                "passed": True,
+                "model": "m",
+                "harness_error": False,
+                "negative_probe": True,
+                "probe_family": "over_trigger",
+            },
+            {
+                "task_id": "f1",
+                "task_type": "office_docx",
+                "steps": 2,
+                "passed": False,
+                "model": "m",
+                "harness_error": False,
+                "negative_probe": True,
+                "probe_family": "fidelity",
+            },
+            {
+                "task_id": "i1",
+                "task_type": "office_docx_infer",
+                "steps": 2,
+                "passed": True,
+                "model": "m",
+                "harness_error": False,
+                "negative_probe": True,
+                "probe_family": "inferential",
+            },
+        ]
+        summary = build_summary(results, "r", "t")
+        arm = summary["arms"]["fusion-harness"]
+        assert arm["total"] == 0
+        fams = arm["negative_probes"]["families"]
+        assert fams["over_trigger"] == {"passed": 1, "total": 1, "rate": 1.0}
+        assert fams["fidelity"]["passed"] == 0
+        assert fams["inferential"]["passed"] == 1
 
 
 class TestEngineBabysit:
@@ -536,7 +722,7 @@ class TestEngineBabysit:
         assert arm["passed"] == 0
         assert arm["harness_errors"] == 32
         rows = [r for r in json.loads((tmp_path / "results.json").read_text())]
-        assert len(rows) == 38
+        assert len(rows) == 42
         assert all(r["run_error"] == "engine unreachable" for r in rows)
 
     @staticmethod

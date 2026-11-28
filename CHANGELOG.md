@@ -7,8 +7,8 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.45
-updated: 2026-11-26
+version: 0.4.46
+updated: 2026-11-28
 owner: "@dahai"
 source_of_truth:
   - README.md
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.46 (2026-11-28)
+
+- **Feat #67 — fidelity probes + inferential docx tasks (DELEGATE-52 arXiv 2604.15597; WordInferBench arXiv 2611.15189)**. Two new trust-probe families completing the five-family track (over_trigger / refusal / robustness / fidelity / inferential), all excluded from the 32-task core stats and reported per-family in `summary.negative_probes.families`. (1) Fidelity probes (`FIDELITY_PROBES`, new `grade_fidelity`): a docx task and a pptx task where the model must make the requested edit WITHOUT damaging out-of-scope content — three grading layers: task structural validator passes; no file other than the task's `result_file` changed vs the byte-level before-snapshot; every `fidelity_anchors` string from `validator_args` is still present in the result file text (an edit that rewrites its way past the target region is delegation corruption per DELEGATE-52). (2) Inferential probes (`INFERENTIAL_PROBES`, new `office_docx_infer` task_type): attributes that must be INFERRED from an in-document exemplar rather than stated in the instruction — new sections must match the exemplar's formatting (bold headings), checked via the new `styled_sections` validator arg (paragraph containing the text must have a bold run, `w:b` val not 0/false); same structural checks as docx, reported as a separate task_type so inferential vs descriptive pass rates compare. New `extract_text` helper (docx paragraphs + pptx slides text). 58 office tests (937 collected).
 
 ### v0.4.45 (2026-11-27)
 

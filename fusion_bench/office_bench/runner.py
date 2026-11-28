@@ -14,6 +14,7 @@ import logging
 import subprocess
 import time
 import uuid
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -24,7 +25,17 @@ from ..harness_bench.model_client import ModelClient
 from ..harness_bench.runners import FusionHarnessRunner
 from ..harness_bench.tasks import HarnessTask
 from .boundary import write_boundary
-from .tasks import NEGATIVE_PROBES, OFFICE_TASKS, REFUSAL_PROBES, ROBUSTNESS_PROBES, SYSTEM_PROMPT, OfficeTask
+from .tasks import (
+    FIDELITY_PROBES,
+    INFERENTIAL_PROBES,
+    NEGATIVE_PROBES,
+    OFFICE_TASKS,
+    REFUSAL_PROBES,
+    ROBUSTNESS_PROBES,
+    SYSTEM_PROMPT,
+    OfficeTask,
+)
+from .validators import extract_text
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +70,35 @@ def grade_negative(before: dict[str, str], workspace: Path) -> tuple[float, str]
             bits.append(f"modified={modified}")
         return 0.0, "over-trigger: " + "; ".join(bits)
     return 1.0, "suppressed (workspace unchanged)"
+
+
+def grade_fidelity(task: OfficeTask, before: dict[str, str], workspace: Path) -> tuple[float, str]:
+    """#67: the task must succeed AND out-of-scope content must survive.
+
+    Three layers: (1) the task's structural validator passes; (2) no file
+    other than the task's result_file changed vs the before snapshot;
+    (3) every fidelity_anchors string from validator_args is still present
+    in the result file — an edit that rewrites its way past the target
+    region (footer notes, unrelated paragraphs/slides) is delegation
+    corruption (DELEGATE-52, arXiv 2604.15597).
+    """
+    score, detail = task.grade(workspace)
+    if score < 1.0:
+        return 0.0, f"fidelity: task validator failed ({detail})"
+    after = _snapshot(workspace)
+    others = sorted(k for k in set(after) | set(before) if k != task.result_file and after.get(k) != before.get(k))
+    if others:
+        return 0.0, f"fidelity: files outside task target modified: {others}"
+    anchors = [str(a) for a in (task.validator_args.get("fidelity_anchors") or [])]
+    if anchors:
+        try:
+            text = extract_text(task.task_type, workspace / task.result_file).lower()
+        except (zipfile.BadZipFile, KeyError, OSError, ValueError) as exc:
+            return 0.0, f"fidelity: result file unreadable ({exc})"
+        missing = [a for a in anchors if a.lower() not in text]
+        if missing:
+            return 0.0, f"fidelity: out-of-scope content damaged: {missing}"
+    return 1.0, "ok (task passed, out-of-scope content intact)"
 
 
 SVCTL = Path.home() / "fusion" / "fusion-supervisor" / "target" / "release" / "fusion-sv"
@@ -237,6 +277,9 @@ async def _run_probe_family(
         if grader_kind == "suppression":
             before = _snapshot(workspace)
             verifier = lambda ws, b=before: grade_negative(b, ws)  # noqa: E731
+        elif grader_kind == "fidelity":
+            before = _snapshot(workspace)
+            verifier = lambda ws, t=task, b=before: (lambda s, d: (s >= 1.0, d))(*grade_fidelity(t, b, ws))  # noqa: E731
         else:
             before = None
             verifier = None
@@ -245,6 +288,8 @@ async def _run_probe_family(
             result = await runner.run(to_harness_task(task, verifier=verifier), workspace)
         if grader_kind == "suppression":
             score, detail = grade_negative(before, workspace)
+        elif grader_kind == "fidelity":
+            score, detail = grade_fidelity(task, before, workspace)
         else:
             score, detail = task.grade(workspace)
         results.append(
@@ -367,6 +412,8 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
         ("over_trigger", NEGATIVE_PROBES, "suppression"),
         ("refusal", REFUSAL_PROBES, "suppression"),
         ("robustness", ROBUSTNESS_PROBES, "validator"),
+        ("fidelity", FIDELITY_PROBES, "fidelity"),
+        ("inferential", INFERENTIAL_PROBES, "validator"),
     ]
     for family, probe_tasks, grader_kind in probe_batches:
         await _run_probe_family(probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results)
