@@ -4,7 +4,11 @@
 # User instruction: "生成doc文档，更新README，提交代码仓，建设CI和lint，确保全绿，发布0.3.0版本"
 name: CI
 
+# workflow_dispatch: manual runs (badge-only pushes are paths-ignored and
+# otherwise leave a PR stuck on a stale failing check).
+
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths-ignore:
