@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-11-28T08:33:26.975234+00:00",
+  "spec": "docs/durability-spec-70.md",
+  "issue": "dahai80/fusion-bench#70 (plan ruling A6, fusion-horizon position)",
+  "sources": {
+    "supervisor_runs": 1,
+    "cowork_audit_trails": 7,
+    "scheduled_task_stats": {
+      "task_count": 99,
+      "active_count": 2,
+      "total_runs": 5,
+      "total_failures": 0
+    }
+  },
+  "metrics": {
+    "long_task_survival_rate": {
+      "value": null,
+      "num": 0,
+      "den": 0,
+      "sufficient": false
+    },
+    "failure_recovery_rate": {
+      "value": null,
+      "num": 0,
+      "den": 0,
+      "sufficient": false
+    },
+    "checkpoint_restore_correctness": {
+      "value": null,
+      "num": 2,
+      "den": 2,
+      "sufficient": false
+    },
+    "hours_scale_completion_ratio": {
+      "value": null,
+      "num": 0,
+      "den": 0,
+      "sufficient": false
+    },
+    "scheduled_task_stats": {
+      "task_count": 99,
+      "active_count": 2,
+      "total_runs": 5,
+      "total_failures": 0
+    }
+  }
+}

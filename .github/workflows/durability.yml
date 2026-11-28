@@ -1,0 +1,26 @@
+# Orchestration durability recomputation gate (issue #70).
+# Nightly: recompute all A6 metrics from the committed published dataset and
+# diff the committed report; drift (or schema breakage) fails the run. This is
+# the public, third-party-auditable half of the nightly story — fresh-record
+# ingestion happens on the data owner machine (scripts/durability-nightly.sh).
+name: durability
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 21 * * *" # 05:30 CST daily, after supervisor/cowork nightly
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Recompute durability metrics from published dataset
+        run: |
+          pip install -e .
+          python -m fusion_bench.cli durability verify \
+            --dataset bench/durability/dataset-v1.json \
+            --report bench/durability/durability-report.json

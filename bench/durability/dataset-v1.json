@@ -1,0 +1,132 @@
+{
+  "supervisor_runs": [
+    {
+      "run_id": "run_da99c9f92aca",
+      "workflow_id": "wf_builtin_payroll-process",
+      "status": "PAUSED",
+      "started_at": "2026-10-25T02:00:00.003461Z",
+      "ended_at": null,
+      "trigger": "schedule",
+      "node_traces": [
+        {
+          "node_id": "n_hours",
+          "seq": 0,
+          "status": "simulated",
+          "enter": "2026-10-25T02:00:00.004034Z",
+          "exit": "2026-10-25T02:00:00.007615Z"
+        },
+        {
+          "node_id": "n_calc",
+          "seq": 1,
+          "status": "simulated",
+          "enter": "2026-10-25T02:00:00.008033Z",
+          "exit": "2026-10-25T02:00:00.009848Z"
+        },
+        {
+          "node_id": "n_approval",
+          "seq": 2,
+          "status": "paused",
+          "enter": "2026-10-25T02:00:00.010095Z",
+          "exit": null
+        }
+      ]
+    }
+  ],
+  "cowork_audits": [
+    {
+      "workflow_id": "family-weekly-cleaning",
+      "revisions": [
+        {
+          "at": 1795673674.342516,
+          "digest": "52964c60ab1a683d",
+          "prev_digest": "",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "workflow_id": "probe-517-live",
+      "revisions": [
+        {
+          "at": 1794975417.800204,
+          "digest": "c4b86fb760b9f565",
+          "prev_digest": "",
+          "status": "active"
+        },
+        {
+          "at": 1794975881.2184,
+          "digest": "f6d4a7b3eefa8791",
+          "prev_digest": "c4b86fb760b9f565",
+          "status": "active"
+        },
+        {
+          "at": 1794975941.746964,
+          "digest": "97df5f95b01c60cd",
+          "prev_digest": "f6d4a7b3eefa8791",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wf_416bad1a14",
+      "revisions": [
+        {
+          "at": 1794988036.0353642,
+          "digest": "c743aeba8e39d891",
+          "prev_digest": "",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wf_7f4dbc2c10",
+      "revisions": [
+        {
+          "at": 1794980863.288178,
+          "digest": "cdbb78d7e5a7d709",
+          "prev_digest": "",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wf_8e913c4c0d",
+      "revisions": [
+        {
+          "at": 1795062852.8261771,
+          "digest": "45ac8c7230b31bc6",
+          "prev_digest": "",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wf_ab7cceeb61",
+      "revisions": [
+        {
+          "at": 1795062743.15786,
+          "digest": "416885f2ebc9038d",
+          "prev_digest": "",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wf_c9de077653",
+      "revisions": [
+        {
+          "at": 1795056047.2193742,
+          "digest": "e3ea3019683c4f3d",
+          "prev_digest": "",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "scheduled_task_stats": {
+    "task_count": 99,
+    "active_count": 2,
+    "total_runs": 5,
+    "total_failures": 0
+  }
+}

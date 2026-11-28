@@ -234,6 +234,23 @@ def main():
     ab_parser.add_argument("--out", default="benchmarks/results/ab-gate", help="Output directory")
     ab_parser.set_defaults(func=lambda a: None)
 
+    # durability (#70) — orchestration durability benchmark (A6, fusion-horizon)
+    dur_parser = subparsers.add_parser(
+        "durability",
+        help="Orchestration durability report from real supervisor/cowork run records (issue #70)",
+    )
+    dur_sub = dur_parser.add_subparsers(dest="durability_command", required=True)
+    for name in ("report", "dataset"):
+        d = dur_sub.add_parser(name)
+        d.add_argument("--supervisor-db", default=str(Path.home() / "fusion" / "fusion-supervisor" / "fsb_data.db"))
+        d.add_argument("--cowork-assets", default=str(Path.home() / ".fusion-cowork" / "web" / "assets"))
+        d.add_argument("--cowork-scheduled", default=str(Path.home() / ".fusion-cowork" / "scheduled_tasks.json"))
+        d.add_argument("--out", required=True, help="Output path (directory for report, file for dataset)")
+    d_ver = dur_sub.add_parser("verify", help="Recompute metrics from a published dataset and diff the report (exit 1 on drift)")
+    d_ver.add_argument("--dataset", required=True, help="Published dataset json (exported by `durability dataset`)")
+    d_ver.add_argument("--report", required=True, help="Published durability-report.json to verify")
+    dur_parser.set_defaults(func=lambda a: None)
+
     # golden (#49) — golden eval set from production traffic + regression gate
     golden_parser = subparsers.add_parser("golden", help="Golden eval set: ingest / pii-scan / gate / coverage")
     golden_sub = golden_parser.add_subparsers(dest="golden_command", required=True)
@@ -445,6 +462,7 @@ def main():
         "compare-suite": lambda: cmd_compare_suite(args),
         "office-bench": lambda: asyncio.run(cmd_office_bench(args)),
         "ab-gate": lambda: cmd_ab_gate(args),
+        "durability": lambda: cmd_durability(args),
         "golden": lambda: cmd_golden(args),
         "compare": lambda: asyncio.run(cmd_compare(args)),
         "gates": lambda: cmd_gates(args),
@@ -973,6 +991,59 @@ def cmd_ab_gate(args):
     print(f"Skill A/B gate: {report['gate']} — report saved to {out / 'ab-report.md'}")
     if report["gate"] != "pass":
         raise SystemExit(1)
+
+
+def cmd_durability(args):
+    """Orchestration durability benchmark (issue #70, plan ruling A6).
+
+    report  — compute the A6 metrics from real supervisor/cowork records,
+              write durability-report.json/.md
+    dataset — export the same records as the published, recomputable dataset
+    verify  — independent recomputation gate: recompute from dataset, diff
+              the published report, exit 1 on drift (acceptance criterion 3)
+    """
+    import json as _json
+
+    from .durability import (
+        build_report,
+        load_cowork_audits,
+        load_cowork_scheduled,
+        load_supervisor_runs,
+        verify_report,
+        write_report,
+    )
+
+    def _records():
+        runs = load_supervisor_runs(Path(args.supervisor_db))
+        audits = load_cowork_audits(Path(args.cowork_assets))
+        scheduled = load_cowork_scheduled(Path(args.cowork_scheduled))
+        return runs, audits, scheduled
+
+    command = args.durability_command
+    if command in ("report", "dataset"):
+        runs, audits, scheduled = _records()
+        if command == "report":
+            report = build_report(runs, audits, scheduled)
+            write_report(report, Path(args.out))
+            print(f"Durability report written to {args.out}")
+            return
+        dataset = {
+            "supervisor_runs": runs,
+            "cowork_audits": audits,
+            "scheduled_task_stats": scheduled,
+        }
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(_json.dumps(dataset, indent=2) + "\n", encoding="utf-8")
+        print(f"Durability dataset written to {args.out}")
+        return
+    dataset = _json.loads(Path(args.dataset).read_text(encoding="utf-8"))
+    report = _json.loads(Path(args.report).read_text(encoding="utf-8"))
+    ok, drifts = verify_report(dataset, report)
+    if not ok:
+        for drift in drifts:
+            print(f"[durability-verify] drift: {drift}")
+        raise SystemExit(1)
+    print(f"Durability verify: pass ({args.dataset} reproduces {args.report})")
 
 
 async def cmd_harness_bench(args):

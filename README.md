@@ -25,7 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-953-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-965-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -462,6 +462,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.49 (2026-11-28)
+
+- **Feat #70 — orchestration durability benchmark (A6, fusion-horizon)**. `fusion-bench durability report|dataset|verify` over real supervisor/cowork run records; four A6 metrics with published formulas + sufficiency floors (`docs/durability-spec-70.md`); insufficient-denominator metrics publish as insufficient, never estimated. Committed dataset + report; nightly CI recomputation gate + local refresh script.
 
 ### v0.4.48 (2026-11-28)
 

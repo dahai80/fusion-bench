@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.48
+version: 0.4.49
 updated: 2026-11-28
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.49 (2026-11-28)
+
+- **Feat #70 — orchestration durability benchmark (plan ruling A6, fusion-horizon position)**. New `fusion_bench/durability/` + `fusion-bench durability report|dataset|verify` over REAL run records only — fusion-supervisor run history (SQLite `runs`/`run_traces`), fusion-cowork audit digest chains, cowork scheduled-task stats. Four A6 metrics with published formulas and sufficiency floors (docs/durability-spec-70.md): long-task survival rate, failure recovery rate (covers the cowork#386 chaos fault matrix), checkpoint-restore correctness (digest-chain link integrity), hours-scale completion ratio (≥1h runs). Metrics below the floor publish as `insufficient` — never estimated; current real dataset is small, so all four are honestly insufficient at v1. Published artifacts: `bench/durability/dataset-v1.json` + `durability-report.{json,md}`; `durability verify` recomputes from the dataset alone and exits 1 on drift (tolerance 1e-9) — acceptance criterion 3. Nightly: `.github/workflows/durability.yml` (public recomputation gate, cron 21:30 UTC) + `scripts/durability-nightly.sh` (fresh-record regeneration on the data-owner machine, same verify gate). 12 tests (965 collected).
 
 ### v0.4.48 (2026-11-28)
 
