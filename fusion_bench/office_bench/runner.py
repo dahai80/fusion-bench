@@ -446,7 +446,9 @@ async def run_office(
         ("inferential", INFERENTIAL_PROBES, "validator"),
     ]
     for family, probe_tasks, grader_kind in probe_batches:
-        await _run_probe_family(probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results, system_prompt)
+        await _run_probe_family(
+            probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results, system_prompt
+        )
     if skill_name:
         for row in results:
             row["skill"] = skill_name
