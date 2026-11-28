@@ -205,6 +205,19 @@ def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
         bucket["passed"] += 1 if row["passed"] else 0
     for stats in families.values():
         stats["rate"] = round(stats["passed"] / stats["total"], 4) if stats["total"] else 0.0
+    # ABE contract aggregation (arXiv 2611.05454): rows tagged with a stable
+    # contract rule id (probes/robustness twins) roll up per rule so
+    # regressions name the broken contract, not just the failed task.
+    contracts: dict[str, dict] = {}
+    for row in results:
+        cid = row.get("contract_id") or ""
+        if not cid:
+            continue
+        bucket = contracts.setdefault(cid, {"passed": 0, "total": 0})
+        bucket["total"] += 1
+        bucket["passed"] += 1 if row["passed"] else 0
+    for stats in contracts.values():
+        stats["rate"] = round(stats["passed"] / stats["total"], 4) if stats["total"] else 0.0
     return {
         "run_id": run_id,
         "created_at": created_at,
@@ -222,6 +235,7 @@ def build_summary(results: list[dict], run_id: str, created_at: str) -> dict:
                     "suppression_rate": round(suppressed / len(neg), 4) if neg else 0.0,
                     "families": families,
                 },
+                "contracts": contracts,
             }
         },
     }
@@ -267,6 +281,7 @@ async def _run_probe_family(
                     "tokens_in": 0,
                     "tokens_out": 0,
                     "wall_s": 0.0,
+                    "contract_id": task.contract_id,
                     "model": getattr(client, "model", ""),
                 }
             )
@@ -308,6 +323,7 @@ async def _run_probe_family(
                 "tokens_in": result.tokens_in,
                 "tokens_out": result.tokens_out,
                 "wall_s": round(result.wall_s, 2),
+                "contract_id": task.contract_id,
                 "model": getattr(client, "model", ""),
             }
         )
@@ -393,6 +409,7 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
                 "tokens_in": result.tokens_in,
                 "tokens_out": result.tokens_out,
                 "wall_s": round(result.wall_s, 2),
+                "contract_id": task.contract_id,
                 "model": model,
             }
         )

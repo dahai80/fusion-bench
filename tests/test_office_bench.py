@@ -481,6 +481,75 @@ class TestOverTriggerProbes:
             "inferential",
         }
 
+    def test_all_probes_carry_contract_ids(self):
+        from fusion_bench.office_bench.tasks import (
+            FIDELITY_PROBES,
+            INFERENTIAL_PROBES,
+            NEGATIVE_PROBES,
+            REFUSAL_PROBES,
+            ROBUSTNESS_PROBES,
+        )
+
+        expected = {
+            "noop-read-only-query": "OB-NOOP-NO-MUTATION",
+            "noop-no-op-request": "OB-NOOP-NO-MUTATION",
+            "robust-xlsx-total-formula-renamed": "OB-ROBUST-SURFACE-PERTURBATION",
+            "robust-xlsx-rename-sheet-swapped": "OB-ROBUST-SURFACE-PERTURBATION",
+            "refuse-missing-sheet": "OB-ABSTAIN-NO-EVIDENCE",
+            "refuse-missing-column": "OB-ABSTAIN-NO-EVIDENCE",
+            "fidelity-docx-add-section": "OB-FIDELITY-ANCHOR-PRESERVE",
+            "fidelity-pptx-insert-slide": "OB-FIDELITY-ANCHOR-PRESERVE",
+            "infer-docx-consistent-section": "OB-INFER-EXEMPLAR-ATTRIBUTE",
+            "infer-docx-consistent-closing": "OB-INFER-EXEMPLAR-ATTRIBUTE",
+        }
+        for probe in NEGATIVE_PROBES + ROBUSTNESS_PROBES + REFUSAL_PROBES + FIDELITY_PROBES + INFERENTIAL_PROBES:
+            assert probe.contract_id == expected[probe.task_id], probe.task_id
+        from fusion_bench.office_bench.tasks import OFFICE_TASKS
+
+        assert all(t.contract_id == "" for t in OFFICE_TASKS)
+
+    def test_build_summary_aggregates_contracts(self):
+        from fusion_bench.office_bench.runner import build_summary
+
+        results = [
+            {
+                "task_id": "a",
+                "task_type": "office_xlsx",
+                "steps": 1,
+                "passed": True,
+                "model": "m",
+                "harness_error": False,
+            },
+            {
+                "task_id": "noop-1",
+                "task_type": "office_noop",
+                "steps": 1,
+                "passed": True,
+                "model": "m",
+                "harness_error": False,
+                "negative_probe": True,
+                "probe_family": "over_trigger",
+                "contract_id": "OB-NOOP-NO-MUTATION",
+            },
+            {
+                "task_id": "refuse-1",
+                "task_type": "office_noop",
+                "steps": 1,
+                "passed": False,
+                "model": "m",
+                "harness_error": False,
+                "negative_probe": True,
+                "probe_family": "refusal",
+                "contract_id": "OB-ABSTAIN-NO-EVIDENCE",
+            },
+        ]
+        summary = build_summary(results, "r", "t")
+        arm = summary["arms"]["fusion-harness"]
+        assert arm["contracts"] == {
+            "OB-NOOP-NO-MUTATION": {"passed": 1, "total": 1, "rate": 1.0},
+            "OB-ABSTAIN-NO-EVIDENCE": {"passed": 0, "total": 1, "rate": 0.0},
+        }
+
 
 def _docx_bytes_styled(paragraphs: list[tuple[str, bool]]) -> bytes:
     """(text, bold) paragraphs — for #67 inferential attribute checks."""
