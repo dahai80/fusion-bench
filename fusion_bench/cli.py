@@ -246,7 +246,9 @@ def main():
         d.add_argument("--cowork-assets", default=str(Path.home() / ".fusion-cowork" / "web" / "assets"))
         d.add_argument("--cowork-scheduled", default=str(Path.home() / ".fusion-cowork" / "scheduled_tasks.json"))
         d.add_argument("--out", required=True, help="Output path (directory for report, file for dataset)")
-    d_ver = dur_sub.add_parser("verify", help="Recompute metrics from a published dataset and diff the report (exit 1 on drift)")
+    d_ver = dur_sub.add_parser(
+        "verify", help="Recompute metrics from a published dataset and diff the report (exit 1 on drift)"
+    )
     d_ver.add_argument("--dataset", required=True, help="Published dataset json (exported by `durability dataset`)")
     d_ver.add_argument("--report", required=True, help="Published durability-report.json to verify")
     dur_parser.set_defaults(func=lambda a: None)

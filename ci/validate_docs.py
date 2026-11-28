@@ -410,21 +410,14 @@ def check_redlines(text: str, rel: str, out: list[Finding]) -> None:
             in_inline = False
             continue
 
-        # banned words (also scanned inside code fences, so marketing
-        # wording cannot hide in examples)
-        for w in FORBIDDEN_ZH:
-            if w in line:
-                out.append(Finding("ERROR", "RED-MKT", rel, idx, f"marketing/vague word: {w}"))
-        for w in FORBIDDEN_EN:
-            if re.search(r"\b" + re.escape(w) + r"\b", line, re.I):
-                out.append(Finding("ERROR", "RED-MKT", rel, idx, f"marketing word: {w}"))
-
-        # leftover placeholders (frontmatter lines are exempt; template files
-        # are exempt via --skip-placeholder; code fences are skipped because
-        # angle-bracket generics like <T> in Rust/C++/TS are not placeholders;
-        # inline-code spans are stripped first: literal tokens like
-        # `<|tool_call|>` are not placeholders)
-        if not in_fence:
+        # inline-code spans carry literal identifiers (e.g. the contract rule
+        # id OB-ROBUST-SURFACE-PERTURBATION), not marketing wording — strip
+        # them once per line and reuse for both the banned-word and
+        # placeholder scans. Code fences stay raw-scanned so marketing
+        # wording cannot hide in examples.
+        if in_fence:
+            prose = line
+        else:
             if not stripped:
                 in_inline = False  # spans do not survive blank lines; prevents cascade
             segs = line.split("`")
@@ -435,6 +428,21 @@ def check_redlines(text: str, rel: str, out: list[Finding]) -> None:
                 if i < len(segs) - 1:
                     in_inline = not in_inline  # toggle only at real backticks
             prose = "".join(prose_parts)
+
+        # banned words (raw inside fences; span-stripped in prose)
+        for w in FORBIDDEN_ZH:
+            if w in prose:
+                out.append(Finding("ERROR", "RED-MKT", rel, idx, f"marketing/vague word: {w}"))
+        for w in FORBIDDEN_EN:
+            if re.search(r"\b" + re.escape(w) + r"\b", prose, re.I):
+                out.append(Finding("ERROR", "RED-MKT", rel, idx, f"marketing word: {w}"))
+
+        # leftover placeholders (frontmatter lines are exempt; template files
+        # are exempt via --skip-placeholder; code fences are skipped because
+        # angle-bracket generics like <T> in Rust/C++/TS are not placeholders;
+        # inline-code spans are stripped first: literal tokens like
+        # `<|tool_call|>` are not placeholders)
+        if not in_fence:
             prose = re.sub(r"<!--.*?-->", " ", prose)  # HTML comments are markers, not prose
             for m in PLACEHOLDER_RE.finditer(prose):
                 inner = m.group(1).strip()

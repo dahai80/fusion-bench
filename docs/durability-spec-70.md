@@ -3,7 +3,7 @@ doc_id: fusion-bench/durability-spec
 product: fusion-bench
 class: platform
 entry: service
-doc_type: spec
+doc_type: architecture
 title: { zh: "编排耐久性基准规范", en: "Orchestration Durability Benchmark Spec" }
 audience: engineer
 status: draft

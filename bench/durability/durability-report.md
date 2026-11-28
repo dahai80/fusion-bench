@@ -1,3 +1,20 @@
+---
+doc_id: fusion-bench/durability-report
+product: fusion-bench
+class: platform
+entry: service
+doc_type: guide
+title: { zh: "编排耐久性基准报告", en: "Orchestration Durability Report" }
+audience: engineer
+status: draft
+version: 1
+updated: 2026-11-28
+owner: "@dahai"
+source_of_truth:
+  - bench/durability/durability-report.json
+  - fusion_bench/durability/report.py
+---
+
 # Orchestration durability report (A6, issue #70)
 
 Generated: 2026-11-28T08:33:26.975234+00:00
