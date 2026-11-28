@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.49
+version: 0.4.50
 updated: 2026-11-28
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.50 (2026-11-28)
+
+- **Feat #71 — candidate-skill injection into office-bench runs (fusion-skills#15)**. Optional `skill_prompt`/`skill_name` on `run_office()`: the skill body is appended to `SYSTEM_PROMPT` for the 32 core tasks AND all five trust-probe families, so contract-probe rows reflect the skill-active arm (feeds G1 pre/post contract gating, #69 `ab-gate`); every results row + summary is stamped `skill`; empty default keeps behavior byte-identical. The injected skill is the experiment arm, not a harness builtin — `harness_injection_audit()` stays truthful; no built-in skills injected.
 
 ### v0.4.49 (2026-11-28)
 

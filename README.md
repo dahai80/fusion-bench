@@ -463,6 +463,10 @@ scripts/release.sh
 
 ## Changelog
 
+### v0.4.50 (2026-11-28)
+
+- **Feat #71 — candidate-skill injection into office-bench runs (fusion-skills#15)**. Optional `skill_prompt`/`skill_name` on `run_office()`; skill body appended to `SYSTEM_PROMPT` for core tasks + all five probe families; rows/summary stamped `skill`; empty default byte-identical. Experiment arm, not a harness builtin — injection audit stays truthful.
+
 ### v0.4.49 (2026-11-28)
 
 - **Feat #70 — orchestration durability benchmark (A6, fusion-horizon)**. `fusion-bench durability report|dataset|verify` over real supervisor/cowork run records; four A6 metrics with published formulas + sufficiency floors (`docs/durability-spec-70.md`); insufficient-denominator metrics publish as insufficient, never estimated. Committed dataset + report; nightly CI recomputation gate + local refresh script.
