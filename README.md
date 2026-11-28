@@ -25,7 +25,11 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-940-success.svg)](tests/)
+<<<<<<< HEAD
+[![Tests](https://img.shields.io/badge/Tests-942-success.svg)](tests/)
+=======
+[![Tests](https://img.shields.io/badge/Tests-942-success.svg)](tests/)
+>>>>>>> 4f1a1b0 (docs: update test count badges to 942)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -465,7 +469,11 @@ scripts/release.sh
 
 ### v0.4.46 (2026-11-28)
 
-- **Feat #67 — fidelity probes + inferential docx tasks (DELEGATE-52 arXiv 2604.15597; WordInferBench arXiv 2611.15189)**. Fidelity probes: edit the requested region without damaging out-of-scope content — `grade_fidelity` layers task validator + no-other-file-changed + `fidelity_anchors` still present in the result text. Inferential probes (`office_docx_infer`): formatting attributes inferred from an in-document exemplar, checked via the `styled_sections` bold-run validator arg. Five-family probe track complete (over_trigger / refusal / robustness / fidelity / inferential), per-family stats in `summary.negative_probes.families`. 58 office tests (940 collected).
+<<<<<<< HEAD
+- **Feat #67 — fidelity probes + inferential docx tasks (DELEGATE-52 arXiv 2604.15597; WordInferBench arXiv 2611.15189)**. Fidelity probes: edit the requested region without damaging out-of-scope content — `grade_fidelity` layers task validator + no-other-file-changed + `fidelity_anchors` still present in the result text. Inferential probes (`office_docx_infer`): formatting attributes inferred from an in-document exemplar, checked via the `styled_sections` bold-run validator arg. Five-family probe track complete (over_trigger / refusal / robustness / fidelity / inferential), per-family stats in `summary.negative_probes.families`. 58 office tests (942 collected).
+=======
+- **Feat #67 — fidelity probes + inferential docx tasks (DELEGATE-52 arXiv 2604.15597; WordInferBench arXiv 2611.15189)**. Fidelity probes: edit the requested region without damaging out-of-scope content — `grade_fidelity` layers task validator + no-other-file-changed + `fidelity_anchors` still present in the result text. Inferential probes (`office_docx_infer`): formatting attributes inferred from an in-document exemplar, checked via the `styled_sections` bold-run validator arg. Five-family probe track complete (over_trigger / refusal / robustness / fidelity / inferential), per-family stats in `summary.negative_probes.families`. 58 office tests (942 collected).
+>>>>>>> 4f1a1b0 (docs: update test count badges to 942)
 
 ### v0.4.45 (2026-11-27)
 
