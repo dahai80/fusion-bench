@@ -34,6 +34,11 @@ class OfficeTask:
     seed_files: dict[str, str] = field(default_factory=dict)
     result_file: str = ""
     validator_args: dict = field(default_factory=dict)
+    # ABE contract rule id (arXiv 2611.05454): stable identifier for the
+    # behavior rule this task exercises; empty for core capability tasks.
+    # Probes and robustness twins carry rule ids so run summaries aggregate
+    # pass rates per contract, and regressions name the broken rule.
+    contract_id: str = ""
 
     def materialize(self, workspace: Path) -> None:
         materialize_seeds(self.seed_files, workspace)
@@ -521,6 +526,7 @@ OFFICE_TASKS: list[OfficeTask] = [
 NEGATIVE_PROBES: list[OfficeTask] = [
     OfficeTask(
         task_id="noop-read-only-query",
+        contract_id="OB-NOOP-NO-MUTATION",
         task_type="office_noop",
         app="xlsx",
         steps=1,
@@ -534,6 +540,7 @@ NEGATIVE_PROBES: list[OfficeTask] = [
     ),
     OfficeTask(
         task_id="noop-no-op-request",
+        contract_id="OB-NOOP-NO-MUTATION",
         task_type="office_noop",
         app="slides",
         steps=1,
@@ -559,6 +566,7 @@ NEGATIVE_PROBES: list[OfficeTask] = [
 ROBUSTNESS_PROBES: list[OfficeTask] = [
     OfficeTask(
         task_id="robust-xlsx-total-formula-renamed",
+        contract_id="OB-ROBUST-SURFACE-PERTURBATION",
         task_type="office_xlsx",
         app="spreadsheet",
         steps=1,
@@ -581,6 +589,7 @@ ROBUSTNESS_PROBES: list[OfficeTask] = [
     ),
     OfficeTask(
         task_id="robust-xlsx-rename-sheet-swapped",
+        contract_id="OB-ROBUST-SURFACE-PERTURBATION",
         task_type="office_xlsx",
         app="spreadsheet",
         steps=1,
@@ -611,6 +620,7 @@ ROBUSTNESS_PROBES: list[OfficeTask] = [
 REFUSAL_PROBES: list[OfficeTask] = [
     OfficeTask(
         task_id="refuse-missing-sheet",
+        contract_id="OB-ABSTAIN-NO-EVIDENCE",
         task_type="office_noop",
         app="spreadsheet",
         steps=1,
@@ -624,6 +634,7 @@ REFUSAL_PROBES: list[OfficeTask] = [
     ),
     OfficeTask(
         task_id="refuse-missing-column",
+        contract_id="OB-ABSTAIN-NO-EVIDENCE",
         task_type="office_noop",
         app="spreadsheet",
         steps=1,
@@ -648,6 +659,7 @@ REFUSAL_PROBES: list[OfficeTask] = [
 FIDELITY_PROBES: list[OfficeTask] = [
     OfficeTask(
         task_id="fidelity-docx-add-section",
+        contract_id="OB-FIDELITY-ANCHOR-PRESERVE",
         task_type="office_docx",
         app="writer",
         steps=2,
@@ -674,6 +686,7 @@ FIDELITY_PROBES: list[OfficeTask] = [
     ),
     OfficeTask(
         task_id="fidelity-pptx-insert-slide",
+        contract_id="OB-FIDELITY-ANCHOR-PRESERVE",
         task_type="office_pptx",
         app="slides",
         steps=2,
@@ -713,6 +726,7 @@ FIDELITY_PROBES: list[OfficeTask] = [
 INFERENTIAL_PROBES: list[OfficeTask] = [
     OfficeTask(
         task_id="infer-docx-consistent-section",
+        contract_id="OB-INFER-EXEMPLAR-ATTRIBUTE",
         task_type="office_docx_infer",
         app="writer",
         steps=2,
@@ -740,6 +754,7 @@ INFERENTIAL_PROBES: list[OfficeTask] = [
     ),
     OfficeTask(
         task_id="infer-docx-consistent-closing",
+        contract_id="OB-INFER-EXEMPLAR-ATTRIBUTE",
         task_type="office_docx_infer",
         app="writer",
         steps=2,

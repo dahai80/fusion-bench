@@ -1,3 +1,19 @@
+---
+doc_id: fusion-bench/architecture
+product: fusion-bench
+class: platform
+entry: service
+audience: engineer
+status: draft
+doc_type: architecture
+version: "1.0"
+title: { zh: "校验器 fail-open 审计（#64）", en: "Validator fail-open audit (#64)" }
+updated: 2026-11-27
+owner: "@dahai"
+source_of_truth:
+  - fusion_bench/office_bench/validators.py
+---
+
 # Validator fail-open audit (issue #64, arXiv 2610.02142)
 
 Per-check enumeration of the office-bench validators and their exposure to
