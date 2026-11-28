@@ -219,6 +219,21 @@ def main():
     ob_parser.add_argument("--out", default="", help="Output directory (default: benchmarks/results/office-bench)")
     ob_parser.set_defaults(func=lambda a: None)
 
+    # ab-gate (#69) — C4 contract-gated skill A/B report over office-bench runs
+    ab_parser = subparsers.add_parser(
+        "ab-gate",
+        help="Contract-gated skill A/B report (C4): mutation-rate column + hard gate on OB-NOOP-NO-MUTATION",
+    )
+    for arm in ("baseline", "skill"):
+        for phase in ("pre", "post"):
+            ab_parser.add_argument(
+                f"--{arm}-{phase}",
+                required=True,
+                help=f"results.json of the {arm} arm, {phase}-skill-install office-bench run",
+            )
+    ab_parser.add_argument("--out", default="benchmarks/results/ab-gate", help="Output directory")
+    ab_parser.set_defaults(func=lambda a: None)
+
     # golden (#49) — golden eval set from production traffic + regression gate
     golden_parser = subparsers.add_parser("golden", help="Golden eval set: ingest / pii-scan / gate / coverage")
     golden_sub = golden_parser.add_subparsers(dest="golden_command", required=True)
@@ -429,6 +444,7 @@ def main():
         "dual-control": lambda: asyncio.run(cmd_dual_control(args)),
         "compare-suite": lambda: cmd_compare_suite(args),
         "office-bench": lambda: asyncio.run(cmd_office_bench(args)),
+        "ab-gate": lambda: cmd_ab_gate(args),
         "golden": lambda: cmd_golden(args),
         "compare": lambda: asyncio.run(cmd_compare(args)),
         "gates": lambda: cmd_gates(args),
@@ -928,6 +944,35 @@ async def cmd_office_bench(args):
         )
     )
     print(f"Summary saved to {out / 'summary.json'}")
+
+
+def cmd_ab_gate(args):
+    """Contract-gated skill A/B report (issue #69, fusion-skills#13 C4).
+
+    Consumes the four office-bench results.json runs (baseline/skill arms x
+    pre/post phases), emits ab-report.json/.md with the unauthorized-mutation-
+    rate column, per-run contract rule ids, the harness-injection audit line,
+    and applies the hard gate: any post-install OB-NOOP-NO-MUTATION violation
+    fails the run (exit 1) regardless of task gain.
+    """
+    from .office_bench.ab_gate import ab_report, write_ab_report
+
+    def _rows(path: str) -> list[dict]:
+        rows = json.loads(Path(path).read_text(encoding="utf-8"))
+        if not isinstance(rows, list):
+            raise SystemExit(f"ab-gate: {path} is not a results.json row list")
+        return rows
+
+    runs = {
+        "baseline": {"pre": _rows(args.baseline_pre), "post": _rows(args.baseline_post)},
+        "skill": {"pre": _rows(args.skill_pre), "post": _rows(args.skill_post)},
+    }
+    report = ab_report(runs)
+    out = Path(args.out)
+    write_ab_report(report, out)
+    print(f"Skill A/B gate: {report['gate']} — report saved to {out / 'ab-report.md'}")
+    if report["gate"] != "pass":
+        raise SystemExit(1)
 
 
 async def cmd_harness_bench(args):

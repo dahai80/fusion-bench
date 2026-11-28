@@ -936,3 +936,142 @@ class TestNegativeProbes:
         score, detail = validate("office_xlsx", p, args)
         assert score == 0.0
         assert "sheet:Sales" not in detail
+
+
+class TestABGate:
+    """#69 (C4, fusion-skills#13): contract-gated skill A/B reporting."""
+
+    @staticmethod
+    def _probe_row(task_id: str, passed: bool, harness_error: bool = False) -> dict:
+        return {
+            "task_id": task_id,
+            "task_type": "office_noop",
+            "steps": 1,
+            "passed": passed,
+            "score": 1.0 if passed else 0.0,
+            "harness_error": harness_error,
+            "negative_probe": True,
+            "probe_family": "over_trigger",
+            "contract_id": "OB-NOOP-NO-MUTATION",
+        }
+
+    def test_mutation_rate(self):
+        from fusion_bench.office_bench.ab_gate import unauthorized_mutation_rate
+
+        rows = [
+            self._probe_row("n1", True),
+            self._probe_row("n2", False),
+            self._probe_row("n3", False, harness_error=True),
+        ]
+        rate, violated, total = unauthorized_mutation_rate(rows)
+        assert (rate, violated, total) == (0.5, 1, 2)
+
+    def test_mutation_rate_empty(self):
+        from fusion_bench.office_bench.ab_gate import unauthorized_mutation_rate
+
+        assert unauthorized_mutation_rate([]) == (0.0, 0, 0)
+
+    def test_gate_pass_clean(self):
+        from fusion_bench.office_bench.ab_gate import gate_verdict
+
+        verdict = gate_verdict([self._probe_row("n1", True)], [self._probe_row("n1", True)])
+        assert verdict["gate"] == "pass"
+        assert verdict["flipped"] == []
+        assert verdict["mutation_rate_post"] == 0.0
+
+    def test_gate_fails_on_flip(self):
+        from fusion_bench.office_bench.ab_gate import gate_verdict
+
+        verdict = gate_verdict([self._probe_row("n1", True)], [self._probe_row("n1", False)])
+        assert verdict["gate"] == "fail"
+        assert verdict["flipped"] == ["n1"]
+        assert verdict["violations_post"] == ["n1"]
+
+    def test_gate_fails_on_post_violation_without_flip(self):
+        from fusion_bench.office_bench.ab_gate import gate_verdict
+
+        verdict = gate_verdict([self._probe_row("n1", False)], [self._probe_row("n1", False)])
+        assert verdict["gate"] == "fail"
+        assert verdict["flipped"] == []
+        assert verdict["violations_post"] == ["n1"]
+
+    def test_gate_ignores_harness_errors(self):
+        from fusion_bench.office_bench.ab_gate import gate_verdict
+
+        verdict = gate_verdict([self._probe_row("n1", True)], [self._probe_row("n1", False, harness_error=True)])
+        assert verdict["gate"] == "pass"
+        assert verdict["mutation_probes_post"] == 0
+
+    def test_harness_injection_audit_env(self, monkeypatch):
+        from fusion_bench.office_bench.ab_gate import HARNESS_SKILLS_ENV, harness_injection_audit
+
+        monkeypatch.setenv(HARNESS_SKILLS_ENV, " web-search , code-exec ")
+        audit = harness_injection_audit()
+        assert audit["injected_builtins"] == ["code-exec", "web-search"]
+        assert audit["count"] == 2
+        assert audit["bench_harness_injected"] == []
+
+    def test_harness_injection_audit_default_empty(self, monkeypatch):
+        from fusion_bench.office_bench.ab_gate import HARNESS_SKILLS_ENV, harness_injection_audit
+
+        monkeypatch.delenv(HARNESS_SKILLS_ENV, raising=False)
+        audit = harness_injection_audit()
+        assert audit["injected_builtins"] == []
+        assert audit["count"] == 0
+
+    @staticmethod
+    def _core_row(passed: bool) -> dict:
+        return {
+            "task_id": "core",
+            "task_type": "office_xlsx",
+            "steps": 2,
+            "passed": passed,
+            "score": 1.0 if passed else 0.0,
+            "harness_error": False,
+            "negative_probe": False,
+            "contract_id": "",
+        }
+
+    def test_ab_report_and_markdown(self):
+        from fusion_bench.office_bench.ab_gate import ab_report, render_markdown
+
+        runs = {
+            "baseline": {
+                "pre": [self._core_row(True), self._probe_row("n1", True)],
+                "post": [self._core_row(True), self._probe_row("n1", True)],
+            },
+            "skill": {
+                "pre": [self._core_row(False), self._probe_row("n1", True)],
+                "post": [self._core_row(True), self._probe_row("n1", False)],
+            },
+        }
+        report = ab_report(runs)
+        assert report["gate"] == "fail"
+        assert report["arms"]["skill"]["task_delta"] == 1.0
+        assert report["arms"]["skill"]["unauthorized_mutation_rate_post"] == 1.0
+        assert report["arms"]["baseline"]["gate"]["gate"] == "pass"
+        md = render_markdown(report)
+        assert "unauthorized-mutation-rate" in md
+        assert "OB-NOOP-NO-MUTATION" in md
+        assert "Harness injection audit" in md
+        assert "| skill |" in md
+
+    def test_ab_report_all_pass(self):
+        from fusion_bench.office_bench.ab_gate import ab_report
+
+        runs = {
+            "baseline": {"pre": [self._probe_row("n1", True)], "post": [self._probe_row("n1", True)]},
+            "skill": {"pre": [self._probe_row("n1", True)], "post": [self._probe_row("n1", True)]},
+        }
+        assert ab_report(runs)["gate"] == "pass"
+
+    def test_write_ab_report(self, tmp_path):
+        import json as _json
+
+        from fusion_bench.office_bench.ab_gate import ab_report, write_ab_report
+
+        runs = {"skill": {"pre": [self._probe_row("n1", True)], "post": [self._probe_row("n1", True)]}}
+        write_ab_report(ab_report(runs), tmp_path)
+        saved = _json.loads((tmp_path / "ab-report.json").read_text())
+        assert saved["gate"] == "pass"
+        assert (tmp_path / "ab-report.md").is_file()

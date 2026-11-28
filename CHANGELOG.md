@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.47
+version: 0.4.48
 updated: 2026-11-28
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.48 (2026-11-28)
+
+- **Feat #69 — contract-gated skill A/B reporting (C4, fusion-skills#13; SkillsBench arXiv 2611.33943, self-evolution safety arXiv 2608.17684)**. New `fusion_bench/office_bench/ab_gate.py` + `fusion-bench ab-gate` CLI over the four office-bench runs (baseline/skill arms × pre/post phases, rows carry `contract_id` via #68). (1) Contract-tagged probe runs consumed with rule ids printed per run (e.g. `OB-NOOP-NO-MUTATION: pre 1/1 → post 0/1`); (2) unauthorized-mutation-rate column next to the task-score delta (fraction of no-mutation contract probes that mutated, harness errors excluded); (3) hard gate — any post-install no-mutation contract violation (including a pre-pass→post-violation flip, reported by task id) fails the report and exits 1 regardless of task gain; (4) harness-injection audit line — built-ins the executing harness injects are declared via `FUSION_HARNESS_SKILLS` (fusion-bench's own harness injects none, SYSTEM_PROMPT only). Output: `ab-report.json` + `ab-report.md` feeding fusion-skills `skills/templates/ab-report.md`. Deterministic aggregation, no model in the loop. 13 tests (953 collected).
 
 ### v0.4.47 (2026-11-28)
 

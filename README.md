@@ -25,8 +25,7 @@ Run, benchmark, and auto-tune AI models on Apple Silicon — entirely local, no 
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-942-success.svg)](tests/)
-[![Tests](https://img.shields.io/badge/Tests-942-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-953-success.svg)](tests/)
 [![CI](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/dahai80/fusion-bench/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -463,6 +462,10 @@ scripts/release.sh
 [Apache License 2.0](LICENSE)
 
 ## Changelog
+
+### v0.4.48 (2026-11-28)
+
+- **Feat #69 — contract-gated skill A/B reporting (C4, fusion-skills#13)**. New `ab-gate` CLI + `office_bench/ab_gate.py`: unauthorized-mutation-rate column next to task-score delta, per-run contract rule ids, harness-injection audit line (`FUSION_HARNESS_SKILLS`), and the hard gate — any post-install `OB-NOOP-NO-MUTATION` violation fails the run (exit 1) regardless of task gain. Consumes the four office-bench runs (baseline/skill × pre/post); emits `ab-report.json`/`.md`.
 
 ### v0.4.47 (2026-11-28)
 
