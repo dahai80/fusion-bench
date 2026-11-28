@@ -251,6 +251,7 @@ async def _run_probe_family(
     max_steps: int,
     out_dir: Path,
     results: list[dict],
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> None:
     """Run one trust-probe family (#64/#65), appending tagged rows to results.
 
@@ -288,7 +289,7 @@ async def _run_probe_family(
             continue
         workspace = out_dir / "workspaces" / task.task_id
         task.materialize(workspace)
-        runner = FusionHarnessRunner(RetryingClient(client), max_steps=max_steps, system_prompt=SYSTEM_PROMPT)
+        runner = FusionHarnessRunner(RetryingClient(client), max_steps=max_steps, system_prompt=system_prompt)
         if grader_kind == "suppression":
             before = _snapshot(workspace)
             verifier = lambda ws, b=before: grade_negative(b, ws)  # noqa: E731
@@ -336,7 +337,19 @@ async def _run_probe_family(
         )
 
 
-async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8, babysit: bool = False) -> dict:
+async def run_office(
+    mlx_url: str,
+    model: str,
+    out_dir: Path,
+    max_steps: int = 8,
+    babysit: bool = False,
+    skill_prompt: str = "",
+    skill_name: str = "",
+) -> dict:
+    # Candidate-skill injection (fusion-bench#71, fusion-skills#15): the
+    # experiment arm, not a harness builtin — harness_injection_audit()
+    # stays truthful. Empty default keeps today's behavior identical.
+    system_prompt = SYSTEM_PROMPT + ("\n\n" + skill_prompt if skill_prompt else "")
     client = ModelClient(base_url=mlx_url, model=model)
     out_dir.mkdir(parents=True, exist_ok=True)
     run_id = f"office-{uuid.uuid4().hex[:8]}"
@@ -433,8 +446,15 @@ async def run_office(mlx_url: str, model: str, out_dir: Path, max_steps: int = 8
         ("inferential", INFERENTIAL_PROBES, "validator"),
     ]
     for family, probe_tasks, grader_kind in probe_batches:
-        await _run_probe_family(probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results)
+        await _run_probe_family(
+            probe_tasks, family, grader_kind, client, mlx_url, babysit, max_steps, out_dir, results, system_prompt
+        )
+    if skill_name:
+        for row in results:
+            row["skill"] = skill_name
     summary = build_summary(results, run_id, datetime.now(UTC).isoformat())
+    if skill_name:
+        summary["skill"] = skill_name
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (out_dir / "results.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     write_boundary(out_dir, results)
