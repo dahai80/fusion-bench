@@ -31,7 +31,25 @@ def build_report(supervisor_runs: list[dict], cowork_audits: list[dict], schedul
 
 def render_markdown(report: dict) -> str:
     m = report["metrics"]
+    generated_date = str(report["generated_at"])[:10]
     lines = [
+        "---",
+        "doc_id: fusion-bench/durability-report",
+        "product: fusion-bench",
+        "class: platform",
+        "entry: service",
+        "doc_type: guide",
+        'title: { zh: "编排耐久性基准报告", en: "Orchestration Durability Report" }',
+        "audience: engineer",
+        "status: draft",
+        "version: 1",
+        f"updated: {generated_date}",
+        'owner: "@dahai"',
+        "source_of_truth:",
+        "  - bench/durability/durability-report.json",
+        "  - fusion_bench/durability/report.py",
+        "---",
+        "",
         "# Orchestration durability report (A6, issue #70)",
         "",
         f"Generated: {report['generated_at']}",
