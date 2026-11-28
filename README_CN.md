@@ -24,11 +24,8 @@ source_of_truth:
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-<<<<<<< HEAD
 [![Tests](https://img.shields.io/badge/Tests-942-success.svg)](tests/)
-=======
 [![Tests](https://img.shields.io/badge/Tests-942-success.svg)](tests/)
->>>>>>> 4f1a1b0 (docs: update test count badges to 942)
 
 [English](README.md) · [快速开始](#快速开始) · [CLI 参考](#cli-参考) · [架构](#架构) · [文档](docs/)
 

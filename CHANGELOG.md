@@ -7,7 +7,7 @@ doc_type: changelog
 title: { zh: "Fusion-Bench 变更日志", en: "Fusion-Bench Changelog" }
 audience: engineer
 status: draft
-version: 0.4.46
+version: 0.4.47
 updated: 2026-11-28
 owner: "@dahai"
 source_of_truth:
@@ -16,6 +16,10 @@ source_of_truth:
 ---
 
 # Changelog
+
+### v0.4.47 (2026-11-28)
+
+- **Feat #68 — ABE contract rule ids for trust probes + per-contract summary aggregation (Agentic Behavior Engineering, arXiv 2611.05454; refs #63 methodology proposal)**. `OfficeTask.contract_id` — stable rule identifier on all 10 trust probes (#64/#65/#67), empty for core capability tasks: `OB-NOOP-NO-MUTATION` (over-trigger), `OB-ROBUST-SURFACE-PERTURBATION` (robustness twins), `OB-ABSTAIN-NO-EVIDENCE` (refusal), `OB-FIDELITY-ANCHOR-PRESERVE` (fidelity), `OB-INFER-EXEMPLAR-ATTRIBUTE` (inferential docx). Run rows propagate `contract_id`; `build_summary` rolls up `summary.arms.<arm>.contracts` per rule (passed/total/rate). Regression triage now names the broken contract, not just the failed task; cross-run comparisons show which contracts flipped between model versions; the trainer#123 pilot's probe gate becomes an explicit must-not-violate rule set. Full suite 942 collected; ruff clean.
 
 ### v0.4.46 (2026-11-28)
 
